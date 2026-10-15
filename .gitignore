@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+artery.db
+data/
+eda_output/
+node_modules/
