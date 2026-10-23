@@ -53,5 +53,6 @@ scripts/audit_local_training_intake.py
 scripts/build_measured_training_results.py
 scripts/build_segmentation_task_report.py
 backend/tests/test_segmentation_training.py
+backend/tests/test_arcade_instance_dataset.py
 docs/*TRAINING*.md
 docs/FREE_GPU_EXECUTION_*.md

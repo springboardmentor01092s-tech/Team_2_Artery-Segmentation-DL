@@ -96,7 +96,16 @@ SQLite is the local default. PostgreSQL can be configured through `DATABASE_URL`
 
 ## Get started
 
-**Requirements:** Python 3.11+, Node.js 20+, and npm. Scanned PDF conversion also requires Poppler's `pdftoppm`. Optional inference dependencies are in `backend/requirements-ai.txt`.
+**Recommended for a new laptop:** follow the [fresh-clone guide](docs/FRESH_CLONE_SETUP.md), or run these commands from the cloned repository root:
+
+```bash
+python scripts/setup_local.py
+python scripts/run_local.py
+```
+
+Then open **http://127.0.0.1:8000**. This serves the built application and API together. The scripts create private configuration and storage locally; use `python3` instead of `python` if required. Optional models, PDF conversion, and account setup are covered in the guide. The separate-server development setup is shown below.
+
+**Requirements:** Python 3.11–3.13, Node.js 20+, and npm. Scanned PDF conversion also requires Poppler's `pdftoppm`. Optional inference dependencies are in `backend/requirements-ai.txt`.
 
 ### 1 · Clone the working branch
 
