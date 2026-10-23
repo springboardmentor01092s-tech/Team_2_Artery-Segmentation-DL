@@ -1,0 +1,5 @@
+-r requirements.txt
+torch>=2.4,<3
+torchvision>=0.19,<1
+shapely>=2,<3
+opencv-python-headless>=4.9,<5

@@ -1,0 +1,47 @@
+.cv-alert { display: flex; align-items: flex-start; gap: 12px; padding: 16px; margin: 12px 0; border: 1px solid var(--theme-line); border-left: 3px solid var(--theme-accent); border-radius: 10px; background: var(--theme-surface); color: var(--theme-ink); text-align: left; min-width: 0; }
+.cv-alert-icon { flex-shrink: 0; margin-top: 1px; color: var(--theme-accent); }
+.cv-alert-content { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cv-alert-title { font-size: 14px; font-weight: 600; line-height: 1.6; }
+.cv-alert-description { margin-top: 5px; color: var(--theme-muted); font-size: 13px; line-height: 1.6; }
+.cv-alert-description p { margin: 5px 0; }
+.cv-alert.is-unread { background: var(--theme-selected); }
+.cv-alert-dismiss { display: grid; place-items: center; flex-shrink: 0; width: 44px; min-height: 44px; margin: -10px -10px -6px 0; border: 0; border-radius: 7px; color: var(--theme-muted); background: transparent; cursor: pointer; }
+.cv-alert-dismiss:hover { background: var(--theme-selected); }
+.app-shell .notification-panel { background: var(--theme-surface); color: var(--theme-ink); border-color: var(--theme-line); }
+.notification-list .cv-alert { margin: 0; padding: 12px; gap: 10px; }
+.notification-list .cv-alert-title { font-size: 13px; }
+.app-shell .notification-list .cv-alert small { color: var(--theme-muted); font-size: 11px; }
+.app-shell .account .notification-list .cv-alert button { min-height: 44px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); color: var(--theme-ink); width: auto; margin-top: 8px; padding: 8px 12px; font-size: 12px; }
+.app-shell .account .notification-list .cv-alert button:hover:not(:disabled) { background: var(--theme-selected); }
+.notification-list .cv-alert button:disabled { opacity: .55; cursor: wait; }
+.app-shell .notification-panel { width: min(460px,calc(100vw - 32px)); }
+.notification-tabs, .notification-bulk > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.notification-tabs { margin: 12px 0; }
+.app-shell .account :is(.notification-tabs,.notification-bulk) button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--theme-line); border-radius: 8px; color: var(--theme-ink); background: var(--theme-surface); font-size: 12px; cursor: pointer; }
+.app-shell .account .notification-tabs button[aria-pressed=true] { background: var(--theme-selected); border-color: var(--theme-accent); }
+.notification-bulk { display: grid; gap: 10px; margin: 12px 0 18px; padding: 12px; border: 1px solid var(--theme-line); border-radius: 10px; }
+.notification-bulk > span, .notification-feedback { font-size: 12px; color: var(--theme-muted); line-height: 1.6; }
+.notification-bulk label, .notification-select { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 12px; cursor: pointer; }
+.notification-panel input[type=checkbox] { width: 18px; height: 18px; min-height: 18px; margin: 0; flex-shrink: 0; }
+.notification-select { padding-left: 4px; }
+.app-shell .account .notification-bulk button:disabled { opacity: .5; cursor: not-allowed; }
+.notification-delete-confirm p { flex-basis: 100%; font-size: 12px; line-height: 1.6; }
+.notification-heading-actions { display: flex; align-items: center; gap: 8px; }
+.app-shell .account .notification-heading-actions button { min-height: 44px; padding: 8px 12px; color: var(--theme-ink); background: var(--theme-surface); border: 1px solid var(--theme-line); border-radius: 22px; cursor: pointer; font-size: 12px; }
+.notification-select-all { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0 12px; }
+.notification-select-all label { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-size: 13px; }
+.notification-select-all small { color: var(--theme-muted); font-size: 11px; }
+.notification-list.is-selecting > li { display: flex; align-items: center; gap: 8px; border-radius: 10px; cursor: pointer; }
+.notification-list.is-selecting > li.is-selected { background: var(--theme-selected); outline: 1px solid var(--theme-accent); outline-offset: -1px; }
+.notification-list.is-selecting .cv-alert { flex: 1; min-width: 0; background: transparent; border: 0; }
+.notification-list.is-selecting .notification-select { position: relative; display: grid; place-items: center; flex: 0 0 44px; min-height: 44px; padding: 0; cursor: pointer; }
+.notification-list.is-selecting .notification-select input { position: absolute; opacity: 0; width: 44px; height: 44px; cursor: pointer; }
+.notification-check-circle { width: 24px; height: 24px; border: 2px solid var(--theme-muted); border-radius: 50%; display: grid; place-items: center; box-sizing: border-box; }
+.notification-select input:checked + .notification-check-circle { border-color: var(--theme-accent); background: var(--theme-accent); color: var(--theme-on-accent); }
+.notification-select input:focus-visible + .notification-check-circle { outline: 3px solid var(--theme-accent); outline-offset: 4px; }
+.notification-selection-footer { position: sticky; bottom: -16px; margin: 12px -4px -4px; padding: 12px 4px 4px; background: var(--theme-surface); }
+.notification-selection-toolbar { display: flex; justify-content: space-around; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--theme-line); border-radius: 32px; background: var(--theme-surface); box-shadow: 0 4px 18px #0001; }
+.app-shell .account .notification-selection-toolbar button, .app-shell .account .notification-delete-confirm button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 0; border-radius: 22px; color: var(--theme-ink); background: transparent; cursor: pointer; font-size: 12px; }
+.app-shell .account .notification-selection-toolbar button:hover:not(:disabled) { background: var(--theme-selected); }
+.app-shell .account .notification-selection-toolbar button:disabled { opacity: .45; cursor: not-allowed; }
+.notification-delete-confirm { padding: 12px; border: 1px solid var(--theme-line); border-radius: 12px; margin-bottom: 12px; }

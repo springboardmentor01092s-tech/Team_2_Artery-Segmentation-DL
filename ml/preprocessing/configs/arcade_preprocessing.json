@@ -1,0 +1,13 @@
+{
+  "config_version": "1.0",
+  "target_size": [512, 512],
+  "image_mode": "L",
+  "image_interpolation": "bilinear",
+  "mask_interpolation": "nearest",
+  "preserve_aspect_ratio": true,
+  "padding_value": 0,
+  "normalization": "uint8_on_disk; scale_to_[0,1]_at_model_input",
+  "syntax_mask": "single-channel PNG preserving source category IDs; 0 is background",
+  "stenosis_mask": "single-channel binary PNG; 0 is background and 1 is source category 26",
+  "augmentation": "none; training-time augmentation is intentionally separate"
+}

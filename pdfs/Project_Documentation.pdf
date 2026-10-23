@@ -1,0 +1,282 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [8 0 R 10 0 R 12 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 9 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> >>
+endobj
+9 0 obj
+<< /Length 7580 >>
+stream
+q 0.5 w 0.0 0.0 0.0 RG 48.00 38.00 m 547.28 38.00 l S Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 28.00 Td (Project Documentation) Tj ET Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 501.52 28.00 Td (Page 1 of 3) Tj ET Q
+q BT /F2 9.00 Tf 0.000 0.000 0.000 rg 48.00 783.89 Td (PROJECT DOCUMENTATION) Tj ET Q
+q BT /F2 16.00 Tf 0.000 0.000 0.000 rg 48.00 763.89 Td (Artery Segmentation and Stenosis Detection using) Tj ET Q
+q BT /F2 16.00 Tf 0.000 0.000 0.000 rg 48.00 743.89 Td (Advanced Deep Learning Techniques) Tj ET Q
+q 1.50 w 0.000 0.000 0.000 RG 48.00 735.89 m 547.28 735.89 l S Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 699.89 Td (1. Project Objectives) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 695.89 m 547.28 695.89 l S Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 674.39 Td (The primary objective of this project is to develop an automated, clinically reliable deep learning) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 660.89 Td (framework for accurate coronary artery segmentation and quantitative stenosis detection from medical) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 647.39 Td (angiographic images. Specifically, the system aims to:) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 629.89 Td (-  Artery Segmentation: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 183.96 629.89 Td (Accurately delineate the lumen boundaries of coronary arteries in medical) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 616.89 Td (angiographic images, addressing challenges such as low contrast, vessel overlap, and background) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 603.89 Td (noise.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 588.89 Td (-  Centerline Extraction: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 194.79 588.89 Td (Extract continuous anatomical vessel centerlines to compute local) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 575.89 Td (cross-sectional diameters along the arterial tree.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 560.89 Td (-  Stenosis Detection & Localization: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 259.77 560.89 Td (Automatically detect, locate, and assess regions of arterial) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 547.89 Td (narrowing \(stenosis\) across major coronary branches.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 532.89 Td (-  Quantitative Severity Grading: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 238.11 532.89 Td (Calculate the percentage of diameter and area reduction \(stenosis) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 519.89 Td (percentage\) to determine lesion severity according to standard clinical criteria.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 494.39 Td (2. Workflow & Initial Preprocessing Pipeline) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 490.39 m 547.28 490.39 l S Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 468.89 Td (The project follows a structured sequential workflow from raw image acquisition to clinical) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 455.39 Td (diagnostic output:) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 437.89 Td (-  Step 1: Data Preprocessing: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 221.86 437.89 Td (Image normalization, contrast enhancement \(CLAHE\), noise reduction,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 424.89 Td (and region-of-interest \(ROI\) extraction from input angiographic scans.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 409.89 Td (-  Step 2: Vessel Segmentation: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 227.28 409.89 Td (Feeding preprocessed images into a deep learning segmentation model) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 396.89 Td (to generate binary/probability masks of the coronary arterial tree.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 381.89 Td (-  Step 3: Centerline & Diameter Profiling: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 292.26 381.89 Td (Morphological skeletonization of the predicted mask,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 368.89 Td (curve smoothing, and orthogonal diameter calculation along the vessel length.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 353.89 Td (-  Step 4: Stenosis Detection & Quantification: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 313.92 353.89 Td (Identifying the minimal lumen diameter \(MLD\)) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 340.89 Td (relative to the reference healthy vessel diameter \(RVD\) to compute percentage stenosis: Stenosis %) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 327.89 Td (= \(1 - MLD / RVD\) * 100.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 312.89 Td (-  Step 5: Output & Reporting: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 221.86 312.89 Td (Visualizing segmented arteries, overlaying detected stenosis) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 299.89 Td (regions, and generating quantitative diagnostic metrics.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 280.39 Td (Initial Preprocessing Pipeline Details) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 265.89 Td (-  Intensity Normalization: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 205.62 265.89 Td (Scaling raw pixel intensities to [0, 1] range and handling bit-depth) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 252.89 Td (variations \(8-bit vs 12/16-bit DICOM\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 237.89 Td (-  Contrast Enhancement \(CLAHE\): ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 232.69 237.89 Td (Contrast Limited Adaptive Histogram Equalization applied locally) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 224.89 Td (to boost low-contrast vessel contours without amplifying background noise.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 209.89 Td (-  Vesselness Filtering: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 189.38 209.89 Td (Multi-scale Frangi/Hessian filtering to enhance tubular vascular) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 196.89 Td (structures and suppress non-vascular planar artifacts.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 181.89 Td (-  Format Conversion & Resizing: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 232.69 181.89 Td (Standardizing multi-format inputs \(DICOM, NIfTI, PNG, JPG\) to) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 168.89 Td (uniform resolution \(512x512\) with isotropic spacing.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 143.39 Td (3. Imaging Modality, Dataset & Exploratory Data Analysis) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 139.39 m 547.28 139.39 l S Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 117.89 Td (-  Medical Imaging Modality: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 211.03 117.89 Td (Selected 2D X-ray Coronary Angiography \(XCA\) as the primary) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 104.89 Td (interventional modality for real-time cath-lab assessment, with complementary support for 3D) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 91.89 Td (Coronary Computed Tomography Angiography \(CCTA\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 76.89 Td (-  Public / De-identified Datasets: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 248.94 76.89 Td (Selected and downloaded benchmark datasets: DCA1 \(130 coronary) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 63.89 Td (angiograms with lumen masks\), ARCADE \(1,200 multi-view series with vessel tree and stenosis) Tj ET Q
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 11 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> >>
+endobj
+11 0 obj
+<< /Length 10824 >>
+stream
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 813.89 Td (Project Documentation) Tj ET Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 809.89 m 547.28 809.89 l S Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 38.00 m 547.28 38.00 l S Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 28.00 Td (Project Documentation) Tj ET Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 501.52 28.00 Td (Page 2 of 3) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 784.39 Td (annotations\), and ASOCA \(40 3D CCTA volumes\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 769.39 Td (-  Dataset Structure & Annotations: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 248.94 769.39 Td (Hierarchical directory structure containing raw images,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 756.39 Td (expert-annotated binary lumen masks \(0: background, 1/255: lumen\), and stenosis metadata \(bounding) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 743.39 Td (boxes, MLD, and % narrowing\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 728.39 Td (-  Exploratory Data Analysis \(EDA\): ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 248.94 728.39 Td (Identified key data characteristics: severe) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 715.39 Td (foreground-to-background class imbalance \(vessels occupy < 6% of pixels\), non-uniform contrast) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 702.39 Td (agent distribution across cardiac phases, catheter occlusions, and patient respiratory motion) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 689.39 Td (artifacts.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 663.89 Td (4. Architecture & Full-Stack System Implementation) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 659.89 m 547.28 659.89 l S Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 633.89 Td (Deep Learning Model Architecture) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 619.39 Td (-  Model Backbone: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 156.88 619.39 Td (Attention U-Net encoder-decoder network with multi-scale convolutional feature) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 606.39 Td (extraction layers.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 591.39 Td (-  Attention Mechanism: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 183.96 591.39 Td (Attention gates integrated into skip connections to prioritize vascular) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 578.39 Td (boundaries and suppress background tissue noise.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 563.39 Td (-  Loss Optimization: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 173.13 563.39 Td (Compound loss combining Focal Loss and Soft Dice Loss to resolve high) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 550.39 Td (foreground-background class imbalance.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 530.89 Td (Full-Stack System Architecture) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 516.39 Td (-  Frontend: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 124.39 516.39 Td (React, TypeScript, and Vite providing a responsive, interactive clinical dashboard.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 501.39 Td (-  Backend: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 118.98 501.39 Td (FastAPI asynchronous REST API handling authentication, case lifecycle, upload handling,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 488.39 Td (and analysis orchestration.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 473.39 Td (-  Database: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 124.39 473.39 Td (PostgreSQL storing users, cases, images, preprocessing runs, analyses, findings, and) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 460.39 Td (audit logs.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 445.39 Td (-  Storage: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 118.98 445.39 Td (Encrypted file storage for original uploads, processed tensors, segmentation masks,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 432.39 Td (overlays, and model weights.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 417.39 Td (-  AI Services: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 140.64 417.39 Td (Decoupled inference services hosting separate models for 2D X-ray Angiography and) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 404.39 Td (3D CT/CTA pipelines via a Model Registry.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 384.89 Td (Core Software Modules & Implementation) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 370.39 Td (-  Authentication Module: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 194.79 370.39 Td (Secure user authentication using JWT sessions, password hashing \(bcrypt\),) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 357.39 Td (session expiration, and role-based access checks.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 342.39 Td (-  Case Management Module: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 200.20 342.39 Td (Comprehensive case lifecycle management \(creation, patient code) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 329.39 Td (assignment, modality specification, status transitions, and team access\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 314.39 Td (-  Image Upload Module: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 183.96 314.39 Td (Secure file upload supporting drag-and-drop for multi-format medical) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 301.39 Td (imaging \(DICOM, PNG, JPG, NIfTI, PDF\) with validation and preprocessing triggers.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 281.89 Td (Database Schema) Tj ET Q
+q 1.00 w 0.000 0.000 0.000 RG 48.00 262.89 m 547.28 262.89 l S Q
+q 1.00 w 0.000 0.000 0.000 RG 48.00 276.89 m 547.28 276.89 l S Q
+q BT /F2 8.00 Tf 0.000 0.000 0.000 rg 52.00 266.89 Td (Table) Tj ET Q
+q BT /F2 8.00 Tf 0.000 0.000 0.000 rg 162.00 266.89 Td (Main Fields) Tj ET Q
+q BT /F2 8.00 Tf 0.000 0.000 0.000 rg 382.00 266.89 Td (Purpose) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 248.89 m 547.28 248.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 252.89 Td (users) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 252.89 Td (id, email, username, password_hash, role, status) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 252.89 Td (User identity and role) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 234.89 m 547.28 234.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 238.89 Td (user_profiles) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 238.89 Td (user_id, display_name, organisation) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 238.89 Td (Profile details) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 220.89 m 547.28 220.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 224.89 Td (auth_sessions) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 224.89 Td (id, user_id, expires_at, revoked_at) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 224.89 Td (Remembered and active sessions) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 206.89 m 547.28 206.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 210.89 Td (audit_events) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 210.89 Td (id, user_id, action, metadata, created_at) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 210.89 Td (Security and activity tracking) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 192.89 m 547.28 192.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 196.89 Td (patients) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 196.89 Td (id, patient_code, age_range, gender, risk_factors) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 196.89 Td (De-identified patient details) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 178.89 m 547.28 178.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 182.89 Td (cases) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 182.89 Td (id, case_code, patient_id, modality, anatomy, status) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 182.89 Td (Imaging case record) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 164.89 m 547.28 164.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 168.89 Td (case_assignments) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 168.89 Td (case_id, user_id, permission) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 168.89 Td (Team access to a case) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 150.89 m 547.28 150.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 154.89 Td (medical_images) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 154.89 Td (id, case_id, source_path, format, spacing) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 154.89 Td (Uploaded images and studies) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 136.89 m 547.28 136.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 140.89 Td (preprocessing_runs) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 140.89 Td (id, image_id, settings, output_path, status) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 140.89 Td (Normalization & conversion history) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 122.89 m 547.28 122.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 126.89 Td (analysis_runs) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 126.89 Td (id, image_id, model_id, task, status, confidence) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 126.89 Td (Each AI analysis execution) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 108.89 m 547.28 108.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 112.89 Td (analysis_findings) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 112.89 Td (id, analysis_id, type, location, severity, confidence) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 112.89 Td (Vessel or stenosis findings) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 94.89 m 547.28 94.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 98.89 Td (model_versions) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 98.89 Td (id, name, version, modality, task, metrics, status) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 98.89 Td (Registered models & validation metrics) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 80.89 m 547.28 80.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 84.89 Td (reports) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 84.89 Td (id, case_id, analysis_id, format, file_path) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 84.89 Td (Generated PDF, JSON, CSV reports) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 66.89 m 547.28 66.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 70.89 Td (notifications) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 162.00 70.89 Td (id, user_id, case_id, level, message, read_at) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 382.00 70.89 Td (Alerts for stenosis or failures) Tj ET Q
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 13 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> >>
+endobj
+13 0 obj
+<< /Length 3251 >>
+stream
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 813.89 Td (Project Documentation) Tj ET Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 809.89 m 547.28 809.89 l S Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 38.00 m 547.28 38.00 l S Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 28.00 Td (Project Documentation) Tj ET Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 501.52 28.00 Td (Page 3 of 3) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 779.89 Td (UI Wireframes & Role-Based Access Control \(RBAC\)) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 765.39 Td (-  1. Login Screen: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 162.30 765.39 Td (Secure sign-in with email/password, social auth, and role switcher \(Clinician,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 752.39 Td (Researcher, ML Engineer\).) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 737.39 Td (-  2. Main Dashboard: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 173.13 737.39 Td (Navigation sidebar, summary counters \(Total cases, In review, Alerts\), and) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 724.39 Td (recent cases table.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 709.39 Td (-  3. Case & Upload Screen: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 205.62 709.39 Td (Form for Case ID, Modality \(X-ray/CT/CTA\), de-identified Patient Code,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 696.39 Td (risk factors, drag-and-drop file upload, and preprocessing settings.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 681.39 Td (-  4. Analysis Workspace: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 194.79 681.39 Td (Interactive comparison viewer \(Original image, Vessel mask, Stenosis) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 668.39 Td (overlay\), centerline & diameter profile plots, confidence scores, and diagnostic findings.) Tj ET Q
+q 1.00 w 0.000 0.000 0.000 RG 48.00 648.89 m 547.28 648.89 l S Q
+q 1.00 w 0.000 0.000 0.000 RG 48.00 662.89 m 547.28 662.89 l S Q
+q BT /F2 8.00 Tf 0.000 0.000 0.000 rg 52.00 652.89 Td (Role) Tj ET Q
+q BT /F2 8.00 Tf 0.000 0.000 0.000 rg 192.00 652.89 Td (Main Access Permissions) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 634.89 m 547.28 634.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 638.89 Td (Radiologist / Clinician) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 192.00 638.89 Td (Review cases, view findings, add clinical comments, export reports) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 620.89 m 547.28 620.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 624.89 Td (Medical Researcher) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 192.00 624.89 Td (Upload de-identified data, compare analyses, export research data) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 606.89 m 547.28 606.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 610.89 Td (ML Engineer) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 192.00 610.89 Td (Dataset audit, preprocessing, training records, model registry management) Tj ET Q
+q 0.50 w 0.000 0.000 0.000 RG 48.00 592.89 m 547.28 592.89 l S Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 52.00 596.89 Td (Administrator) Tj ET Q
+q BT /F1 8.00 Tf 0.000 0.000 0.000 rg 192.00 596.89 Td (User & role management, audit logs, system settings, deleted-case recovery) Tj ET Q
+endstream
+endobj
+xref
+0 14
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000129 00000 n 
+0000000199 00000 n 
+0000000274 00000 n 
+0000000352 00000 n 
+0000000420 00000 n 
+0000000493 00000 n 
+0000000665 00000 n 
+0000008296 00000 n 
+0000008470 00000 n 
+0000019347 00000 n 
+0000019521 00000 n 
+trailer
+<< /Size 14 /Root 1 0 R >>
+startxref
+22824
+%%EOF

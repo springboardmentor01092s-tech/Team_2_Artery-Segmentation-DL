@@ -1,0 +1,150 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [8 0 R 10 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 9 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> >>
+endobj
+9 0 obj
+<< /Length 6782 >>
+stream
+q 0.5 w 0.0 0.0 0.0 RG 48.00 38.00 m 547.28 38.00 l S Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 28.00 Td (Daily Project Work Log) Tj ET Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 501.52 28.00 Td (Page 1 of 2) Tj ET Q
+q BT /F2 9.00 Tf 0.000 0.000 0.000 rg 48.00 783.89 Td (DAILY PROJECT WORK LOG) Tj ET Q
+q BT /F2 16.00 Tf 0.000 0.000 0.000 rg 48.00 763.89 Td (Artery Segmentation and Stenosis Detection using) Tj ET Q
+q BT /F2 16.00 Tf 0.000 0.000 0.000 rg 48.00 743.89 Td (Advanced Deep Learning Techniques) Tj ET Q
+q 1.50 w 0.000 0.000 0.000 RG 48.00 735.89 m 547.28 735.89 l S Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 699.89 Td (Objective) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 695.89 m 547.28 695.89 l S Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 674.39 Td (To develop an automated deep learning framework for accurate coronary artery lumen segmentation,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 660.89 Td (centerline extraction, and quantitative stenosis detection and severity grading from angiographic) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 48.00 647.39 Td (images.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 619.39 Td (Workflow) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 615.39 m 547.28 615.39 l S Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 593.89 Td (-  Step 1: Data Preprocessing: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 221.86 593.89 Td (Input image normalization, contrast enhancement \(CLAHE\), and noise) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 580.89 Td (suppression.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 565.89 Td (-  Step 2: Artery Segmentation: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 227.28 565.89 Td (Deep learning model prediction of arterial lumen masks.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 550.89 Td (-  Step 3: Centerline & Geometry Profiling: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 292.26 550.89 Td (Skeletonization and orthogonal diameter measurement) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 537.89 Td (across the vessel path.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 522.89 Td (-  Step 4: Stenosis Quantification: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 248.94 522.89 Td (Local minimal lumen diameter calculation and percentage) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 509.89 Td (narrowing determination.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 494.89 Td (-  Step 5: Visualization & Output: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 243.52 494.89 Td (Visual overlay of segmented vessels and quantified stenosis) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 481.89 Td (findings.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 456.39 Td (Architecture) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 452.39 m 547.28 452.39 l S Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 430.89 Td (-  Model Architecture: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 178.54 430.89 Td (Attention U-Net / U-Net encoder-decoder network with multi-scale convolution) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 417.89 Td (and compound Focal + Soft Dice loss.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 402.89 Td (-  System Platform: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 162.30 402.89 Td (FastAPI backend, React + TypeScript UI, PostgreSQL database, secure file) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 389.89 Td (storage, and dedicated AI inference pipelines for X-ray and CT/CTA.) Tj ET Q
+q BT /F2 12.00 Tf 0.000 0.000 0.000 rg 48.00 364.39 Td (About It \(Daily Work Done\)) Tj ET Q
+q 0.75 w 0.000 0.000 0.000 RG 48.00 360.39 m 547.28 360.39 l S Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 334.39 Td (October 8, 2026) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 319.89 Td (-  Define Project Objectives & Workflow: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 276.01 319.89 Td (Formalized core objectives for lumen segmentation,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 306.89 Td (centerline extraction, and stenosis severity quantification; established 5-step sequential) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 293.89 Td (workflow.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 278.89 Td (-  Architecture Selection: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 200.20 278.89 Td (Specified Attention U-Net network backbone and compound Focal + Soft) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 265.89 Td (Dice loss formulation.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 250.89 Td (-  Documentation Setup: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 183.96 250.89 Td (Established project documentation structure and automated black-and-white) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 237.89 Td (PDF reporting system.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 218.39 Td (October 9, 2026) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 203.89 Td (-  Select Medical Imaging Modality: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 248.94 203.89 Td (Selected 2D X-ray Coronary Angiography \(XCA\) as primary) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 190.89 Td (modality and 3D CCTA as complementary modality.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 175.89 Td (-  Select & Download Appropriate Dataset: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 281.43 175.89 Td (Acquired public/de-identified benchmark datasets \(DCA1,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 162.89 Td (ARCADE, ASOCA\) for vascular segmentation and stenosis evaluation.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 147.89 Td (-  Understand Dataset Structure & Annotations: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 308.50 147.89 Td (Analyzed directory structure, image resolutions,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 134.89 Td (binary lumen masks, and clinical stenosis bounding box annotations.) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 115.39 Td (October 12, 2026) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 100.89 Td (-  Design System Architecture: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 221.86 100.89 Td (Designed full-stack system architecture comprising React +) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 87.89 Td (TypeScript UI, FastAPI REST API, PostgreSQL database, secure storage, and decoupled AI services.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 72.89 Td (-  Design Database Schema: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 200.20 72.89 Td (Specified 14 relational tables covering users, patients, cases, images,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 59.89 Td (preprocessing, analyses, findings, models, and reports.) Tj ET Q
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 11 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R /F5 7 0 R >> >> >>
+endobj
+11 0 obj
+<< /Length 2999 >>
+stream
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 813.89 Td (Daily Project Work Log) Tj ET Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 809.89 m 547.28 809.89 l S Q
+q 0.5 w 0.0 0.0 0.0 RG 48.00 38.00 m 547.28 38.00 l S Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 48.00 28.00 Td (Daily Project Work Log) Tj ET Q
+q BT /F1 8.0 Tf 0.0 0.0 0.0 rg 501.52 28.00 Td (Page 2 of 2) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 784.39 Td (-  Create UI Wireframes: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 189.38 784.39 Td (Designed wireframes for Login, Main Dashboard, Case & Upload Screen,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 771.39 Td (Analysis Workspace, and Role-Based Access Control \(RBAC\).) Tj ET Q
+q BT /F2 10.00 Tf 0.000 0.000 0.000 rg 48.00 751.89 Td (October 15, 2026 \(Today's Work\)) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 737.39 Td (-  Perform Exploratory Data Analysis: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 259.77 737.39 Td (Conducted EDA on angiographic images: evaluated intensity) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 724.39 Td (distribution, contrast variability, vascular pixel sparsity \(<6%\), and catheter/motion artifacts.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 709.39 Td (-  Set Up Frontend and Backend: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 227.28 709.39 Td (Initialized full-stack project scaffolds with React, TypeScript,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 696.39 Td (and Vite on frontend, and FastAPI with modular API routing on backend.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 681.39 Td (-  Implement Authentication: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 211.03 681.39 Td (Built user authentication module with password hashing, JWT session) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 668.39 Td (token generation, session expiration, and role verification.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 653.39 Td (-  Implement Case Management: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 216.45 653.39 Td (Built case management service handling case creation, patient code) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 640.39 Td (linkage, modality tagging, status progression, and team access permissions.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 625.39 Td (-  Implement Image Upload: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 200.20 625.39 Td (Implemented multi-format file upload endpoint supporting DICOM, PNG,) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 612.39 Td (JPG, and NIfTI with file integrity verification and secure directory storage.) Tj ET Q
+q BT /F2 9.50 Tf 0.000 0.000 0.000 rg 54.00 597.39 Td (-  Build Initial Preprocessing Pipeline: ) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 276.01 597.39 Td (Constructed initial image preprocessing pipeline) Tj ET Q
+q BT /F1 9.50 Tf 0.000 0.000 0.000 rg 64.00 584.39 Td (implementing intensity normalization, CLAHE contrast enhancement, and noise filtering.) Tj ET Q
+endstream
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000122 00000 n 
+0000000192 00000 n 
+0000000267 00000 n 
+0000000345 00000 n 
+0000000413 00000 n 
+0000000486 00000 n 
+0000000658 00000 n 
+0000007491 00000 n 
+0000007665 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+10716
+%%EOF

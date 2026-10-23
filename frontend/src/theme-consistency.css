@@ -1,0 +1,100 @@
+/* Shared semantic colours: accents follow the selected design, never the page. */
+:root {
+  --theme-font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --theme-display: var(--theme-font);
+  --theme-ink: var(--apple-text, #202124);
+  --theme-muted: var(--apple-secondary, #5e6068);
+  --theme-accent: var(--apple-accent, #202124);
+  --theme-on-accent: #fff;
+  --theme-surface: var(--apple-surface, #fff);
+  --theme-canvas: var(--apple-canvas, #fafafa);
+  --theme-line: var(--apple-line, #d5d6dc);
+  --theme-selected: var(--apple-selected, #eeeef0);
+}
+.screen-share-select { min-width: 0; width: 100%; }
+.app-shell .screen-share-select > button { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--theme-line); border-radius: 8px; color: var(--theme-ink); background: var(--theme-surface); font: inherit; font-size: .875rem; text-align: left; white-space: normal; }
+.screen-share-select > button > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.screen-share-options { margin-top: 6px; padding: 5px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); color: var(--theme-ink); max-height: 280px; overflow-y: auto; }
+.screen-share-options [role=option] { display: flex; justify-content: space-between; gap: 10px; padding: 10px; min-height: 44px; box-sizing: border-box; border-radius: 5px; cursor: pointer; font-size: .875rem; line-height: 1.5; }
+.screen-share-options [role=option].is-highlighted { background: var(--theme-selected); outline: 1px solid var(--theme-accent); outline-offset: -1px; }
+html.dark {
+  --theme-ink: var(--apple-text, #f4f4f5);
+  --theme-muted: var(--apple-secondary, #bfc0c8);
+  --theme-accent: var(--apple-accent, #f4f4f5);
+  --theme-on-accent: #18181b;
+  --theme-surface: var(--apple-surface, #25252b);
+  --theme-canvas: var(--apple-canvas, #18181b);
+  --theme-line: var(--apple-line, #51515b);
+  --theme-selected: var(--apple-selected, #37373e);
+}
+html[data-editorial=true] { --theme-display: Georgia, "Times New Roman", serif; }
+.app-shell { font-family: var(--theme-font); color: var(--theme-ink); background: var(--theme-canvas); }
+.app-shell :is(button, input, select, textarea) { font-family: inherit; }
+.app-shell .content :is(h1, h2) { font-family: var(--theme-display); }
+.app-shell :is(.muted, .caption, .help, .small, .eyebrow, .empty, .footer-note) { color: var(--theme-muted); }
+.app-shell .panel { color: var(--theme-ink); background-color: var(--theme-surface); border-color: var(--theme-line); }
+.app-shell .viewer-portal { --viewer-ink: var(--theme-ink); --viewer-muted: var(--theme-muted); --viewer-accent: var(--theme-accent); --viewer-surface: var(--theme-surface); --viewer-line: var(--theme-line); --viewer-tint: var(--theme-selected); }
+.app-shell button[data-ui-variant=default] { background: var(--theme-accent); color: var(--theme-on-accent); border: 1px solid var(--theme-accent); box-shadow: none; }
+.app-shell button[data-ui-variant=outline], .app-shell button.secondary { background: var(--theme-surface); color: var(--theme-accent); border: 1px solid var(--theme-line); box-shadow: none; }
+.app-shell button[data-ui-variant=secondary] { background: var(--theme-selected); color: var(--theme-ink); }
+.app-shell button[data-ui-variant=ghost], .app-shell button[data-ui-variant=link] { color: var(--theme-accent); }
+.app-shell button[data-ui-variant]:hover:not(:disabled) { filter: brightness(.94); }
+html.dark .app-shell button[data-ui-variant]:hover:not(:disabled) { filter: brightness(1.12); }
+.app-shell :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--theme-accent); outline-offset: 3px; }
+.app-shell :is(input[type=radio], input[type=checkbox], input[type=range]) { accent-color: var(--theme-accent); }
+.app-shell .role-module > svg, .app-shell .role-workspace-heading > svg, .app-shell .overview-tagline { color: var(--theme-accent); }
+.app-shell .macos-nav-btn.active, .app-shell .macos-nav-btn.active svg { color: var(--theme-accent); }
+.app-shell .macos-active-bg { background: var(--theme-selected); }
+.app-shell .settings-page .panel h3:has(> svg) { display: flex; align-items: center; gap: 10px; line-height: 1.4; }
+.app-shell .settings-page .panel h3 > svg { flex-shrink: 0; color: var(--theme-accent); }
+.app-shell .settings-page .panel > p { line-height: 1.65; }
+.app-shell .settings-page form, .app-shell form.aligned-settings-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; width: 100%; max-width: 560px; margin-top: 24px; }
+.app-shell .settings-page form > label { display: block; margin: 10px 0 0; font-size: .875rem; line-height: 1.5; font-weight: 600; }
+.app-shell .settings-page :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { width: 100%; min-width: 0; min-height: 44px; padding: 11px 13px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); color: var(--theme-ink); font-size: .9375rem; line-height: 1.5; }
+.app-shell .settings-page input[type=password] { padding-right: 44px; }
+.app-shell .settings-page textarea { min-height: 132px; resize: vertical; display: block; }
+.app-shell .settings-page :is(input, textarea)::placeholder { color: var(--theme-muted); opacity: 1; }
+.app-shell .settings-page form > button { justify-self: start; margin-top: 10px; min-height: 44px; max-width: 100%; white-space: normal; }
+.app-shell .access-request-panel > p:last-child { margin-top: 20px; }
+.settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+.app-shell .settings-actions button.secondary { margin: 0; }
+.app-shell .settings-page .list-row, .app-shell .settings-page .simple-list, .app-shell .appearance-settings fieldset, .app-shell .appearance-options label { border-color: var(--theme-line); }
+.app-shell .appearance-options label { color: var(--theme-ink); background: var(--theme-surface); }
+.app-shell .appearance-options label:has(input:checked) { outline-color: var(--theme-accent); background: var(--theme-selected); }
+/* The existing hero is intentionally dark; keep its actions readable. */
+.standard-pipeline-options { padding: 20px; margin: 20px 0; border: 1px solid var(--theme-line); border-radius: 10px; min-width: 0; }
+.standard-pipeline-options legend { padding: 0 8px; font-weight: 600; }
+.standard-pipeline-options > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.standard-pipeline-options label { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); cursor: pointer; }
+.standard-pipeline-options label:has(input:checked) { background: var(--theme-selected); outline: 2px solid var(--theme-accent); outline-offset: -2px; }
+.standard-pipeline-options input[type=radio] { width: 18px; height: 18px; flex: 0 0 18px; margin: 3px 0 0; }
+.standard-pipeline-options small { display: block; margin-top: 7px; color: var(--theme-muted); font-size: .8rem; line-height: 1.65; }
+.standard-pipeline-options > p { color: var(--theme-muted); font-size: .8rem; line-height: 1.65; margin: 18px 0 0; }
+html[data-design=existing] .overview-hero .overview-tagline { color: #e4e4e7; }
+html[data-design=existing] .overview-hero button[data-ui-variant=default] { background: #f4f4f5; color: #18181b; border-color: #f4f4f5; }
+html[data-design=existing] .overview-hero button[data-ui-variant=outline] { background: transparent; color: #f4f4f5; border-color: #777780; }
+@media (max-width: 480px) { .app-shell .settings-page form > button { justify-self: stretch; } .settings-actions > button { flex: 1 1 100%; } }
+.case-section-nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 28px; }
+.new-case { display: grid; gap: 12px; }
+.new-case label, .case-list-controls label { display: grid; gap: 6px; }
+.new-case select, .case-list-controls select { width: 100%; min-width: 0; }
+.clinical-metadata-toggle { display: flex !important; align-items: flex-start; gap: 12px; }
+.clinical-metadata-toggle input { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 3px; }
+.case-details-form fieldset:disabled { opacity: .65; }
+.case-item small { display: block; white-space: normal; }
+.new-case-disclosure { margin: 18px 0; }
+.new-case-disclosure summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+/* One scroll region keeps navigation and case tools in normal document flow. */
+.app-shell .macos-sidebar-top-section { overscroll-behavior: contain; scrollbar-gutter: stable; }
+.app-shell .macos-sidebar-nav { flex: 0 0 auto; }
+.app-shell .macos-sidebar-cases { flex: 0 0 auto; overflow: visible; max-height: none; margin-top: 20px; padding-top: 20px; }
+.app-shell .macos-sidebar-footer { flex: 0 0 auto; }
+.app-shell .macos-sidebar-cases .new-case { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin: 12px 0 20px; }
+.app-shell .macos-sidebar-cases .new-case label { margin: 0; display: grid; gap: 7px; font-size: .875rem; line-height: 1.45; }
+.app-shell .macos-sidebar-cases .new-case :is(input, select),
+.app-shell .macos-sidebar-cases .case-list-controls :is(input, select) { box-sizing: border-box; display: block; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); color: var(--theme-ink); font: inherit; font-size: .875rem; line-height: 1.4; }
+.app-shell .macos-sidebar-cases .new-case .inline-form { margin: -7px 0 0; }
+.app-shell .macos-sidebar-cases .new-case > button { width: 100%; white-space: normal; min-height: 44px; }
+.app-shell .macos-sidebar-cases .new-case .caption { margin: 0; line-height: 1.6; }
+.app-shell .macos-sidebar-cases .new-case-disclosure { margin: 16px 0; }
+.app-shell .macos-sidebar-cases .new-case-disclosure summary { line-height: 1.5; padding: 12px 0; }

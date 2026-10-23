@@ -1,0 +1,113 @@
+/* Optional web interpretation of the two downloaded Apple design guides.
+   All visual overrides are scoped; the existing design remains the default. */
+.design-comparison { order: 2; display: grid; gap: .3rem; flex: 0 0 auto; text-align: center; }
+.design-comparison > span { font: 600 .65rem/1.2 system-ui; color: #52525b; letter-spacing: .04em; }
+.design-comparison > div { display: flex; gap: 3px; padding: 3px; background: #eeeef0; border-radius: 10px; }
+.design-comparison a { display: inline-flex; align-items: center; justify-content: center; padding: .35rem .7rem; min-height: 32px; border-radius: 7px; color: #45454e; text-decoration: none; font: 600 .75rem/1.3 system-ui; }
+.design-comparison a[aria-current] { background: #fff; color: #171719; box-shadow: 0 1px 4px #0002; }
+.design-comparison a:focus-visible { outline: 3px solid #005ec4; outline-offset: 2px; }
+.topbar > .brand { order: 1; }
+.topbar > .account { order: 3; }
+.dark .design-comparison > span { color: #c5c5ce; }
+.dark .design-comparison > div { background: #343438; }
+.dark .design-comparison a { color: #d7d7df; }
+.dark .design-comparison a[aria-current] { background: #57575e; color: #fff; }
+
+html[data-design=apple] {
+  --apple-canvas: #f5f5f7;
+  --apple-surface: #ffffff;
+  --apple-text: #1d1d1f;
+  --apple-secondary: #575760;
+  --apple-accent: #005ec4;
+  --apple-line: #d8d8df;
+  --apple-selected: #e8f1ff;
+  --apple-chrome: rgba(245,245,247,.94);
+  --apple-shadow: 0 4px 18px #18182a08;
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+html.dark[data-design=apple] {
+  --apple-canvas: #141416;
+  --apple-surface: #222225;
+  --apple-text: #f5f5f7;
+  --apple-secondary: #b9b9c3;
+  --apple-accent: #8fc2ff;
+  --apple-line: #48484f;
+  --apple-selected: #243b59;
+  --apple-chrome: rgba(28,28,30,.96);
+  --apple-shadow: 0 4px 18px #0002;
+  color-scheme: dark;
+}
+[data-design=apple] body, [data-design=apple] .app-shell { background: var(--apple-canvas); color: var(--apple-text); font-family: inherit; }
+[data-design=apple] .topbar { height: 88px; padding-inline: 28px; background: var(--apple-chrome); border-bottom: 1px solid var(--apple-line); backdrop-filter: blur(18px) saturate(140%); }
+[data-design=apple] .brand { color: var(--apple-text); font-size: 1.1rem; letter-spacing: -.025em; }
+[data-design=apple] .brand small { color: var(--apple-secondary); letter-spacing: .12em; font-size: .6rem; }
+[data-design=apple] .workspace { gap: 0; background: var(--apple-canvas); }
+[data-design=apple] .macos-sidebar-panel { background: var(--apple-chrome); border-right: 1px solid var(--apple-line); backdrop-filter: blur(18px); box-shadow: none; border-radius: 0; }
+[data-design=apple] .macos-sidebar { top: 88px; height: calc(100dvh - 88px); }
+[data-design=apple] .macos-sidebar-nav { gap: 6px; padding: 8px; }
+[data-design=apple] .macos-nav-btn { min-height: 44px; border-radius: 10px; color: var(--apple-secondary); font-weight: 550; }
+[data-design=apple] .macos-active-bg { background: var(--apple-selected); box-shadow: none; border-radius: 10px; }
+[data-design=apple] .macos-nav-btn.active, [data-design=apple] .macos-nav-btn.active svg { color: var(--apple-accent); }
+[data-design=apple] .macos-toolbar-title, [data-design=apple] .macos-profile-btn { color: var(--apple-text); }
+[data-design=apple] .macos-sidebar-cases { border-top: 1px solid var(--apple-line); margin-top: 20px; padding-top: 20px; }
+[data-design=apple] .content { padding: 32px clamp(20px, 3vw, 48px) 64px; min-width: 0; }
+[data-design=apple] .overview { gap: 28px; }
+[data-design=apple] .overview-hero { grid-template-columns: minmax(0, 1fr) minmax(180px, .35fr); padding: 36px; border: 1px solid var(--apple-line); border-radius: 22px; background: var(--apple-surface); color: var(--apple-text); box-shadow: var(--apple-shadow); }
+[data-design=apple] .overview-hero::before, [data-design=apple] .overview-hero::after { content: none; }
+[data-design=apple] .overview-pill { color: var(--apple-secondary); border: 0; padding: 0; background: none; font-size: .7rem; letter-spacing: .08em; }
+[data-design=apple] .overview-pill span { background: var(--apple-accent); box-shadow: none; }
+[data-design=apple] .overview-hero h1 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); letter-spacing: -.035em; line-height: 1.12; max-width: 19ch; margin: 20px 0 16px; font-weight: 650; }
+[data-design=apple] .overview-hero h1 em { color: var(--apple-secondary); }
+[data-design=apple] .overview-hero-main > p { color: var(--apple-secondary); font-size: 1rem; max-width: 60ch; line-height: 1.65; }
+[data-design=apple] .overview-hero-side { background: var(--apple-canvas); border: 0; border-radius: 14px; padding: 20px; backdrop-filter: none; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
+[data-design=apple] .overview-hero-side strong { font-size: clamp(1rem, 2vw, 1.5rem); letter-spacing: -.02em; overflow-wrap: anywhere; line-height: 1.3; color: var(--apple-text); }
+[data-design=apple] .overview-hero-side > span, [data-design=apple] .overview-hero-side p, [data-design=apple] .overview-hero-side > small { color: var(--apple-secondary); }
+[data-design=apple] .overview-actions { gap: 10px; margin-top: 24px; }
+[data-design=apple] .overview-actions button { background: var(--apple-surface); color: var(--apple-accent); border: 1px solid var(--apple-line); border-radius: 10px; font-weight: 600; }
+[data-design=apple] .overview-actions button:first-child, [data-design=apple] button.primary { background: var(--apple-accent); color: var(--apple-surface); border-color: transparent; }
+html.dark[data-design=apple] .overview-actions button:first-child, html.dark[data-design=apple] button.primary { color: #111a27; }
+[data-design=apple] .overview-actions button:hover:not(:disabled) { filter: brightness(.95); }
+[data-design=apple] .panel, [data-design=apple] .overview-stats > div, [data-design=apple] .overview-bottom > div { border: 1px solid var(--apple-line); border-radius: 18px; background: var(--apple-surface); color: var(--apple-text); box-shadow: var(--apple-shadow); }
+[data-design=apple] .panel { padding: 24px; }
+[data-design=apple] .overview-stats { gap: 16px; }
+[data-design=apple] .overview-stats > div { min-height: 148px; padding: 24px; }
+[data-design=apple] .overview-stats strong { font-variant-numeric: tabular-nums; font-size: 2.4rem; letter-spacing: -.035em; font-weight: 600; }
+[data-design=apple] .overview-stats span, [data-design=apple] .overview-stats small, [data-design=apple] .muted, [data-design=apple] .caption, [data-design=apple] .eyebrow { color: var(--apple-secondary); }
+[data-design=apple] .overview-section-heading h2, [data-design=apple] .page-heading h2 { font-weight: 650; letter-spacing: -.025em; }
+[data-design=apple] .overview-analytics-grid, [data-design=apple] .overview-bottom, [data-design=apple] .analysis-grid { gap: 24px; }
+[data-design=apple] .case-item, [data-design=apple] .medical-uploader, [data-design=apple] .intake-pipeline, [data-design=apple] .dataset-intake-note { background: var(--apple-surface); color: var(--apple-text); border-color: var(--apple-line); border-radius: 12px; }
+[data-design=apple] .case-item.active, [data-design=apple] .upload-mode-picker button.active { background: var(--apple-selected); border-color: var(--apple-accent); box-shadow: none; }
+[data-design=apple] .case-details-form label, [data-design=apple] .upload-mode-picker button small, [data-design=apple] .preprocessing-profile label small { color: var(--apple-secondary); }
+[data-design=apple] input:not([type=radio]):not([type=checkbox]), [data-design=apple] select, [data-design=apple] textarea { background: var(--apple-surface); color: var(--apple-text); border-color: var(--apple-line); border-radius: 9px; }
+[data-design=apple] .notification-panel, [data-design=apple] .macos-profile-popover { background: var(--apple-surface); color: var(--apple-text); border: 1px solid var(--apple-line); border-radius: 18px; box-shadow: 0 12px 40px #0002; }
+[data-design=apple] .account .notification-list button.unread { background: var(--apple-selected); border-color: var(--apple-line); }
+[data-design=apple] :is(button, a, input, select, textarea):focus-visible { outline: 3px solid var(--apple-accent); outline-offset: 3px; }
+[data-design=apple] button { touch-action: manipulation; transition: background-color 120ms, color 120ms, box-shadow 120ms; }
+[data-design=apple] button:active:not(:disabled) { filter: brightness(.9); }
+[data-design=apple] .wm-auth { background: var(--apple-canvas); color: var(--apple-text); }
+[data-design=apple] .wm-auth-form input:not([type=checkbox]), [data-design=apple] .wm-social-button, [data-design=apple] .wm-auth-submit { border-radius: 12px; }
+[data-design=apple] .wm-auth-submit { background: var(--apple-accent); color: var(--apple-surface); border: 0; box-shadow: none; }
+[data-design=apple] .wm-auth h1 { color: var(--apple-text); letter-spacing: -.035em; }
+[data-design=apple] .wm-auth-help, [data-design=apple] .wm-auth p { color: var(--apple-secondary); }
+@media (max-width: 850px) {
+  .topbar { height: auto; min-height: 76px; flex-wrap: wrap; padding-block: 12px; }
+  .design-comparison { order: 4; flex-basis: 100%; align-items: center; justify-items: center; }
+  [data-design=apple] .topbar { height: auto; padding: 12px 16px; }
+  [data-design=apple] .overview-hero { grid-template-columns: minmax(0, 1fr); padding: 24px; gap: 24px; }
+  [data-design=apple] .overview-hero h1 { max-width: none; }
+  [data-design=apple] .content { padding: 24px 16px 48px; }
+  [data-design=apple] .overview-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  [data-design=apple] .overview-stats, [data-design=apple] .overview-analytics-grid, [data-design=apple] .overview-bottom, [data-design=apple] .analysis-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-design=apple] .overview-actions button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-design=apple] *, [data-design=apple] *::before, [data-design=apple] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  [data-design=apple] .topbar, [data-design=apple] .macos-sidebar-panel { background: var(--apple-canvas); backdrop-filter: none; }
+  [data-design=apple] .panel { border-color: var(--apple-secondary); }
+}

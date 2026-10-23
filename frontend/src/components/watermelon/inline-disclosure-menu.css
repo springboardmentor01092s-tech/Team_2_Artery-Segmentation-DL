@@ -1,0 +1,23 @@
+.cv-inline-menu { position: relative; display: inline-flex; flex-shrink: 0; }
+.cv-inline-menu-trigger { display: grid; place-items: center; width: 44px; min-height: 44px; border: 1px solid var(--theme-line); border-radius: 10px; background: var(--theme-surface); color: var(--theme-ink); cursor: pointer; }
+.cv-inline-menu-trigger:hover { background: var(--theme-selected); }
+.cv-inline-menu-panel { position: absolute; top: calc(100% + 8px); right: 0; width: min(280px,calc(100vw - 32px)); z-index: 80; border: 1px solid var(--theme-line); border-radius: 14px; background: var(--theme-surface); color: var(--theme-ink); box-shadow: 0 12px 32px #0002; transform-origin: top right; }
+.cv-inline-menu-heading { padding: 12px 16px; border-bottom: 1px solid var(--theme-line); border-radius: 14px 14px 0 0; background: var(--theme-selected); font-size: 12px; font-weight: 600; color: var(--theme-muted); }
+.cv-inline-menu-items { padding: 6px; display: grid; gap: 4px; }
+.cv-inline-menu-panel [role=menuitem] { display: flex; width: 100%; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--theme-ink); text-align: left; font-size: 14px; line-height: 1.5; cursor: pointer; white-space: normal; }
+.cv-inline-menu-panel [role=menuitem]:hover, .cv-inline-menu-panel [role=menuitem]:focus-visible { background: var(--theme-selected); }
+.cv-inline-menu-panel [role=menuitem]:disabled { opacity: .5; cursor: not-allowed; }
+.cv-inline-menu-items svg { width: 19px; height: 19px; }
+.cv-inline-menu-confirm { border-top: 1px solid var(--theme-line); padding: 6px; }
+.cv-inline-menu-panel p { margin: 8px 12px; font-size: 12px; color: var(--theme-muted); }
+.cv-library-date-and-menu { display: flex; align-items: flex-start; gap: 16px; }
+.screen-share-options.cv-selection-disclosure { padding: 0; border-radius: 12px; box-shadow: 0 5px 16px #0001; }
+.cv-selection-disclosure > .cv-inline-menu-heading { border-radius: 12px 12px 0 0; }
+.cv-selection-disclosure [role=option] { margin: 4px 6px; border-radius: 8px; }
+/* Options overlay the form rather than becoming another grid row. */
+.screen-share-select { position: relative; align-self: start; }
+.screen-share-select.is-open { z-index: 90; }
+.screen-share-select > .screen-share-options { position: absolute; top: calc(100% + 6px); left: 0; width: 100%; box-sizing: border-box; z-index: 90; margin: 0; max-height: min(280px,45vh); overflow-y: auto; overscroll-behavior: contain; }
+.screen-share-select > .screen-share-options[data-side=above] { top: auto; bottom: calc(100% + 6px); }
+.app-shell .screen-share-select > button > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-case-page .new-case label { align-content: start; }

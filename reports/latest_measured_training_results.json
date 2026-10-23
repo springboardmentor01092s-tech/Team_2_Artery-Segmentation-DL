@@ -1,0 +1,50 @@
+{
+  "updated_utc": "2026-10-14T10:30:58.787419+00:00",
+  "all_datasets_complete": false,
+  "measured_results": {
+    "ARCADE syntax": {
+      "test_images": 300,
+      "metrics": {
+        "images": 300,
+        "arcade_official_f1": 0.13308986856103103,
+        "pixel_accuracy_union_mask": 0.9813009643554688,
+        "pixel_precision_union_mask": 0.7518696039619517,
+        "pixel_recall_sensitivity_union_mask": 0.7134271190531973,
+        "pixel_specificity_union_mask": 0.9912528977473996,
+        "pixel_f1_union_mask": 0.7321440866317941,
+        "pixel_dice_union_mask": 0.7321440866317941,
+        "pixel_iou_union_mask": 0.5774663184610376,
+        "pixel_auc_roc_union_score": 0.9380721460765087,
+        "instance_precision_iou50": 0.27845832088437406,
+        "instance_recall_iou50": 0.5574162679425837,
+        "instance_f1_iou50": 0.371388722853158,
+        "matched_instance_dice_iou50": 0.8177265691527301,
+        "matched_instance_iou_iou50": 0.6977011593430651,
+        "instance_counts": {
+          "tp": 932,
+          "fp": 2415,
+          "fn": 740
+        },
+        "score_threshold": 0.25,
+        "pixel_threshold": 0.5,
+        "pixel_metric_note": "Supplementary binary-union pixel metrics; do not represent official ARCADE task scoring."
+      },
+      "report": "/Users/lingareddydhanushkumar/Desktop/Codex/ML/Artery Segmentation and Stenosis Detection using Advanced Deep Learning Techniques /output/colab_runs/20261014_syntax/models/individual/syntax/test_report.json",
+      "status": "training and frozen-checkpoint test evaluation complete"
+    }
+  },
+  "cadica_status": "2 training epochs persisted; final test evaluation pending",
+  "local_queue": {
+    "phase": "waiting_existing_jobs",
+    "updated_utc": "2026-10-14T10:30:57.627394+00:00",
+    "cadica_pid": 43029,
+    "msd_preprocess_pid": null,
+    "training_complete": false
+  },
+  "unresolved": {
+    "ICA": "Source licence, intermediate mask semantics, patient mapping",
+    "DCA1": "Source reuse terms and patient mapping",
+    "Mendeley": "Release-specific patient/series mapping and source partition reconciliation"
+  },
+  "important": "Local ARCADE-rule metric is not independently certified by the challenge server; no clinical validation."
+}
