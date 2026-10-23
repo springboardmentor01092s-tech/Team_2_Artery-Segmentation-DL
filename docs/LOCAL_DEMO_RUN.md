@@ -1,0 +1,11 @@
+# Local demonstration
+
+Frontend: `http://127.0.0.1:5173/`; backend: `http://127.0.0.1:8000/`. Both bind to loopback. The existing two-mask research release is installed and ready; opening the application does not start training.
+
+Open `http://127.0.0.1:5173/?demo_role=researcher` to select the seeded researcher through the existing local demo roster/session flow. The role selector contains no credentials and is removed from the URL after selection. Other exact backend role values are `clinician`, `doctor`, `ml_engineer`, `technician`, `viewer` and `admin`. This shortcut and the visible sign-in demo buttons operate only on localhost/loopback. Existing case access/grants still apply. Use the account menu to switch workspaces.
+
+The local researcher has a case named `DEMO-INTEGRATED-SYNTHETIC`, containing a generated geometric PNG and a completed persistent analysis job using the pinned artery and stenosis-mask checkpoints. It is synthetic demonstration data, not a patient example or performance validation. Open AI Analysis to inspect its saved masks, centerline, raw scores, stage status and explanation. Automatic severity remains insufficient_evidence. No other user's cases were shared with the demo team.
+
+Missing accounts can be created using the existing idempotent seeder from `backend/` with the application's Python environment: `python seed_demo_accounts.py`. Windows now skips the unavailable POSIX fchmod call; credential files inherit the backend directory's Windows access controls. Existing passwords are preserved. Generated passwords remain in ignored `backend/demo-credentials.json`; do not publish that file. The existing demo roster endpoint issues demonstration sessions, so this configuration is for an isolated local demonstration, not public hosting.
+
+Verified on 23 October: all seven accounts authenticate through normal password/me APIs; seeder rerun makes no new accounts; researcher synthetic inference completes using release `corovision-preserved-2d-20261023`; frontend production build passes; both servers respond. Browser-control initialization failed, so an observed browser session is not claimed. The direct demo URL selects the researcher when the browser loads it. No accounts were added to Git, no checkpoints changed and no retraining or GitHub push occurred.

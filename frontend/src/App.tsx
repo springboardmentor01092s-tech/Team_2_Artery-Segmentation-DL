@@ -131,6 +131,18 @@ function App() {
           if (res.accounts && res.accounts.length > 0) {
             const merged = saveDemoAccounts(res.accounts);
             setDemoAccounts([...merged]);
+            // Explicit local-demo navigation uses the existing demo roster/session flow.
+            // No passwords or session tokens are placed in URLs.
+            if (["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)) {
+              const demoUrl = new URL(window.location.href);
+              const requestedRole = demoUrl.searchParams.get("demo_role");
+              const choice = res.accounts.find((account) => account.role === requestedRole && account.email.endsWith(".demo@example.com"));
+              if (choice) {
+                demoUrl.searchParams.delete("demo_role");
+                window.history.replaceState({}, "", demoUrl.pathname + demoUrl.search + demoUrl.hash);
+                switchAccount(choice);
+              }
+            }
           }
         })
         .catch(() => {});
@@ -609,6 +621,13 @@ function App() {
             <Button className="wm-auth-submit" disabled={busy}>{busy ? "Please wait…" : registering ? "Create account" : "Sign in"}</Button>
           </form>
         )}
+        {!registering && !resetting && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) && demoAccounts.length > 0 &&
+          <section aria-label="Local demo accounts" className="mt-6 space-y-3">
+            <p className="caption">Local demonstration accounts · choose a workspace</p>
+            <div className="flex flex-wrap gap-2">{demoAccounts.filter((account) => account.email.endsWith(".demo@example.com")).map((account) =>
+              <Button key={account.id} type="button" variant="outline" onClick={() => switchAccount(account)}>{account.label || account.role.replaceAll("_", " ")}</Button>
+            )}</div>
+          </section>}
       </Auth7>
       </>
     );

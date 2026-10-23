@@ -2,7 +2,8 @@
 
 Run from the backend directory: python3 seed_demo_accounts.py
 Existing accounts and passwords are preserved. The generated credential file is
-Git-ignored and readable only by its owner.
+Git-ignored. POSIX uses owner-only permissions; Windows inherits the backend
+directory's filesystem access controls.
 """
 
 import json
@@ -66,7 +67,8 @@ def main() -> None:
             return
         fd, temporary = tempfile.mkstemp(prefix=".demo-credentials.", dir=HERE)
         try:
-            os.fchmod(fd, 0o600)
+            if hasattr(os, "fchmod"):
+                os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w") as output:
                 json.dump({"site": existing.get("site", "http://127.0.0.1:5173/"), "accounts": accounts}, output, indent=2)
                 output.write("\n")
