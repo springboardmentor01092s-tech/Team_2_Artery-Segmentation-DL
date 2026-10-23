@@ -7,6 +7,7 @@ _temp = TemporaryDirectory()
 os.environ["DATABASE_URL"] = f"sqlite:///{Path(_temp.name) / 'test.db'}"
 os.environ["STORAGE_DIR"] = str(Path(_temp.name) / "storage")
 os.environ["JWT_SECRET"] = "test-only-secret-value"
+os.environ["COROVISION_MODEL_PROVIDER"] = "legacy"  # Unit tests do not consume developer-installed weights.
 
 
 def authorize_test_researcher(email: str):
@@ -19,3 +20,9 @@ def authorize_test_researcher(email: str):
         assert user is not None
         user.role = "researcher"
         db.commit()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # Release pooled SQLite handles before TemporaryDirectory cleanup on Windows.
+    from app.database import engine
+    engine.dispose()

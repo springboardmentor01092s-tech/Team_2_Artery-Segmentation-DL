@@ -1,5 +1,6 @@
 .env
 backend/demo-credentials.json
+backend/.local-login.json
 .venv/
 __pycache__/
 .pytest_cache/

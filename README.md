@@ -146,6 +146,8 @@ Never commit credentials. See [authentication setup](docs/AUTH_SETUP.md) and [ba
 
 Weights are not included in this repository. Install compatible inference dependencies, supply the expected checkpoints, and follow [AI analysis setup](docs/AI_ANALYSIS.md). Model-dependent actions remain unavailable without these artifacts. A source checkout is not evidence that a model is installed or clinically validated.
 
+The preserved training-workspace models can be installed separately using the [trained release integration guide](docs/TRAINED_RELEASE_INTEGRATION.md). This connects the binary artery and ARCADE stenosis-mask baselines without committing weights, changing historical test bindings, or activating rejected candidates.
+
 </details>
 
 ## Research and evaluation

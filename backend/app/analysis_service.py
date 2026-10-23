@@ -8,6 +8,7 @@ from pathlib import Path
 from .analysis_model import (analyze_vessel_geometry, build_model, centerline_overlay_png,
                              heatmap_overlay_png, overlay_png, postprocess_mask, prepare_input)
 from .pixel_mlp import predict as predict_mlp
+from . import trained_release
 
 ROOT = Path(__file__).resolve().parents[2]
 WEIGHTS = ROOT / "models" / "baseline"
@@ -30,6 +31,8 @@ def _instance_selection() -> dict:
     return selected
 
 def model_version() -> str:
+    if trained_release.configured():
+        return trained_release.RELEASE['version']
     instance = _instance_selection()
     if instance:
         return instance.get("version", f"arcade-instance-{instance['architecture']}-{instance.get('run_id', 'v1')}")
@@ -45,6 +48,8 @@ def model_version() -> str:
 
 
 def selected_input_size() -> int:
+    if trained_release.configured():
+        return 512
     instance = _instance_selection()
     if instance:
         try:
@@ -63,6 +68,8 @@ def selected_input_size() -> int:
 
 
 def models_ready() -> bool:
+    if trained_release.configured():
+        return trained_release.ready()
     if _instance_selection():
         return True
     selected_path = ROOT / "models" / "segmentation" / "promoted_model.json"
@@ -157,6 +164,8 @@ def _threshold_sensitivity(probabilities, selected_mask, threshold: float,
 
 
 def analyze(preview_path: Path, spacing_mm: tuple[float, float] | None = None) -> tuple[bytes, int, int, dict, bytes | None, bytes | None, bytes | None, bytes | None, dict, bytes]:
+    if trained_release.configured():
+        return trained_release.analyze(preview_path, spacing_mm)
     if not models_ready():
         raise FileNotFoundError("Train both ARCADE models before running analysis")
     selected = _instance_selection()
@@ -348,6 +357,9 @@ def _instance_model(task: str, architecture: str, checkpoint: Path):
 
 
 def validation_summary() -> dict:
+    if trained_release.configured():
+        return {item['task']: {k: item[k] for k in ('validation_dice', 'validation_images', 'validation_iou', 'validation_status')}
+                for item in trained_release.RELEASE['models']}
     selection_path = ROOT / "models" / "segmentation" / "promoted_model.json"
     if selection_path.is_file():
         try:

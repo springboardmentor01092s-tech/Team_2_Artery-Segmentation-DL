@@ -5,7 +5,7 @@ import pytest
 import torch
 from PIL import Image
 
-from scripts import train_arcade_instances as instance_training
+instance_training = pytest.importorskip("scripts.train_arcade_instances", reason="Training runner belongs to the separate training workspace")
 
 
 def _write_split(root: Path, task: str, split: str, image_rows, annotations):

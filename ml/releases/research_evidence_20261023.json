@@ -1,0 +1,160 @@
+{
+  "as_of": "2026-10-23",
+  "scope": "Development-exposed validation;historical test bindings preserved. Not independent final or clinical performance.",
+  "tasks": [
+    {
+      "task_id": "cadica_localization",
+      "title": "CADICA localization",
+      "validation_support": "908 frames, 6 patients, 855 boxes",
+      "baseline_result": "mAP0.028236; fixed0.5:106TP/252FP/749FN. Baseline retained; latest ROI-sampling job cancelled after original queue deadline, no scientific result.",
+      "report_locations": "reports/cadica_full_stages_v1/FINAL_RESULTS.md; reports/cadica_roi_balance_v1/OPERATIONAL_OUTCOME.json",
+      "outcome": "baseline_retained_current_sampler_trial_precisely_blocked_provider_queue",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "cadica_grade_aware",
+      "title": "CADICA grades",
+      "validation_support": "Same908frames/855boxes;7source grades",
+      "baseline_result": "mAP0.012394; fixed0.5:17TP/39FP/838FN. Cross-grade NMS rejected. Later paired75-update heads completed training but evaluated0frames after interface failure; incomplete, no candidate claim.",
+      "report_locations": "reports/cadica_grade_full_cpu_v1/FINAL_RESULTS.md; reports/cadica_grade_head_balance_cpu_v4/OPERATIONAL_OUTCOME.json",
+      "outcome": "baseline_retained_after_weighting_and_p99_sampling_rejections",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "arcade_stenosis",
+      "title": "ARCADE stenosis masks",
+      "validation_support": "200images,406regions",
+      "baseline_result": "Pooled union Dice0.564392;224TP/578FP/182FN, sensitivity0.551724. Original retained after ROI/head/dropout/NMS rejections.",
+      "report_locations": "reports/arcade_stenosis_sequential_outcome/OUTCOME.json",
+      "outcome": "baseline_retained_after_measured_rejections_sequential_evidence_reconciled",
+      "inference_connected": true,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "archive_lesions",
+      "title": "Archive lesion boxes",
+      "validation_support": "874images/874boxes",
+      "baseline_result": "146TP/454FP/728FN;P0.243333/sensitivity0.167048.711misses have no returned IoU0.5box at saved score floor. Research baseline retained.",
+      "report_locations": "reports/archive_lesion_sequential_outcome/OUTCOME.json",
+      "outcome": "baseline_retained_raw_stage_diagnostic_complete_next_training_hypothesis_pending",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "hepatic_vessels",
+      "title": "Hepatic vessels",
+      "validation_support": "38volumes,prepared128grid",
+      "baseline_result": "Mean Dice0.537082/P0.534107/R0.569681. Weighting Dice delta-0.004527,FP+5133; focal/native trials also rejected. Original retained.",
+      "report_locations": "reports/hepatic_sequential_outcomes/hepatic_vessels.json",
+      "outcome": "baseline_retained_after_full_wholefield_resolution_comparison_rejected",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "hepatic_tumours",
+      "title": "Hepatic tumours",
+      "validation_support": "Same38volumes,prepared128grid",
+      "baseline_result": "Mean Dice0.439074/P0.741516/R0.578909;6zero-overlap cases. Weighting Dice delta-0.020866,FN+17351. Original retained.",
+      "report_locations": "reports/hepatic_sequential_outcomes/hepatic_tumours.json; reports/release_readiness/HEPATIC_SIX_CASE_REVIEW.md",
+      "outcome": "baseline_retained_after_full_wholefield_resolution_comparison_rejected",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "aorta_aligned",
+      "title": "Aligned AortaSeg",
+      "validation_support": "2AI-pseudo-reference validation volumes",
+      "baseline_result": "Mean Dice0.492335/P0.621078/R0.423743. Weighting Dice0.421275 rejected;48geometry-mismatched pairs stay quarantined. Native target/context dependency remains.",
+      "report_locations": "reports/aorta_sequential_verification/assessment.json",
+      "outcome": "baseline_retained_after_wholefield160_rejection_expert_semantics_dependency",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "arcade_artery_binary",
+      "title": "ARCADE binary artery",
+      "validation_support": "200images,512grid",
+      "baseline_result": "Mean Dice0.827277/IoU0.712221/R0.821874. New paired100-update CPU continuity candidate Dice0.813976 versus control0.812197; candidateFP+4289/FN+35045 versus original. Rejected after full recount/visual review; original retained.",
+      "report_locations": "reports/arcade_binary_continuity_cpu_v1/comparison.json; visual_review.json",
+      "outcome": "baseline_retained_after_train_time_BN_rejection",
+      "inference_connected": true,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "arcade_anatomical_instances",
+      "title": "ARCADE anatomical instances",
+      "validation_support": "Same200images;1168anatomical references,25classes",
+      "baseline_result": "At0.75:524TP/271FP/644FN;P0.659119/sensitivity0.448630;adapted polygonF1 0.323116. Full replay exactly reproduced baseline. Of644misses,541decodedbox-covered low-score,45without decodedcoverage,58later mask failures. Paired75update dropout comparison rejected: F1.330335 vs control.330616;9extra instance misses/19473extra missed pixels vs original. Six cases visually reviewed.",
+      "report_locations": "reports/arcade_anatomical_full_cpu_v1/assessment.json; reports/arcade_anatomical_roi_audit_v1/assessment.json; reports/arcade_anatomical_scope_audit/regularization_proposal.json",
+      "outcome": "baseline_retained_after_dropout_and_category_coverage_rejections",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "dca_vessels",
+      "title": "DCA vessels",
+      "validation_support": "20images,512grid",
+      "baseline_result": "Mean Dice0.783754/IoU0.646522/R0.818133. Continuity/gapclosing rejected. Encoderfreeze75updates: Dice.780495,FP+10413,FN-5596 vs original; thin sensitivity.795960 vs.808491. Full20recount and6visual cases; original retained.",
+      "report_locations": "reports/dca_encoder_freeze_cpu_v1/comparison.json",
+      "outcome": "baseline_retained_after_CLAHE_and_prior_rejections",
+      "inference_connected": false,
+      "research_voxel_score_improvement": false
+    },
+    {
+      "task_id": "imagecas",
+      "title": "ImageCAS",
+      "validation_support": "150native-reference volumes",
+      "baseline_result": "Packaged original mean Dice0.722395. Recovered0.726185 with pooledP0.737205/R0.718221 remains withheld for40case Dice regressions; blend/native/context candidates rejected. Do not present recovered score as promoted inference.",
+      "report_locations": "reports/imagecas_sequential_reconciliation/assessment.json",
+      "outcome": "baseline_retained_with_crossfit_voxel_score_improvement",
+      "inference_connected": false,
+      "research_voxel_score_improvement": true
+    },
+    {
+      "task_id": "imagecasx",
+      "title": "ImageCAS-X",
+      "validation_support": "80native-reference volumes",
+      "baseline_result": "Original mean Dice0.678596.12subject64/192 endpoints0.725429/0.725507;192adds10878FPversus64 and fails frozen gates. Original inference baseline retained.",
+      "report_locations": "reports/imagecasx_sequential_reconciliation/assessment.json",
+      "outcome": "baseline_retained_with_crossfit_voxel_score_improvement",
+      "inference_connected": false,
+      "research_voxel_score_improvement": true
+    }
+  ],
+  "calibration_studies": [
+    {
+      "task": "imagecas128",
+      "cases": 150,
+      "grid": "Prepared128development reference;separate from native/reference historical test metrics",
+      "raw_NLL": 0.005687545337328375,
+      "crossfit_NLL": 0.00315879650764693,
+      "raw_Brier": 0.0006414064634533988,
+      "crossfit_Brier": 0.0005946041355839401,
+      "segmentation_changed": false,
+      "deployed": false,
+      "calibrated_patient_confidence": false
+    },
+    {
+      "task": "imagecasx128",
+      "cases": 80,
+      "grid": "Prepared128development reference;separate from native/reference historical test metrics",
+      "raw_NLL": 0.001540365810224014,
+      "crossfit_NLL": 0.0006413040383826085,
+      "raw_Brier": 0.00013796390286682135,
+      "crossfit_Brier": 0.00012407321372817393,
+      "segmentation_changed": false,
+      "deployed": false,
+      "calibrated_patient_confidence": false
+    }
+  ],
+  "limitations": [
+    "Distinct tasks/cohorts are not interchangeable; shared CADICA/ARCADE/hepatic cohorts are not counted twice.",
+    "ImageCAS and ImageCAS-X physically overlap and retain separate labels,splits and weights.",
+    "48geometry-mismatched Aorta pairs remain quarantined; aligned Aorta references are AIpseudo-labels.",
+    "Modelvariants and rejected comparisons do not count as independent datasets or accepted improvements.",
+    "Report locations identify the training workspace; raw datasets/images/checkpoints are not published with this catalog.",
+    "Only the two listed compatible2Dmask models are connected; no3Dvolume inference or experimental temperature is deployed."
+  ]
+}

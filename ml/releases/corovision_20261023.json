@@ -1,0 +1,42 @@
+{
+  "version": "corovision-preserved-2d-20261023",
+  "input_size": 512,
+  "research_only": true,
+  "models": [
+    {
+      "task": "syntax",
+      "filename": "artery.pt",
+      "architecture": "resnet34_unet",
+      "sha256": "ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c",
+      "source_relative": "trained_models/syntax_binary_resnet34_v1/best.pt",
+      "threshold": 0.5,
+      "validation_images": 200,
+      "validation_dice": 0.8272773138933874,
+      "validation_iou": 0.7122207162851368,
+      "validation_status": "Development-exposed validation;binary artery mask"
+    },
+    {
+      "task": "stenosis",
+      "filename": "stenosis.pt",
+      "architecture": "maskrcnn_resnet50_fpn",
+      "sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+      "source_relative": "trained_models/stenosis/models/candidate_01_maskrcnn_resnet50_fpn/best.pt",
+      "score_threshold": 0.1,
+      "mask_threshold": 0.5,
+      "validation_images": 200,
+      "validation_dice": 0.56439208772936,
+      "validation_iou": 0.39313804479990994,
+      "validation_status": "Development-exposed ARCADE validation;stenosis instance masks,distinct from archive boxes"
+    }
+  ],
+  "source_architecture_sha256": {
+    "vessel": "0bd959b85fef8b5748ce7b4f6108e5d5dfc68582da9fe9cd9fa6accd78e4d8df",
+    "instances": "b692708af08c4cca4f383aff3025b5799af068c43dde9ef4e10075402ce4a7b7"
+  },
+  "limitations": [
+    "Raw scores are uncalibrated; no diagnosis, healthy-case or physical stenosis claim.",
+    "No rejected candidate or research temperature is activated.",
+    "Historical test reports retain original weight bindings; no fresh final performance claim.",
+    "3Dvolume models and archive lesion boxes are distinct tasks,not connected to this mask endpoint."
+  ]
+}

@@ -29,6 +29,7 @@ from .models import (
     ReportRevision, RoleAccessRequest, User, UserIdentity, UserProfile, now
 )
 from .analysis_service import analyze, model_version, models_ready, validation_summary
+from . import trained_release
 from .action_policy import allowed_action, effective_actions, CONDITIONAL_ACTIONS
 from .case_contract import validate_case_configuration, supports_current_inference, case_modalities, case_tasks, validate_case_routes
 from .preprocessing import InvalidImage, SUPPORTED_EXTENSIONS, TARGET_SIZE, STANDARD_PIPELINES, prepare_image, processed_spacing_mm, content_geometry
@@ -1372,6 +1373,7 @@ def analysis_status(user: User = Depends(current_user)):
                                  all((instance_root / task / instance_arch / "best.pt").is_file()
                                      for task in ("syntax", "stenosis")))
     return {"models_ready": models_ready(), "model_version": model_version(),
+            "trained_release": trained_release.status(),
             "validation": validation_summary(), "comparison": comparison,
             "selection": selection, "test_report": test_report,
             "instance_aware": instance_status,
@@ -1438,6 +1440,13 @@ def _model_registry_data() -> tuple[dict, dict, list[dict]]:
 
 @app.get("/api/analysis/models")
 def registered_models(user: User = Depends(require_roles(*ROLE_MODEL_MANAGERS))):
+    if trained_release.configured():
+        release = trained_release.status()
+        return {"can_activate": False, "model_version": model_version(), "active_architecture": "preserved_mask_models",
+                "models": [{"architecture": "preserved_mask_models", "display_name": "Verified preserved training models",
+                            "version": model_version(), "input_size": 512, "available": release['ready'], "active": True,
+                            "mean_validation_dice": None, "checkpoint_sha256": {x['task']: x['sha256'] for x in release['models']},
+                            "tasks": release['models']}], "history": [], "research_only": True}
     selection, registry, models = _model_registry_data()
     history = registry.get("history", [])
     if not history and selection.get("architecture"):
@@ -1451,6 +1460,8 @@ def registered_models(user: User = Depends(require_roles(*ROLE_MODEL_MANAGERS)))
 @app.post("/api/analysis/models/activate")
 def activate_model(data: ModelActivationIn, user: User = Depends(require_roles("admin")),
                    db: Session = Depends(get_db)):
+    if trained_release.configured():
+        raise HTTPException(status_code=409, detail="Preserved release configured; choose the documented legacy provider before activating older models")
     selection, registry, models = _model_registry_data()
     candidate = next((item for item in models if item["architecture"] == data.architecture), None)
     if not candidate or not candidate["available"]:
