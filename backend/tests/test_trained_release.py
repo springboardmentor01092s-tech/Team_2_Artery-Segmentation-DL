@@ -79,3 +79,52 @@ def test_real_case_upload_analysis_and_access_control(monkeypatch):
         assert client.get(record['centerline_url'],headers=owner).status_code==200
         assert client.get(record['overlay_url'],headers=outsider).status_code==404
         assert client.get('/api/images/'+identity+'/analyses',headers=owner).status_code==200
+        # Real installed checkpoints through the actual background dispatcher.
+        import time
+        from app.inference_jobs import InferenceWorker
+        from app.main import execute_analysis_job
+        worker = InferenceWorker(execute_analysis_job)
+        worker.start()
+        try:
+            job = client.post(f'/api/images/{identity}/analysis/jobs', headers=owner,
+                              json={'idempotency_key': uuid4().hex})
+            assert job.status_code == 202
+            state = job.json()
+            deadline = time.monotonic() + 40
+            while state['status'] in {'pending', 'processing'} and time.monotonic() < deadline:
+                time.sleep(.1)
+                state = client.get(state['status_url'], headers=owner).json()
+            assert state['status'] == 'completed'
+            result = client.get(state['result_url'], headers=owner).json()['structured_result']
+            assert result['models']['checkpoint_sha256'] == record['model_scores']['checkpoint_sha256']
+            assert result['severity']['narrowing_percent'] is None
+            assert result['input']['prepared_sha256']
+            for name in ['artery_mask', 'stenosis_mask']:
+                response = client.get(result['artifacts'][name], headers=owner)
+                assert response.status_code == 200
+                mask = np.array(Image.open(BytesIO(response.content)))
+                assert mask.shape == (512, 512) and set(np.unique(mask)) <= {0, 255}
+                assert client.get(result['artifacts'][name], headers=outsider).status_code == 404
+            scores = client.get(result['artifacts']['raw_scores'], headers=owner)
+            with np.load(BytesIO(scores.content), allow_pickle=False) as arrays:
+                assert set(arrays.files) == {'artery', 'stenosis'}
+                assert arrays['artery'].shape == (512, 512) and np.isfinite(arrays['artery']).all()
+            for candidate in result['candidates']:
+                assert len(candidate['bbox_prepared_xyxy']) == 4 and candidate['category_id'] == 26
+            assert client.get(f'/api/images/{identity}/analyses', headers=owner).status_code == 200
+        finally:
+            worker.close()
+
+
+@pytest.mark.parametrize('invalid', ['shape', 'nonfinite', 'range'])
+def test_invalid_prediction_arrays_fail_closed(tmp_path, monkeypatch, invalid):
+    shape = (10, 10) if invalid == 'shape' else (512, 512)
+    mask = np.zeros(shape, dtype=bool)
+    raw = np.zeros(shape, dtype=np.float32)
+    if invalid == 'nonfinite':
+        raw[0, 0] = np.nan
+    if invalid == 'range':
+        raw[0, 0] = 1.1
+    monkeypatch.setattr(trained_release, 'predict_masks', lambda _: (mask, mask, raw, raw, []))
+    with pytest.raises(ValueError):
+        trained_release.analyze(tmp_path / 'not-read-by-mock.png')

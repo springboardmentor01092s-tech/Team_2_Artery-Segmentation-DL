@@ -17,19 +17,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .database import BASE_DIR, Base, SessionLocal, engine, get_db
 from .migrations import upgrade_local_schema
 from .auth_ext import identity_out, normalized_username, resolve_user, router as auth_ext_router
 from .models import (
-    ActionGrant, AnalysisEvent, AnalysisRun, AuditEvent, AuthSession, Case, CaseAccess,
+    ActionGrant, AnalysisEvent, AnalysisJob, AnalysisRun, AuditEvent, AuthSession, Case, CaseAccess,
     CaseComment, ClinicalReview, Image, LoginThrottle, Notification, NotificationDismissal,
     ReportRevision, RoleAccessRequest, User, UserIdentity, UserProfile, now
 )
 from .analysis_service import analyze, model_version, models_ready, validation_summary
 from . import trained_release
+from .analysis_result import build_result
+from .inference_jobs import InferenceWorker
 from .action_policy import allowed_action, effective_actions, CONDITIONAL_ACTIONS
 from .case_contract import validate_case_configuration, supports_current_inference, case_modalities, case_tasks, validate_case_routes
 from .preprocessing import InvalidImage, SUPPORTED_EXTENSIONS, TARGET_SIZE, STANDARD_PIPELINES, prepare_image, processed_spacing_mm, content_geometry
@@ -49,16 +52,25 @@ async def lifespan(app: FastAPI):
     upgrade_local_schema(engine)
     with SessionLocal() as db:
         for run in db.scalars(select(AnalysisRun)).all():
-            if db.get(AnalysisEvent, run.id) is None:
+            if db.scalar(select(AnalysisEvent).where(AnalysisEvent.image_id == run.image_id,
+                                                     AnalysisEvent.overlay_path == run.overlay_path)) is None:
                 db.add(AnalysisEvent(id=run.id, image_id=run.image_id,
                                      model_version=run.model_version, artery_pixels=run.artery_pixels,
                                      stenosis_pixels=run.stenosis_pixels, overlay_path=run.overlay_path,
-                                     validation_json=json.dumps(validation_summary()), created_at=run.created_at))
+                                     validation_json=json.dumps({"models": {}, "provenance_status": "legacy_backfill_unverified"}), created_at=run.created_at))
         db.commit()
     (STORAGE / "uploads").mkdir(parents=True, exist_ok=True)
     (STORAGE / "preprocessed").mkdir(parents=True, exist_ok=True)
     (STORAGE / "analysis").mkdir(parents=True, exist_ok=True)
-    yield
+    worker = None
+    if os.getenv("COROVISION_INFERENCE_WORKER", "1") == "1":
+        worker = InferenceWorker(execute_analysis_job)
+        worker.start()
+    try:
+        yield
+    finally:
+        if worker:
+            worker.close()
 
 
 app = FastAPI(title="CoroVision AI API", version="0.1.0", lifespan=lifespan)
@@ -1299,7 +1311,7 @@ def analysis_out(run: AnalysisRun) -> dict:
         vessel = metadata.get("vessel_analysis", {})
         model_scores = metadata.get("model_scores", {})
     except (OSError, ValueError):
-        vessel, model_scores = {}, {}
+        vessel, model_scores, metadata = {}, {}, {}
     return {"id": run.id, "image_id": run.image_id, "model_version": run.model_version,
             "artery_pixels": run.artery_pixels, "stenosis_pixels": run.stenosis_pixels,
             "overlay_url": f"/api/images/{run.image_id}/analysis/overlay",
@@ -1310,6 +1322,7 @@ def analysis_out(run: AnalysisRun) -> dict:
             "artery_probability_url": f"/api/images/{run.image_id}/analysis/map/artery_probability",
             "vessel_analysis": vessel,
             "model_scores": model_scores,
+            "structured_result": metadata.get("structured_result"),
             "validation": validation_summary() if run.model_version == model_version() else {},
             "created_at": run.created_at,
             "research_only": True,
@@ -1333,6 +1346,7 @@ def event_out(event: AnalysisEvent) -> dict:
             "validation": evaluation.get("models", evaluation),
             "vessel_analysis": evaluation.get("vessel_analysis", {}),
             "model_scores": evaluation.get("model_scores", {}),
+            "structured_result": evaluation.get("structured_result"),
             "created_at": event.created_at, "research_only": True,
             "interpretation": "Pixel masks are uncalibrated research outputs; no clinical stenosis grade is inferred."}
 
@@ -1505,8 +1519,9 @@ def activate_model(data: ModelActivationIn, user: User = Depends(require_roles("
             "architecture": data.architecture}
 
 
-@app.post("/api/images/{image_id}/analyze")
-def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYSIS_RUNNERS)), db: Session = Depends(get_db)):
+def analysis_input(image_id, user, db):
+    if not user or user.role not in ROLE_ANALYSIS_RUNNERS or user.status != 'active':
+        raise HTTPException(403, "Analysis permission unavailable")
     if not allowed_action(user, "analysis:run", db):
         raise HTTPException(403, "AI analysis needs a separate operational grant")
     image = db.get(Image, image_id)
@@ -1519,7 +1534,16 @@ def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYS
     if not supports_current_inference(db.get(Case, image.case_id)):
         raise HTTPException(status_code=422, detail="The current research models require X-ray coronary angiography")
     if not models_ready():
-        raise HTTPException(status_code=503, detail="Research models are not trained yet")
+        raise HTTPException(status_code=503, detail="Verified research model artifacts or inference dependencies are unavailable")
+    return image
+
+
+def perform_analysis(image_id, user, db, job=None):
+    image = analysis_input(image_id, user, db)
+    if job and (model_version() != job.model_version or (image.processed_sha256 or '') != job.input_sha256):
+        raise HTTPException(409, "Model version or input changed after submission")
+    if image.processed_sha256 and hashlib.sha256(Path(image.preview_path).read_bytes()).hexdigest() != image.processed_sha256:
+        raise HTTPException(409, "Saved input integrity check failed")
     try:
         spacing = None
         if image.processed_spacing_mm:
@@ -1549,8 +1573,20 @@ def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYS
                                   ("gradcam", gradcam_map), ("centerline", centerline_map)):
         if map_content is not None:
             overlay_path.with_name(f"{overlay_path.stem}.{map_name}.png").write_bytes(map_content)
+    artifacts = {"overlay": f"/api/images/{image.id}/analyses/{event_id}/overlay"}
+    for kind, content in model_scores.pop('_artifacts', {}).items():
+        if kind not in {"artery_mask", "stenosis_mask", "raw_scores"}:
+            raise ValueError("Unsupported inference artifact")
+        extension = 'npz' if kind == 'raw_scores' else 'png'
+        overlay_path.with_name(f'{event_id}.{kind}.{extension}').write_bytes(content)
+        artifacts[kind] = f'/api/images/{image.id}/analyses/{event_id}/artifacts/{kind}'
+    structured = build_result(event_id=event_id, job_id=job.id if job else None, image=image,
+                              case=db.get(Case, image.case_id), version=model_version(), scores=model_scores,
+                              vessel=vessel_analysis, artery_pixels=artery_pixels, stenosis_pixels=stenosis_pixels,
+                              evidence=validation_summary(), artifacts=artifacts, timestamp=now().isoformat())
     overlay_path.with_suffix(".json").write_text(json.dumps({"vessel_analysis": vessel_analysis,
-                                                               "model_scores": model_scores}))
+                                                               "model_scores": model_scores,
+                                                               "structured_result": structured}, allow_nan=False))
     run = db.scalar(select(AnalysisRun).where(AnalysisRun.image_id == image.id))
     if run is None:
         run = AnalysisRun(image_id=image.id, model_version=model_version(),
@@ -1568,7 +1604,8 @@ def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYS
                           stenosis_pixels=stenosis_pixels, overlay_path=str(overlay_path),
                           validation_json=json.dumps({"models": validation_summary(),
                                                       "vessel_analysis": vessel_analysis,
-                                                      "model_scores": model_scores}))
+                                                      "model_scores": model_scores,
+                                                      "structured_result": structured}, allow_nan=False))
     db.add(event)
     case = db.get(Case, image.case_id)
     case.status = "analyzed"
@@ -1593,9 +1630,109 @@ def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYS
            for flag in flags):
         notify_case(db, case, user.id, "model_uncertainty_review",
                     f"Model output is unstable or has a low uncalibrated score for {case.case_code}; inspect the probability map")
+    if job:
+        job.status, job.progress, job.result_event_id = 'completed', 100, event_id
+        job.active_image_id = None
+        job.completed_at = now()
+        audit(db, user.id, 'analysis_job_completed', image.case_id)
     db.commit()
     db.refresh(run)
-    return analysis_out(run)
+    return event_out(event) if job else analysis_out(run)
+
+
+def execute_analysis_job(db, job):
+    user = db.get(User, job.requested_by)
+    perform_analysis(job.image_id, user, db, job)
+
+
+class AnalysisJobIn(BaseModel):
+    idempotency_key: str = Field(min_length=8, max_length=80, pattern=r'^[A-Za-z0-9_-]+$')
+
+
+def job_out(job):
+    return dict(id=job.id, image_id=job.image_id, case_id=job.case_id, status=job.status,
+                model_version=job.model_version, progress=job.progress, created_at=job.created_at,
+                started_at=job.started_at, completed_at=job.completed_at, result_event_id=job.result_event_id,
+                error_code=job.error_code, error_detail=job.error_detail,
+                status_url=f'/api/analysis/jobs/{job.id}',
+                result_url=f'/api/analysis/jobs/{job.id}/result' if job.status == 'completed' else None)
+
+
+@app.post('/api/images/{image_id}/analysis/jobs', status_code=202)
+def create_analysis_job(image_id: str, data: AnalysisJobIn,
+                        user: User = Depends(require_roles(*ROLE_ANALYSIS_RUNNERS)), db: Session = Depends(get_db)):
+    image = analysis_input(image_id, user, db)
+    existing = db.scalar(select(AnalysisJob).where(AnalysisJob.image_id == image.id,
+                         AnalysisJob.requested_by == user.id, AnalysisJob.idempotency_key == data.idempotency_key))
+    if existing:
+        return job_out(existing)
+    # Sequential admission per image; a new key cannot duplicate an active job.
+    active = db.scalar(select(AnalysisJob).where(AnalysisJob.image_id == image.id,
+                                               AnalysisJob.status.in_(['pending', 'processing'])))
+    if active:
+        return job_out(active)
+    if db.scalar(select(func.count()).select_from(AnalysisJob).where(AnalysisJob.status.in_(['pending', 'processing']))) >= 32:
+        raise HTTPException(429, 'Inference queue is full; retry later with the same key')
+    job = AnalysisJob(image_id=image.id, case_id=image.case_id, requested_by=user.id,
+                      idempotency_key=data.idempotency_key, model_version=model_version(),
+                      input_sha256=image.processed_sha256 or '', active_image_id=image.id)
+    db.add(job)
+    db.get(Case, image.case_id).processing_status = 'pending'
+    audit(db, user.id, 'analysis_job_requested', image.case_id)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.scalar(select(AnalysisJob).where(AnalysisJob.image_id == image.id,
+                             AnalysisJob.requested_by == user.id, AnalysisJob.idempotency_key == data.idempotency_key))
+        if not existing:
+            existing = db.scalar(select(AnalysisJob).where(AnalysisJob.active_image_id == image.id))
+        if not existing:
+            raise HTTPException(409, 'Conflicting analysis request; retry with the same key')
+        return job_out(existing)
+    return job_out(job)
+
+
+@app.get('/api/analysis/jobs/{job_id}')
+def get_analysis_job(job_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    job = db.get(AnalysisJob, job_id)
+    if not job:
+        raise HTTPException(404, 'Job not found')
+    accessible_case(job.case_id, user, db, required_action='read')
+    return job_out(job)
+
+
+@app.get('/api/analysis/jobs/{job_id}/result')
+def get_analysis_job_result(job_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    job = db.get(AnalysisJob, job_id)
+    if not job:
+        raise HTTPException(404, 'Job not found')
+    accessible_case(job.case_id, user, db, required_action='read')
+    if job.status != 'completed':
+        raise HTTPException(409, 'Job has no completed result')
+    event = db.get(AnalysisEvent, job.result_event_id)
+    if not event or event.image_id != job.image_id:
+        raise HTTPException(404, 'Saved result unavailable')
+    return event_out(event)
+
+
+@app.get('/api/images/{image_id}/analysis/jobs')
+def image_analysis_jobs(image_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    image = db.get(Image, image_id)
+    if not image:
+        raise HTTPException(404, 'Image not found')
+    accessible_case(image.case_id, user, db, required_action='read')
+    return [job_out(row) for row in db.scalars(select(AnalysisJob).where(AnalysisJob.image_id == image_id)
+                                             .order_by(AnalysisJob.created_at.desc()).limit(50))]
+
+
+@app.post("/api/images/{image_id}/analyze")
+def analyze_image(image_id: str, user: User = Depends(require_roles(*ROLE_ANALYSIS_RUNNERS)), db: Session = Depends(get_db)):
+    # Compatibility route; new frontend uses the persistent job API.
+    analysis_input(image_id, user, db)
+    if db.scalar(select(AnalysisJob).where(AnalysisJob.active_image_id == image_id)):
+        raise HTTPException(409, 'An analysis job is already active for this image')
+    return perform_analysis(image_id, user, db)
 
 
 @app.get("/api/images/{image_id}/analyses")
@@ -1627,6 +1764,24 @@ def history_overlay(image_id: str, event_id: str, user: User = Depends(require_c
     if not event or event.image_id != image_id or not Path(event.overlay_path).is_file():
         raise HTTPException(status_code=404, detail="Analysis overlay not found")
     return FileResponse(event.overlay_path, media_type="image/png")
+
+
+@app.get('/api/images/{image_id}/analyses/{event_id}/artifacts/{kind}')
+def result_artifact(image_id: str, event_id: str, kind: str,
+                    user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    image = db.get(Image, image_id)
+    if not image:
+        raise HTTPException(404, 'Image not found')
+    accessible_case(image.case_id, user, db, required_action='read')
+    event = db.get(AnalysisEvent, event_id)
+    if not event or event.image_id != image_id or kind not in {'artery_mask', 'stenosis_mask', 'raw_scores'}:
+        raise HTTPException(404, 'Artifact not found')
+    extension = 'npz' if kind == 'raw_scores' else 'png'
+    path = Path(event.overlay_path).with_name(f'{event.id}.{kind}.{extension}')
+    if not path.is_file():
+        raise HTTPException(404, 'Artifact unavailable for this model')
+    return FileResponse(path, media_type='application/octet-stream' if kind == 'raw_scores' else 'image/png',
+                        headers={'X-Content-Type-Options': 'nosniff'})
 
 
 def _explanation_file(base_path: str, kind: str) -> Path:

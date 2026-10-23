@@ -96,16 +96,26 @@ def predict_masks(path):
             raise ValueError('Invalid stenosis foreground label')
         stenosis |= item['mask']
         probability = np.maximum(probability, item['mask_probability'])
-        records.append(dict(task='ARCADE stenosis instance mask', category_id=26, model_score=item['score'],
+        y, x = np.where(item['mask'])
+        records.append(dict(candidate_id=f'C{len(records)+1}', task='ARCADE stenosis instance mask',
+                            category_id=26, model_score=item['score'],
+                            bbox_prepared_xyxy=[int(x.min()), int(y.min()), int(x.max())+1, int(y.max())+1],
+                            polygon_prepared_xy=item['polygon'], coordinate_frame='prepared_512_xy',
                             mask_pixels=int(item['mask'].sum()), calibration='uncalibrated_raw_score'))
     return artery, stenosis, artery_probability, probability, records
 
 
 def analyze(path, spacing_mm=None):
+    from io import BytesIO
     import numpy as np
+    from PIL import Image
     from scipy import ndimage
     from .analysis_model import analyze_vessel_geometry, centerline_overlay_png, heatmap_overlay_png, overlay_png
     artery, stenosis, artery_p, stenosis_p, instances = predict_masks(path)
+    if any(value.shape != (512, 512) for value in [artery, stenosis, artery_p, stenosis_p]):
+        raise ValueError('Unexpected prediction geometry')
+    if any(not np.isfinite(value).all() or np.any((value < 0) | (value > 1)) for value in [artery_p, stenosis_p]):
+        raise ValueError('Invalid raw prediction scores')
     geometry = analyze_vessel_geometry(artery, spacing_mm, artery_p, .5)
     geometry['stenosis_mask_components'] = int(ndimage.label(stenosis)[1])
     geometry['stenosis_component_interpretation'] = 'Predicted mask components,not confirmed lesions.'
@@ -115,6 +125,16 @@ def analyze(path, spacing_mm=None):
                   trained_release=RELEASE['version'], checkpoint_sha256={x['task']: x['sha256'] for x in RELEASE['models']},
                   preprocessing='Preserved512contract; no median/autocontrast/postprocessing added',
                   absence_interpretation='No detections do not establish absence of disease')
+    # Private artifacts are consumed by the API, never serialized into ordinary JSON.
+    payload = {}
+    for name, mask in [('artery_mask', artery), ('stenosis_mask', stenosis)]:
+        stream = BytesIO()
+        Image.fromarray(mask.astype('uint8') * 255).save(stream, format='PNG')
+        payload[name] = stream.getvalue()
+    stream = BytesIO()
+    np.savez_compressed(stream, artery=artery_p, stenosis=stenosis_p)
+    payload['raw_scores'] = stream.getvalue()
+    scores['_artifacts'] = payload
     return (overlay_png(path, artery, stenosis), int(artery.sum()), int(stenosis.sum()), geometry,
             None, heatmap_overlay_png(path, artery_p), heatmap_overlay_png(path, stenosis_p), None,
             scores, centerline_overlay_png(path, geometry['centerline_paths'], geometry['branch_points'],

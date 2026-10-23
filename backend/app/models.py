@@ -255,6 +255,27 @@ class Image(Base):
     case: Mapped[Case] = relationship(back_populates="images")
 
 
+class AnalysisJob(Base):
+    __tablename__ = "analysis_jobs"
+    __table_args__ = (UniqueConstraint("requested_by", "image_id", "idempotency_key"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    image_id: Mapped[str] = mapped_column(ForeignKey("images.id"), index=True)
+    case_id: Mapped[str] = mapped_column(ForeignKey("cases.id"), index=True)
+    requested_by: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(80))
+    model_version: Mapped[str] = mapped_column(String(80))
+    input_sha256: Mapped[str] = mapped_column(String(64))
+    active_image_id: Mapped[str | None] = mapped_column(String(36), nullable=True, unique=True)
+    status: Mapped[str] = mapped_column(String(24), default="pending", index=True)
+    progress: Mapped[int] = mapped_column(Integer, default=0)
+    result_event_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    error_detail: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class AnalysisRun(Base):
     __tablename__ = "analysis_runs"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)

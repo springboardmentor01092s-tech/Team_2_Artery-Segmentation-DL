@@ -148,6 +148,8 @@ Weights are not included in this repository. Install compatible inference depend
 
 The preserved training-workspace models can be installed separately using the [trained release integration guide](docs/TRAINED_RELEASE_INTEGRATION.md). This connects the binary artery and ARCADE stenosis-mask baselines without committing weights, changing historical test bindings, or activating rejected candidates.
 
+For the audited end-to-end workflow, read the [master integration prompt](docs/MASTER_INTEGRATION_PROMPT.md), [audit](docs/INTEGRATION_AUDIT.md), [single-worker job deployment guide](docs/INFERENCE_JOB_DEPLOYMENT.md) and [verification report](reports/end_to_end_integration.md). Analysis jobs preserve saved masks, raw scores and evidence-based explanations; automatic severity and 3D inference remain explicitly unavailable.
+
 </details>
 
 ## Research and evaluation

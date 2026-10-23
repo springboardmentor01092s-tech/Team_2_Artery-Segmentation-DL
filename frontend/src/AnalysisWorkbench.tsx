@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Play, FileText, Eye, GitBranch, Layers3, ScanLine, Sparkles } from "lucide-react";
 import type { AnalysisResult, CaseRecord, ImageRecord } from "./caseTypes";
 import AnalysisHistory from "./AnalysisHistory";
+import ResultEvidence from "./ResultEvidence";
 import { Button } from "./components/prismui/button";
 import { Card } from "./components/prismui/card";
 import { ContextualAIBar } from "./components/watermelon/contextual-ai-bar";
@@ -20,6 +21,7 @@ type Props = {
   history: AnalysisResult[];
   modelsReady: boolean;
   analysisBusy: boolean;
+  jobStatus?: string;
   canRunAnalysis: boolean;
   onCaseChange: (id: string) => void;
   onImageChange: (id: string) => void;
@@ -29,7 +31,7 @@ type Props = {
   onReports: () => void;
 };
 
-export default function AnalysisWorkbench({ token, cases, selectedCase, selectedImage, processedPreview, overlay, analysis, history, modelsReady, analysisBusy, canRunAnalysis, onCaseChange, onImageChange, onRun, onSelectAnalysis, onUpload, onReports }: Props) {
+export default function AnalysisWorkbench({ token, cases, selectedCase, selectedImage, processedPreview, overlay, analysis, history, modelsReady, analysisBusy, jobStatus, canRunAnalysis, onCaseChange, onImageChange, onRun, onSelectAnalysis, onUpload, onReports }: Props) {
   const [mode, setMode] = useState<"source" | "processed" | "overlay" | "attention" | "artery_probability" | "probability" | "gradcam" | "centerline">("overlay");
   const [opacity, setOpacity] = useState(80);
   const [zoom, setZoom] = useState(1);
@@ -102,8 +104,8 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
     if (!analysis) { setEvidenceGuide("Run or select a saved analysis before reviewing explainability evidence."); return; }
     const context = question ? ` Your question: “${question}”` : "";
     if (lens === "stenosis") {
-      setMode("gradcam");
-      setEvidenceGuide(`Stenosis evidence is limited to the saved probability and Grad-CAM layers. The current mask contains ${analysis.stenosis_pixels.toLocaleString()} predicted pixels. Inspect it against the original image; it is not a diagnosis or calibrated confidence score.${context}`);
+      setMode("probability");
+      setEvidenceGuide(`Stenosis evidence comes from the saved mask and raw score layer, when available. The current mask contains ${analysis.stenosis_pixels.toLocaleString()} predicted pixels. Inspect it against the original image; it is not a diagnosis or calibrated confidence score.${context}`);
     } else if (lens === "vessel_graph") {
       setMode("centerline");
       setEvidenceGuide(`Vessel-graph evidence comes from the saved artery mask and its derived centerline. Measurements and branch candidates are approximate 2D mask outputs; verify graph continuity visually.${context}`);
@@ -114,6 +116,7 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
   }
 
   return <div className="workbench-page">
+    {jobStatus && <p role="status">Analysis job: {jobStatus}. You may revisit this image to recover its saved job status.</p>}
     <div className="page-heading"><div><p className="eyebrow">CORONARY IMAGING</p><h2>AI Analysis Workbench</h2></div><span className="stage-badge">Research only</span></div>
     <div className="workbench-selectors">
       <label>Case<select value={selectedCase?.id || ""} onChange={(event) => onCaseChange(event.target.value)}><option value="">Select a case</option>{cases.map((item) => <option value={item.id} key={item.id}>{item.case_code} · {item.status}</option>)}</select></label>
@@ -149,7 +152,7 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
           <p className="muted">{selectedCase?.case_code} · {selectedImage.original_name}</p>
           <div className="metadata"><div><span>Model</span><strong>{analysis?.model_version || "Not run"}</strong></div><div><span>Study modality</span><strong>{selectedCase?.modality}</strong></div><div><span>Pixel spacing</span><strong>{selectedImage.spacing_mm || "Unavailable"}</strong></div></div>
           {canRunAnalysis ? <Button type="button" className="primary" disabled={!canAnalyze || analysisBusy} onClick={onRun}><Play size={16} aria-hidden="true" /> {analysisBusy ? "Processing…" : analysis ? "Run again" : "Run AI analysis"}</Button> : <p className="caption">Your role can inspect saved analyses but cannot start a model run.</p>}
-          {!modelsReady && <p className="caption">Models are unavailable. Train both baselines to enable inference.</p>}
+          {!modelsReady && <p className="caption">Models are unavailable. Install the verified research artifacts and inference dependencies.</p>}
           {selectedCase?.modality !== "XCA" && <p className="caption">The current models accept X-ray coronary angiography only.</p>}
           {analysis && <><div className="metadata"><div><span>Artery mask</span><strong>{analysis.artery_pixels.toLocaleString()} px</strong></div><div><span>Suspected stenosis mask</span><strong>{analysis.stenosis_pixels.toLocaleString()} px</strong></div><div><span>Run time</span><strong>{new Date(analysis.created_at).toLocaleString()}</strong></div><div><span>Mean artery pixel score</span><strong>{analysis.model_scores?.artery_foreground_mean_probability == null ? "Unavailable" : `${(analysis.model_scores.artery_foreground_mean_probability * 100).toFixed(1)}%`}</strong></div><div><span>Mean stenosis pixel score</span><strong>{analysis.model_scores?.stenosis_foreground_mean_probability == null ? "Unavailable" : `${(analysis.model_scores.stenosis_foreground_mean_probability * 100).toFixed(1)}%`}</strong></div></div><p className="caption">{analysis.interpretation} Mean foreground scores are uncalibrated pixel probabilities, not diagnostic confidence.</p></>}
           {analysis && <section className="explainability-guide" aria-labelledby="explainability-guide-title"><div><p className="eyebrow">EXPLAINABILITY</p><h4 id="explainability-guide-title">Evidence guide</h4><p className="caption">Choose a stored evidence lens. This helper only directs you to saved model outputs and does not use an external AI service.</p></div><SelectAIAgent agents={evidenceAgents} placeholder="Ask about the displayed evidence" contextLabel="Saved analysis only · research use" onSendMessage={(question, lens) => showEvidenceGuide(question, lens)} /><ContextualAIBar musicIcon={<Layers3 size={18} aria-hidden="true" />} sparkleIcon={<Sparkles size={18} aria-hidden="true" />} tools={[<button type="button" aria-label="Show AI overlay" onClick={() => { setMode("overlay"); setEvidenceGuide("Showing the saved segmentation overlay. Compare its edges with the original image."); }}><Layers3 size={18} aria-hidden="true" /></button>, <button type="button" aria-label="Show Grad-CAM" onClick={() => { setMode("gradcam"); setEvidenceGuide("Showing the saved Grad-CAM layer when available. It is a research saliency map, not a clinical explanation."); }}><Sparkles size={18} aria-hidden="true" /></button>]} placeholder="Ask how to inspect this evidence" compactLabel="Evidence layers" expandedLabel="Ask about stored evidence" onSubmit={(question) => showEvidenceGuide(question, "segmentation")} /><QuickSwitcher askIcon={<Eye size={20} aria-hidden="true" />} generateIcon={<GitBranch size={20} aria-hidden="true" />} askLabel="Inspect saliency" generateLabel="Inspect vessel graph" onActionClick={(action, question) => showEvidenceGuide(question, action === "ask" ? "stenosis" : "vessel_graph")} />{evidenceGuide && <p className="message success" role="status">{evidenceGuide}</p>}</section>}
@@ -165,6 +168,7 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
           <Button type="button" variant="outline" onClick={onReports}><FileText size={16} aria-hidden="true" /> View report</Button>
         </Card>
       </div>
+      {analysis && <Card><ResultEvidence result={analysis.structured_result} /></Card>}
       <AnalysisHistory imageId={selectedImage.id} token={token} history={history} onSelect={onSelectAnalysis} />
     </>}
   </div>;

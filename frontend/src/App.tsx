@@ -30,7 +30,7 @@ import { CreateNewDisclosure } from "./components/watermelon/create-new-disclosu
 import { standardPipelines, type StandardPipeline } from "./preprocessingPipelines";
 import { caseTasks, caseAnatomies, taskLabel } from "./caseConfiguration";
 import { restoreUserDesign } from "./designPreview";
-import type { AnalysisResult, CaseRecord } from "./caseTypes";
+import type { AnalysisJob, AnalysisResult, CaseRecord } from "./caseTypes";
 import { canCreateCases, canReadCases, canViewModels, canOpenSection } from "./permissions";
 import { forgetAccount, localDemo, saveAccount, saveDemoAccounts, savedAccounts, type SavedAccount } from "./demoSessions";
 
@@ -52,6 +52,7 @@ function App() {
   const [overlay, setOverlay] = useState("");
   const [modelsReady, setModelsReady] = useState(false);
   const [analysisBusy, setAnalysisBusy] = useState(false);
+  const [analysisJob, setAnalysisJob] = useState<AnalysisJob | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -108,6 +109,8 @@ function App() {
   activeTokenRef.current = token;
   const selected = cases.find((item) => item.id === selectedId);
   const selectedImage = selected?.images.find((item) => item.id === selectedImageId) || selected?.images.at(-1);
+  const selectedImageRef = useRef(selectedImage?.id);
+  selectedImageRef.current = selectedImage?.id;
   const matchingCases = cases.filter((item) =>
     (caseStatus === "all" || item.status === caseStatus) &&
     (caseModality === "all" || item.modality === caseModality) &&
@@ -255,6 +258,7 @@ function App() {
     try {
       const response = await fetch(apiUrl(result.overlay_url), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error("Analysis overlay unavailable");
+      if (selectedImageRef.current !== result.image_id) return;
       const objectUrl = URL.createObjectURL(await response.blob());
       setOverlay((previous) => { if (previous) URL.revokeObjectURL(previous); return objectUrl; });
       setAnalysis(result);
@@ -262,25 +266,67 @@ function App() {
   }
 
   async function handleAnalysis() {
-    if (!selectedImage) return;
+    if (!selectedImage || analysisBusy) return;
+    const submittedImageId = selectedImage.id;
     setError("");
     setAnalysisBusy(true);
+    setAnalysisJob(null);
     try {
-      const result = await request<AnalysisResult>(`/api/images/${selectedImage.id}/analyze`, token, {}, "POST");
-      const response = await fetch(apiUrl(result.overlay_url), { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error("Analysis overlay unavailable");
-      const objectUrl = URL.createObjectURL(await response.blob());
-      setOverlay((previous) => { if (previous) URL.revokeObjectURL(previous); return objectUrl; });
-      setAnalysis(result);
-      setHistory(await request<AnalysisResult[]>(`/api/images/${selectedImage.id}/analyses`, token));
-      await loadCases(token);
-      setNotice("Research analysis completed. Review the masks and validation limitations.");
+      const storageKey = `corovision-job-${selectedImage.id}`;
+      const key = sessionStorage.getItem(storageKey) || crypto.randomUUID();
+      sessionStorage.setItem(storageKey, key);
+      const job = await request<AnalysisJob>(`/api/images/${selectedImage.id}/analysis/jobs`, token, { idempotency_key: key }, "POST");
+      sessionStorage.removeItem(storageKey);
+      if (selectedImageRef.current === submittedImageId) setAnalysisJob(job);
     } catch (cause) {
       setError((cause as Error).message);
-    } finally {
       setAnalysisBusy(false);
     }
   }
+
+  useEffect(() => {
+    let active = true;
+    setAnalysisJob(null);
+    setAnalysisBusy(false);
+    if (selectedImage && token) request<AnalysisJob[]>(`/api/images/${selectedImage.id}/analysis/jobs`, token)
+      .then((jobs) => { if (active) setAnalysisJob(jobs.find((job) => ["pending", "processing"].includes(job.status)) || jobs[0] || null); })
+      .catch((cause: Error) => { if (active) setError(cause.message); });
+    return () => { active = false; };
+  }, [selectedImage?.id, token]);
+
+  useEffect(() => {
+    if (!analysisJob || analysisJob.image_id !== selectedImage?.id || !token) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const jobId = analysisJob.id;
+    setAnalysisBusy(true);
+    async function poll() {
+      try {
+        const job = await request<AnalysisJob>(`/api/analysis/jobs/${jobId}`, token);
+        if (!active) return;
+        setAnalysisJob(job);
+        if (job.status === "failed") {
+          setError(job.error_detail || "Analysis job failed; review before requesting a new run.");
+          setAnalysisBusy(false);
+        } else if (job.status === "completed" && job.result_url) {
+          const result = await request<AnalysisResult>(job.result_url, token);
+          if (!active) return;
+          await showAnalysis(result);
+          const items = await request<AnalysisResult[]>(`/api/images/${job.image_id}/analyses`, token);
+          if (!active) return;
+          setHistory(items);
+          await loadCases(token);
+          if (!active) return;
+          setNotice("Research analysis saved. Review masks, candidate evidence and limitations.");
+          setAnalysisBusy(false);
+        } else timer = setTimeout(poll, 1000);
+      } catch (cause) {
+        if (active) { setError((cause as Error).message); setAnalysisBusy(false); }
+      }
+    }
+    void poll();
+    return () => { active = false; clearTimeout(timer); };
+  }, [analysisJob?.id, selectedImage?.id, token]);
 
   async function handleAuth(event: FormEvent) {
     event.preventDefault();
@@ -645,7 +691,7 @@ function App() {
             />
           )}
           {activeView === "models" && canViewModels(user.role) && <ModelWorkspace token={token} />}
-          {activeView === "analysis" && canReadCases(user.role) && <><>{error && <Alert1 tone="error" title="Action could not be completed" onDismiss={() => setError("")}>{error}</Alert1>}{notice && <Alert1 tone="success" title="Update completed" onDismiss={() => setNotice("")}>{notice}</Alert1>}</><AnalysisWorkbench token={token} cases={cases} selectedCase={selected} selectedImage={selectedImage} processedPreview={preview} overlay={overlay} analysis={analysis} history={history} modelsReady={modelsReady} analysisBusy={analysisBusy} canRunAnalysis={selected?.permissions?.can_run_analysis ?? canCreateCases(user.role)} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} /></>}
+          {activeView === "analysis" && canReadCases(user.role) && <><>{error && <Alert1 tone="error" title="Action could not be completed" onDismiss={() => setError("")}>{error}</Alert1>}{notice && <Alert1 tone="success" title="Update completed" onDismiss={() => setNotice("")}>{notice}</Alert1>}</><AnalysisWorkbench token={token} cases={cases} selectedCase={selected} selectedImage={selectedImage} processedPreview={preview} overlay={overlay} analysis={analysis} history={history} modelsReady={modelsReady} analysisBusy={analysisBusy} jobStatus={analysisJob?.status} canRunAnalysis={selected?.permissions?.can_run_analysis ?? canCreateCases(user.role)} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} /></>}
           {activeView === "reports" && canReadCases(user.role) && <ReportsPage token={token} role={user.role} cases={cases} selectedCase={selected} selectedImage={selectedImage} analysis={analysis} preview={preview} overlay={overlay} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onAnalysis={() => setActiveView("analysis")} />}
           {activeView === "account" && <AccountPanel token={token} user={user} onUser={setUser} onLogout={clearSession} />}
           {(["admin", "permissions", "access", "audit"] as string[]).includes(activeView) && user?.role === "admin" && <AdminPanel key={activeView} section={activeView === "admin" ? "users" : activeView as "permissions" | "access" | "audit"} token={token} currentUser={user} />}

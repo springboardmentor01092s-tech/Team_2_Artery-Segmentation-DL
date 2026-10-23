@@ -84,6 +84,7 @@ export type CaseRecord = {
 };
 
 export type AnalysisResult = {
+  structured_result?: StructuredResearchResult | null;
   id: string;
   image_id: string;
   model_version: string;
@@ -144,4 +145,20 @@ export type AnalysisResult = {
   interpretation: string;
   research_only: boolean;
   created_at: string;
+};
+
+export type AnalysisJob = {
+  id: string; image_id: string; status: "pending" | "processing" | "completed" | "failed";
+  progress: number; error_detail?: string | null; status_url: string; result_url?: string | null;
+};
+
+export type StructuredResearchResult = {
+  schema_version: string; result_id: string; job_id: string | null;
+  stages: Record<string, { status: string; reason: string }>;
+  candidates: { candidate_id: string; category_id?: number; model_score?: number;
+    bbox_prepared_xyxy?: number[]; bbox_source_xyxy?: number[] | null;
+    coordinate_warning?: string | null; association_status?: string }[];
+  severity: { status: string; narrowing_percent: number | null; category: string | null; reason: string };
+  limitations: string[]; artifacts: Record<string, string>;
+  explanation: { version: string; method: string; sections: { title: string; text: string; source_refs: string[] }[] };
 };
