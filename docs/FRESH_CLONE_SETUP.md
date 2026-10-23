@@ -31,6 +31,22 @@ The setup generates a private JWT secret once, keeps existing configuration unch
 
 ## Accounts
 
+To restore the integrated artery and stenosis inference models, transfer
+`CoroVision_application_mask_models_v1.zip` separately, then run:
+
+```bash
+python scripts/setup_local.py --with-ai --model-archive /path/to/CoroVision_application_mask_models_v1.zip --demo
+```
+
+Use the actual archive path on the destination computer (quote paths containing spaces).
+The installer checks both checkpoint hashes and the release contract and preserves an
+already installed matching release. The archive SHA-256 is
+`bd780e66c7154038ee9e6c0e9e23582be82118e8944352717c4eea0752cc9b43`.
+The older three-model handoff archive is a different package and cannot substitute
+for this two-mask release. Git cloning alone does not install weights or training data.
+These models return research predictions and raw scores; severity and clinical
+confidence remain unavailable without supporting validated measurements.
+
 Register an account in the app, or optionally run `python scripts/setup_local.py --demo` to seed demo users. Generated passwords are saved only in ignored `backend/demo-credentials.json`. Automatic sharing with the demo team is off by default.
 
 For an administrator without demos, set private `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables, then run `backend/.venv/bin/python backend/create_admin.py` on macOS/Linux or `backend\.venv\Scripts\python.exe backend\create_admin.py` on Windows from the repository root. Do not put real passwords in Git. Institutional SSO, Google sign-in, and email reset require their external configuration.

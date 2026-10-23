@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "purpose": "Preserved local training source, not an experiment submission or promotion",
+  "files": [
+    {
+      "file": "train_segmentation.py",
+      "source_relative": "scripts/train_segmentation.py",
+      "sha256": "2bedd94571b3147335c9d2721c9ac24d8692be885e4f18d612a0abda8f7e2457",
+      "modified": false
+    },
+    {
+      "file": "train_pretrained_vessel.py",
+      "source_relative": "scripts/train_pretrained_vessel.py",
+      "sha256": "0bd959b85fef8b5748ce7b4f6108e5d5dfc68582da9fe9cd9fa6accd78e4d8df",
+      "modified": false
+    },
+    {
+      "file": "train_volume_baseline.py",
+      "source_relative": "scripts/train_volume_baseline.py",
+      "sha256": "bb23cd903ddb4fa507daf4665087cf79a29155db49bf3ab94fc25d945f443c92",
+      "modified": false
+    },
+    {
+      "file": "train_boxes.py",
+      "source_relative": "scripts/train_boxes.py",
+      "sha256": "0cd0cde7a1b2cdc8db489504008caca3de6da9a038d4fed4ed142c297ad81fb4",
+      "modified": false
+    }
+  ],
+  "datasets_included": false,
+  "weights_included": false,
+  "automatic_training": false
+}
