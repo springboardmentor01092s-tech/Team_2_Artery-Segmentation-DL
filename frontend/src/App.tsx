@@ -105,6 +105,12 @@ function App() {
   const [casePage, setCasePage] = useState(1);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number; name: string } | null>(null);
   const caseFetchSeq = useRef(0);
+  const [caseListToken, setCaseListToken] = useState("");
+  const requestedCaseNavigation = useRef<{ caseId: string; imageId: string | null } | null>((() => {
+    const params = new URL(window.location.href).searchParams;
+    const caseId = params.get("case_id");
+    return caseId ? { caseId, imageId: params.get("image_id") } : null;
+  })());
   const activeTokenRef = useRef(token);
   activeTokenRef.current = token;
   const selected = cases.find((item) => item.id === selectedId);
@@ -169,6 +175,7 @@ function App() {
     const next = await request<CaseRecord[]>("/api/cases", activeToken);
     if (requestId !== caseFetchSeq.current || activeToken !== activeTokenRef.current) return;
     setCases((current) => JSON.stringify(current) === JSON.stringify(next) ? current : next);
+    setCaseListToken(activeToken);
     setSelectedId((current) => next.some((item) => item.id === current) ? current : next[0]?.id || "");
   }
 
@@ -192,8 +199,10 @@ function App() {
 
   useEffect(() => {
     if (!token) return;
+    let active = true;
     request<User>("/api/auth/me", token)
       .then((profile) => {
+        if (!active || token !== activeTokenRef.current) return;
         setUser(profile);
         if (localStorage.getItem(TOKEN_KEY) === token) setDemoAccounts(saveAccount(profile, token));
         setActiveView("overview");
@@ -202,12 +211,34 @@ function App() {
         setSelectedId("");
       })
       .catch(() => {
+        if (!active || token !== activeTokenRef.current) return;
         setDemoAccounts(forgetAccount(token));
         sessionStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(TOKEN_KEY);
         setToken("");
       });
+    return () => { active = false; };
   }, [token]);
+
+  useEffect(() => {
+    const target = requestedCaseNavigation.current;
+    if (!target || !user || caseListToken !== token || new URL(window.location.href).searchParams.has("demo_role")) return;
+    // Resolve only against the server-authorized case list for this exact session.
+    const allowedCase = cases.find((item) => item.id === target.caseId);
+    requestedCaseNavigation.current = null;
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("case_id");
+    cleanUrl.searchParams.delete("image_id");
+    window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    if (!allowedCase || !canOpenSection("analysis", user.role, user.permissions)) {
+      setError("The requested analysis case is unavailable for this account.");
+      return;
+    }
+    const image = allowedCase.images.find((item) => item.id === target.imageId) || allowedCase.images.at(-1);
+    setSelectedId(allowedCase.id);
+    setSelectedImageId(image?.id || "");
+    setActiveView("analysis");
+  }, [cases, user, caseListToken, token, demoAccounts]);
 
   useEffect(() => {
     const item = selectedImage;

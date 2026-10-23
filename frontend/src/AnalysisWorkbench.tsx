@@ -34,6 +34,7 @@ type Props = {
 export default function AnalysisWorkbench({ token, cases, selectedCase, selectedImage, processedPreview, overlay, analysis, history, modelsReady, analysisBusy, jobStatus, canRunAnalysis, onCaseChange, onImageChange, onRun, onSelectAnalysis, onUpload, onReports }: Props) {
   const [mode, setMode] = useState<"source" | "processed" | "overlay" | "attention" | "artery_probability" | "probability" | "gradcam" | "centerline">("overlay");
   const [opacity, setOpacity] = useState(80);
+  const [showCandidates, setShowCandidates] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [source, setSource] = useState("");
@@ -132,6 +133,25 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
           <div className="workbench-canvas" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
             {processedPreview ? <div className="workbench-image-stack" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
               {mode === "overlay" ? <><img src={processedPreview} alt="Preprocessed angiography image" draggable={false} />{overlay && <img className="workbench-overlay" src={overlay} alt="AI artery and suspected stenosis overlay" style={{ opacity: opacity / 100 }} draggable={false} />}</> : <img src={renderedImage} alt={mode === "source" ? "Original uploaded study" : mode === "processed" ? "Preprocessed angiography image" : mode === "centerline" ? "Algorithmic centerline paths, branch nodes, and endpoints" : mode === "attention" ? "Attention gate visualization" : mode === "artery_probability" ? "Uncalibrated artery pixel probability heatmap" : mode === "probability" ? "Uncalibrated stenosis pixel probability heatmap" : "Grad-CAM saliency map for stenosis segmentation output"} draggable={false} />}
+              {mode === "overlay" && showCandidates && !!analysis?.structured_result?.candidates.length &&
+                <svg viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Saved stenosis candidate bounds and uncalibrated scores"
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+                  <title>Model candidates, not confirmed lesions. Scores are uncalibrated.</title>
+                  {analysis.structured_result.candidates.map((candidate, index) => {
+                    const box = candidate.bbox_prepared_xyxy;
+                    if (!box || box.length !== 4 || !box.every(Number.isFinite)) return null;
+                    const [x1, y1, x2, y2] = box;
+                    const color = ["#ffe156", "#80ff9e", "#ffffff"][index % 3];
+                    const tx = Math.min(335, x2 + 8), ty = Math.max(18, Math.min(495, y1 + index * 22));
+                    return <g key={candidate.candidate_id}>
+                      <rect x={x1} y={y1} width={Math.max(0, x2-x1)} height={Math.max(0, y2-y1)} fill="none" stroke={color} strokeWidth={1.5} strokeDasharray={index ? "5 3" : undefined} />
+                      <line x1={(x1+x2)/2} y1={(y1+y2)/2} x2={tx} y2={ty} stroke={color} strokeWidth={.8} />
+                      <text x={tx} y={ty} fill={color} fontSize={11} stroke="#111827" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+                        {candidate.candidate_id} · raw {candidate.model_score?.toFixed(3) ?? "unavailable"}
+                      </text>
+                    </g>;
+                  })}
+                </svg>}
             </div> : <p>Loading image…</p>}
           </div>
           <div className="workbench-toolbar" role="group" aria-label="Viewer controls">
@@ -145,6 +165,7 @@ export default function AnalysisWorkbench({ token, cases, selectedCase, selected
           {mode === "overlay" && !overlay && <p className="caption">No saved AI overlay for this image yet. Run analysis to create one.</p>}
           {["attention", "artery_probability", "probability", "gradcam", "centerline"].includes(mode) && !xaiLayers[mode] && <p className="caption">This map is unavailable. Run analysis with a supported segmentation checkpoint first.</p>}
           {mode === "overlay" && overlay && <label className="workbench-opacity">Overlay opacity <input type="range" min="0" max="100" value={opacity} onChange={(event) => setOpacity(Number(event.target.value))} /> <output>{opacity}%</output></label>}
+          {mode === "overlay" && !!analysis?.structured_result?.candidates.length && <label className="caption"><input type="checkbox" checked={showCandidates} onChange={(event) => setShowCandidates(event.target.checked)} /> Show saved candidate bounds and raw scores. Overlapping candidates may represent the same region.</label>}
           <p className="caption">{mode === "overlay" ? "Cyan marks predicted artery pixels; coral marks predicted stenosis pixels. Colors are model output, not verified anatomy." : mode === "centerline" ? "The artery mask is shown faintly under cyan traced paths; yellow labels mark grouped junctions; green dots mark endpoints. Nodes are graph candidates, not confirmed anatomical branches." : mode === "attention" ? "Attention gates show where the model weights skip features; this visualization is not a faithful or clinically validated explanation." : mode === "artery_probability" || mode === "probability" ? "Pixel probabilities are uncalibrated model scores; color intensity is not a patient-level confidence score." : mode === "gradcam" ? "Grad-CAM highlights features that influence the stenosis segmentation logits. It is a research saliency map, not a clinical explanation." : "Review all model outputs against the original study."}</p>
         </Card>
         <Card className="panel workbench-findings">
