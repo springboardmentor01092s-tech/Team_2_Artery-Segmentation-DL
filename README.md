@@ -1,47 +1,111 @@
+<div align="center">
+
+<img src="frontend/public/corovision-heart-mark.png" alt="CoroVision anatomical heart logo" width="90" />
+
 # CoroVision AI
 
-Role-specific navigation, implemented sections, outstanding modules and dashboard
-counting definitions are documented in the
-[16 October role section map](docs/ROLE_SECTIONS_ROUTE_MATRIX_2026-10-16.md).
+### From angiography to evidence. From evidence to expert review.
 
-**Advanced Coronary Artery Segmentation and Stenosis Analysis Platform**
+A research workspace for coronary artery segmentation, vessel exploration, and suspected stenosis localization.
 
-*See the vessels. Detect the narrowing. Understand the results.*
+**Infosys Springboard · Team 2**
 
-**Academic title:** CoroVision AI: An Explainable Deep Learning Platform for
-Coronary Artery Segmentation, Vessel Structure Analysis, and Stenosis Detection
+`React + TypeScript` · `FastAPI` · `Medical imaging` · `Deep learning`
 
-**Suggested repository name:** `CoroVision-AI` · **Project group:** Group 3
+[Get started](#get-started) · [Workflow](#the-workflow) · [Architecture](#architecture) · [Documentation](#documentation) · [Research results](reports/latest_measured_training_results.md)
 
-Milestone 1 (weeks 1–2) foundation for a research prototype using 2D coronary
-X-ray angiography and the public ARCADE dataset. This milestone includes data
-inspection, documented scope and architecture, authentication and account
-management, de-identified case management, image upload, and a 512×512
-preprocessing preview.
-An optional research-only neural baseline provides artery and suspected stenosis
-mask overlays after local training. It is not a diagnosis or severity estimate.
-See [AI analysis](docs/AI_ANALYSIS.md) for training and validation limits.
-See [frontend workflow](docs/FRONTEND_WORKFLOW.md) for navigation, role access, reports, and current model limitations.
-See [case management and preprocessing](docs/CASE_AND_PREPROCESSING.md) for
-de-identified metadata, analysis history, ROI/frame selection, and modality limits.
+</div>
 
-## Repository layout
+---
 
-- `arcade/`: downloaded ARCADE dataset; not needed to launch the app.
-- `scripts/dataset_audit.py`: read-only inventory and integrity checks.
-- `docs/`: project scope, dataset EDA, system architecture/schema, and UI wireframes.
-- `backend/`: FastAPI, SQLAlchemy, authentication, case and image APIs.
-- `frontend/`: React and TypeScript app.
-- `storage/`: local uploaded files and processed previews (ignored by Git).
+> **Research prototype—not a medical device.** AI masks and measurements support research and expert review. They are not a diagnosis, a validated stenosis grade, or a substitute for medical advice. Use only public or appropriately de-identified data.
 
-The frontend uses adapted Button, Input, Label, Card, and theme code from
-[Codehagen/Prismui](https://github.com/Codehagen/Prismui). See
-`frontend/THIRD_PARTY_NOTICES.md` and `frontend/LICENSE.prismui.md`
-for source and license details.
+## Why CoroVision?
 
-## Run locally
+Medical-image research needs more than a prediction: reproducible preparation, preserved source images, traceable results, and a clear separation between AI output and human assessment.
 
-Requires Python 3.11+ and Node.js 20+.
+CoroVision brings these steps into one role-based application: create a case, prepare images, inspect available model outputs, record a doctor's review, and export permitted reports.
+
+## What you can do
+
+| Capability | In the application |
+| :--- | :--- |
+| **Manage studies** | Create de-identified cases, record metadata, select intended tasks, and assign case access. |
+| **Prepare images** | Validate supported images, select DICOM frames or PDF pages, apply optional ROI cropping, and generate previews. |
+| **Choose preprocessing** | Standard only, noise reduction, contrast enhancement, or both enhancements together. Originals and processing records are retained. |
+| **Explore AI findings** | Inspect artery and suspected stenosis overlays when compatible checkpoints are installed. Review vessel measurements with calibration limitations. |
+| **Record expert review** | Enter a doctor's decision, assessed severity, notes, and follow-up findings separately from predictions. |
+| **Track and report** | Inspect saved analysis history, report revisions, notifications, and authorized exports. |
+| **Control access** | Use role-specific workspaces. Case ownership and assignment still apply. |
+
+## The workflow
+
+```mermaid
+flowchart LR
+    A[Create a case] --> B[Upload de-identified images]
+    B --> C[Validate and preprocess]
+    C --> D[Inspect quality preview]
+    D --> E[Run a compatible model]
+    E --> F[Review masks and findings]
+    F --> G[Doctor assessment]
+    G --> H[Reports and exports]
+```
+
+**The original is retained.** Preparation creates a derived image; it does not overwrite the source or start training. Final report approval remains a separately authorized action.
+
+### Imaging scope
+
+| Input | Current scope |
+| :--- | :--- |
+| **Coronary X-ray angiography** | 2D preparation and compatible artery/stenosis-mask inference. |
+| **CT, CTA, and MRA** | Separate research volume preparation and exports; no connected volume-inference model is implied. |
+| **DICOM and scanned PDFs** | Supported decoding, frame/page selection, validation, and preparation within documented limits. |
+
+X-ray images and CT/MR volumes use separate processing routes. This project does **not** provide complete whole-body artery segmentation or validated automated clinical grading.
+
+## Workspaces built around responsibilities
+
+| Role | Main responsibility |
+| :--- | :--- |
+| **Doctor** | Review authorized cases, images, findings, severity assessments, and reports. |
+| **Medical Researcher** | Prepare research cases, explore outputs, and inspect recorded evaluations. |
+| **Technician / Data Operator** | Handle intake, uploads, metadata, and preparation quality. |
+| **ML Engineer** | Inspect model records and evaluation artifacts; training controls are not connected. |
+| **Viewer** | Read shared case details, recorded results, and assigned doctor information. |
+| **Administrator** | Manage users, access, audit records, and available doctor workflows within case scope. |
+
+Legacy `clinician` identifiers remain supported internally; the interface presents the role as **Doctor**. Institutional SSO requires a real identity-provider configuration—not a demo account name.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    UI[React and TypeScript workspace] --> API[FastAPI application]
+    API --> AUTH[Authentication and access policy]
+    API --> CASES[Cases, assignments, and reviews]
+    API --> PREP[Image and volume preparation]
+    API --> INFER[Compatible model inference]
+    API --> REPORTS[Reports, notifications, and audit]
+    CASES --> DB[(SQLAlchemy / SQLite)]
+    REPORTS --> DB
+    PREP --> FILES[Local originals and derived artifacts]
+    INFER --> WEIGHTS[Separately supplied checkpoints]
+```
+
+SQLite is the local default. PostgreSQL can be configured through `DATABASE_URL`; production use requires additional security, operations, and privacy review.
+
+## Get started
+
+**Requirements:** Python 3.11+, Node.js 20+, and npm. Scanned PDF conversion also requires Poppler's `pdftoppm`. Optional inference dependencies are in `backend/requirements-ai.txt`.
+
+### 1 · Clone the working branch
+
+```bash
+git clone --branch lingareddy-dhanush https://github.com/springboardmentor01092s-tech/Team_2_Artery-Segmentation-DL.git
+cd Team_2_Artery-Segmentation-DL
+```
+
+### 2 · Start the backend
 
 ```bash
 cd backend
@@ -49,73 +113,109 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 export JWT_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-In a second terminal:
+On Windows, activate with `.venv\Scripts\activate`. Keep your JWT secret stable in private environment configuration for persistent sessions; generating a new value invalidates previous tokens.
+
+### 3 · Start the frontend
+
+Open another terminal at the repository root:
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm ci
+npm run dev -- --host 127.0.0.1
 ```
 
-Open `http://localhost:5173`. API documentation is at
-`http://localhost:8000/docs`. The default local database is SQLite at
-`artery.db`. To use PostgreSQL, install the listed `psycopg` dependency and
-set `DATABASE_URL=postgresql+psycopg://user:password@host:5432/database`.
+| Open | Address |
+| :--- | :--- |
+| Application | <http://127.0.0.1:5173> |
+| Interactive API documentation | <http://127.0.0.1:8000/docs> |
 
-Open the `http://localhost:5173` URL in a browser while both terminal
-commands are running. Opening `frontend/index.html` as a `file://` page
-will not start Vite or the API and will appear broken.
+Keep both servers running. Opening `frontend/index.html` directly does not launch the application.
 
-For a local demo, register a researcher account, create a pseudonymous case
-code, and upload multiple supported raster images, DICOM studies, or scanned
-PDF pages (up to 50 MB each). The app processes each selected file separately:
-validation, grayscale conversion, intensity normalization, median noise
-reduction, contrast enhancement, optional ROI cropping, and a padded 512×512
-preview. Standard upload preserves image intensity apart from conversion needed
-for grayscale and high-bit-depth data. Research-only median denoising and
-clipped autocontrast are optional and off by default. DICOM multi-frame studies
-need a frame index; PDFs default to page zero and require Poppler's `pdftoppm`
-on the server. Unsupported transfer
-syntaxes and document types return a validation error. Upload only public or
-de-identified images. See [the exact formats and limits](docs/CASE_AND_PREPROCESSING.md).
+### 4 · Set up an account
 
-To bootstrap a local administrator, set `ADMIN_EMAIL` and `ADMIN_PASSWORD`
-(12+ characters) and run `python3 create_admin.py` from `backend/`. Only an
-administrator can grant clinician, ML engineer, or administrator roles through
-the Administration screen or admin API. Public registration always creates a
-researcher account. The Profile & security screen supports profile edits,
-password changes, session review, sign-out, and personal audit history.
+Use registration for the default research account workflow. To bootstrap an administrator, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` privately, then run `python create_admin.py` from `backend/`. The password must contain at least 12 characters.
 
-Username and email password sign-in, Google/GitHub OAuth, and email
-password reset setup are documented in [Authentication setup](docs/AUTH_SETUP.md).
-External provider credentials are required for live social sign-in and code
-delivery; see `backend/.env.example` for variable names.
+Never commit credentials. See [authentication setup](docs/AUTH_SETUP.md) and [backend/.env.example](backend/.env.example). Provider sign-in and email recovery require their corresponding service configuration.
 
-## Dataset audit
+<details>
+<summary><strong>Optional: connect inference artifacts</strong></summary>
 
-```bash
-python3 scripts/dataset_audit.py
+Weights are not included in this repository. Install compatible inference dependencies, supply the expected checkpoints, and follow [AI analysis setup](docs/AI_ANALYSIS.md). Model-dependent actions remain unavailable without these artifacts. A source checkout is not evidence that a model is installed or clinically validated.
+
+</details>
+
+## Research and evaluation
+
+Dataset-specific Colab notebooks and training scripts are included. Datasets, checkpoints, and large training bundles are distributed separately under their respective access and licensing terms.
+
+- Preserve original annotations and source splits.
+- Check patient/group leakage separately from image-level evaluation.
+- Keep X-ray and CT/MR experiments separate.
+- Select models using training/validation data—not repeated final-test tuning.
+- Report measured results and limitations; do not promise a “highest accuracy.”
+
+Read the [measured-results report](reports/latest_measured_training_results.md) for dataset-specific outcomes and incomplete work. **Not every dataset has completed training.** Local training remains paused unless explicitly resumed.
+
+## Repository guide
+
+```text
+backend/      FastAPI services, access policy, preprocessing, and tests
+frontend/     React application, role workspaces, themes, and UI tests
+ml/           Shared preprocessing code and configuration
+scripts/      Dataset audits, preparation, training, and evaluation tools
+colab/        Dataset-specific research notebooks
+docs/         Architecture, workflows, datasets, and implementation scope
+reports/      Selected aggregate measured-result reports
+pdfs/         Project documentation and document-generation scripts
 ```
 
-This checks annotation references, file counts, empty polygons, class counts,
-and identical-image overlap across train/validation/test.
+Local databases, uploaded images, datasets, model weights, environment secrets, and generated builds are intentionally excluded from Git.
 
-## Backend tests
+## Development checks
 
 ```bash
-cd backend
+# From backend/, with its environment active
 pytest -q
+
+# From frontend/, after npm ci
+npm run build
+node --test tests/*.test.mjs
 ```
 
-The tests exercise registration, login, authorization, case creation, upload
-validation, and preview generation.
+These checks verify implementation behavior—not clinical safety or model validity.
 
-## Current limitations
+## Documentation
 
-The auth and storage implementation is suitable for a local student prototype.
-Before accepting real patient images or public deployment, add institution
-managed role assignment, migration scripts, rate limits, TLS, secret management,
-backup policy, audit review, and an approved privacy/security process.
+| Start here | Read more |
+| :--- | :--- |
+| Product and scope | [Project scope](docs/PROJECT_SCOPE.md) · [Comprehensive PRD](docs/CoroVision_AI_Comprehensive_PRD_Infosys_Springboard_Team_2.md) |
+| Architecture and design | [Architecture](docs/ARCHITECTURE.md) · [Database schema](docs/PRD_DATABASE_SCHEMA.md) · [Wireframes](docs/WIREFRAMES.md) |
+| Application workflows | [Frontend workflow](docs/FRONTEND_WORKFLOW.md) · [Role section map](docs/ROLE_SECTIONS_ROUTE_MATRIX_2026-10-16.md) |
+| Images and datasets | [Preprocessing requirements](docs/PREPROCESSING_ENGINE_REQUIREMENTS.md) · [Dataset registry](docs/DATASET_REGISTRY.md) |
+| Access and publishing | [Authentication](docs/AUTH_SETUP.md) · [Branch and publishing rules](docs/GIT_PUBLISHING.md) |
+
+Dated documents may describe earlier stages. Consult current code, explicit “not connected” states, and measured-result artifacts for actual availability.
+
+## Responsible use
+
+This academic prototype is not a production clinical system. Real patient use or public deployment requires an approved privacy/security process, institution-managed identity and access, secure transport, secret management, operational safeguards, retention/backup policies, and appropriate clinical validation.
+
+**AI findings and a doctor's assessment are different records.** A mask is not a confirmed lesion, a pixel score is not clinical confidence, and uncalibrated image geometry is not a validated physical measurement.
+
+## License and acknowledgements
+
+See [LICENSE](LICENSE) for the repository license. Third-party components retain their original terms: [frontend notices](frontend/THIRD_PARTY_NOTICES.md), [PrismUI](frontend/LICENSE.prismui.md), and [Watermelon](frontend/LICENSE.watermelon.md). Dataset licenses and access conditions apply independently.
+
+---
+
+<div align="center">
+
+**CoroVision AI · Infosys Springboard · Team 2**
+
+Research with traceability. Review with context.
+
+</div>
