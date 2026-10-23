@@ -37,3 +37,20 @@ data/
 scratch_*
 -.png
 .git-publish/
+# Training workspace is maintained separately from the published application.
+colab/
+scripts/train_*.py
+scripts/continue_local_gpu_queue.py
+scripts/*training_bundle.py
+scripts/build_individual_colab_notebooks.py
+scripts/build_msd_colab_notebook.py
+scripts/package_arcade_instance_bundle.py
+scripts/prepare_msd_nnunet.py
+scripts/evaluate_cadica_checkpoint.py
+scripts/evaluate_selected_segmentation.py
+scripts/audit_local_training_intake.py
+scripts/build_measured_training_results.py
+scripts/build_segmentation_task_report.py
+backend/tests/test_segmentation_training.py
+docs/*TRAINING*.md
+docs/FREE_GPU_EXECUTION_*.md

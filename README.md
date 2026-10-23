@@ -150,7 +150,7 @@ Weights are not included in this repository. Install compatible inference depend
 
 ## Research and evaluation
 
-Dataset-specific Colab notebooks and training scripts are included. Datasets, checkpoints, and large training bundles are distributed separately under their respective access and licensing terms.
+This branch contains the application and its inference/preprocessing code, not the training workspace. Training notebooks, training runners, training queues, checkpoint-evaluation scripts, and training execution notes have been removed. Train models separately and supply compatible artifacts for inference. Datasets and checkpoints remain subject to their original access and licensing terms.
 
 - Preserve original annotations and source splits.
 - Check patient/group leakage separately from image-level evaluation.
@@ -166,8 +166,7 @@ Read the [measured-results report](reports/latest_measured_training_results.md) 
 backend/      FastAPI services, access policy, preprocessing, and tests
 frontend/     React application, role workspaces, themes, and UI tests
 ml/           Shared preprocessing code and configuration
-scripts/      Dataset audits, preparation, training, and evaluation tools
-colab/        Dataset-specific research notebooks
+scripts/      Dataset audits, preparation, and documentation tools
 docs/         Architecture, workflows, datasets, and implementation scope
 reports/      Selected aggregate measured-result reports
 pdfs/         Project documentation and document-generation scripts

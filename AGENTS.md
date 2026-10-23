@@ -6,3 +6,4 @@
 - This project is nested in an unrelated parent Git repository. Do not publish that parent's other projects or change its remote. Use the dedicated target checkout for publishing.
 - Before publishing, exclude credentials, environment secrets, local databases, user uploads, datasets, checkpoints, archives, caches and generated build artifacts. Review notebook outputs and documentation for secrets.
 - Training remains paused unless the user explicitly authorizes resuming it.
+- The published branch is application-only: do not reintroduce local training notebooks, training runners/queues, checkpoint evaluation scripts, or training execution notes during later source synchronization unless explicitly requested.
