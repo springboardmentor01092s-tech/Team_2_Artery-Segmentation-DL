@@ -1,0 +1,5 @@
+# Preserve source-manifest byte hashes across checkouts and archives.
+/train_segmentation.py -text
+/train_pretrained_vessel.py -text
+/train_volume_baseline.py -text
+/train_boxes.py -text
