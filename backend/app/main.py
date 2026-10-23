@@ -1886,7 +1886,7 @@ if frontend_dist.is_dir():
     if assets_dir.is_dir():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-    for static_name in ["favicon.ico", "favicon-48.png", "apple-touch-icon.png", "auth-7.avif", "corovision-heart-mark.png", "corovision-heart.png"]:
+    for static_name in ["favicon.ico", "favicon-48.png", "corovision-heart-favicon-20261014.png", "apple-touch-icon.png", "auth-7.avif", "corovision-heart-mark.png", "corovision-heart.png"]:
         file_path = frontend_dist / static_name
         if file_path.is_file():
             def make_static_endpoint(fp: Path):

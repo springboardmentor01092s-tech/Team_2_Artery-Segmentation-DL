@@ -114,7 +114,7 @@ def test_5_roles_permission_matrix():
         assert client.get(f"/api/cases/{c_doc}", headers=admin_hdr).status_code == 404
         assert client.post(f"/api/cases/{c_doc}/access", headers=doc_hdr,
                            json={"user_email_or_id": admin["email"], "access_level": "read"}).status_code == 201
-        assert client.get(f"/api/cases/{c_doc}/export", headers=admin_hdr).status_code == 403
+        assert client.get(f"/api/cases/{c_doc}/export", headers=admin_hdr).status_code == 200
         _, approver = make_user("operational-approver@test.org", "admin")
         assert client.post(f"/api/admin/users/{admin['id']}/operational-grant", headers=approver,
                            json={"permission": "analysis:export", "enabled": True,

@@ -46,22 +46,26 @@ def test_admin_operational_grants_cannot_be_self_approved_or_bypass_resources():
         target, target_headers = make_user("target-actions@example.org", "admin")
         _, approver = make_user("approver-actions@example.org", "admin")
         _, researcher = make_user("research-actions@example.org", "researcher")
-        assert client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-CASE"}).status_code == 403
+        # Administrators now include doctor operations by default; case scope remains enforced.
+        assert client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-DEFAULT"}).status_code == 201
         assert grant(client, target_headers, target["id"], "case:create").status_code == 403
         assert grant(client, approver, target["id"], "case:create").status_code == 200
         created = client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-CASE"})
         assert created.status_code == 201
         assert client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-CASE"}).status_code == 409
         case_id = created.json()["id"]
-        assert created.json()["permissions"]["can_upload"] is False
-        assert created.json()["permissions"]["can_run_analysis"] is False
+        assert created.json()["permissions"]["can_upload"] is True
+        assert created.json()["permissions"]["can_run_analysis"] is True
         assert client.post(f"/api/cases/{case_id}/images", headers=target_headers,
-                           files={"file": ("x.png", b"not-read-before-authorization", "image/png")}).status_code == 403
+                           files={"file": ("x.png", b"invalid-image", "image/png")}).status_code == 422
         assert grant(client, researcher, target["id"], "case:upload").status_code == 403
         assert grant(client, approver, target["id"], "case:upload").status_code == 200
         assert client.get(f"/api/cases/{case_id}", headers=target_headers).json()["permissions"]["can_upload"] is True
         assert grant(client, approver, target["id"], "case:create", False).status_code == 200
-        assert client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-CASE-2"}).status_code == 403
+        # Disabling a redundant conditional grant does not remove a role's default capabilities.
+        assert client.post("/api/cases", headers=target_headers, json={"case_code": "ADMIN-CASE-2"}).status_code == 201
+        foreign_case = client.post("/api/cases", headers=researcher, json={"case_code": "FOREIGN-CASE"}).json()["id"]
+        assert client.get(f"/api/cases/{foreign_case}", headers=target_headers).status_code == 404
 
 
 def test_role_changes_clear_old_operational_grants():

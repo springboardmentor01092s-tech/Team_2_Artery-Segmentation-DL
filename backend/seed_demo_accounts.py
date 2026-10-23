@@ -24,8 +24,7 @@ from app.security import hash_password
 HERE = Path(__file__).resolve().parent
 OUTPUT = HERE / "demo-credentials.json"
 ACCOUNTS = (
-    ("Radiologist / Clinician", "clinician", "radiologist_demo", "radiologist.demo@example.com", "Demo Radiologist"),
-    ("Doctor / Clinical Reviewer", "doctor", "doctor_demo", "doctor.demo@example.com", "Demo Doctor"),
+    ("Doctor", "doctor", "doctor_demo", "doctor.demo@example.com", "Demo Doctor"),
     ("Medical Researcher", "researcher", "researcher_demo", "researcher.demo@example.com", "Demo Researcher"),
     ("Data Scientist / ML Engineer", "ml_engineer", "mlengineer_demo", "mlengineer.demo@example.com", "Demo ML Engineer"),
     ("Technician / Data Operator", "technician", "technician_demo", "technician.demo@example.com", "Demo Technician"),
