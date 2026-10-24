@@ -29,10 +29,11 @@ python scripts/check_local.py
 
 The setup generates a private JWT secret once, keeps existing configuration unchanged, creates local storage directories, installs backend dependencies, and builds the frontend. Startup creates/migrates the local SQLite schema. Re-run setup after pulling frontend/dependency changes, then restart the application.
 
-## Accounts
+## Install trained models
 
-To restore the integrated artery and stenosis inference models, transfer
-`CoroVision_application_mask_models_v1.zip` separately, then run:
+To restore the integrated artery and stenosis inference models, download
+[`CoroVision_application_mask_models_v1.zip`](https://github.com/springboardmentor01092s-tech/Team_2_Artery-Segmentation-DL/releases/download/corovision-mask-models-v1/CoroVision_application_mask_models_v1.zip)
+from the [GitHub model release](https://github.com/springboardmentor01092s-tech/Team_2_Artery-Segmentation-DL/releases/tag/corovision-mask-models-v1), then run:
 
 ```bash
 python scripts/setup_local.py --with-ai --model-archive /path/to/CoroVision_application_mask_models_v1.zip --demo
@@ -44,8 +45,15 @@ already installed matching release. The archive SHA-256 is
 `bd780e66c7154038ee9e6c0e9e23582be82118e8944352717c4eea0752cc9b43`.
 The older three-model handoff archive is a different package and cannot substitute
 for this two-mask release. Git cloning alone does not install weights or training data.
+The ZIP is hosted as a release asset rather than stored in Git history. Download
+both the `lingareddy-dhanush` source branch and this asset for an inference setup;
+the release's automatic source archive is pinned to the original integration commit.
+Datasets and historical training artifacts are not required for application inference
+and remain a separate transfer if you intend to train models.
 These models return research predictions and raw scores; severity and clinical
 confidence remain unavailable without supporting validated measurements.
+
+## Accounts
 
 Register an account in the app, or optionally run `python scripts/setup_local.py --demo` to seed demo users. Generated passwords are saved only in ignored `backend/demo-credentials.json`. Automatic sharing with the demo team is off by default.
 

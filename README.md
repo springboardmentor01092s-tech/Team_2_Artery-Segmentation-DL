@@ -96,6 +96,12 @@ SQLite is the local default. PostgreSQL can be configured through `DATABASE_URL`
 
 ## Get started
 
+**Trained models:** download the [276 MB artery and stenosis model ZIP](https://github.com/springboardmentor01092s-tech/Team_2_Artery-Segmentation-DL/releases/download/corovision-mask-models-v1/CoroVision_application_mask_models_v1.zip)
+from the [model release](https://github.com/springboardmentor01092s-tech/Team_2_Artery-Segmentation-DL/releases/tag/corovision-mask-models-v1).
+Use the `lingareddy-dhanush` source branch and follow the
+[model installation steps](docs/FRESH_CLONE_SETUP.md#install-trained-models). Weights are a separate
+release download; cloning alone does not install them.
+
 **Recommended for a new laptop:** follow the [fresh-clone guide](docs/FRESH_CLONE_SETUP.md), or run these commands from the cloned repository root:
 
 ```bash
