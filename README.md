@@ -12,13 +12,29 @@ Upload scan -> Validation -> Normalization -> Noise reduction ->
 Contrast enhancement -> ROI extraction -> Model input -> Segmentation ->
 Stenosis detection -> Report
 
-## Milestone 
+## Progress
+Done:
 - React + FastAPI + SQLite project setup
 - JWT authentication with role-based access and audit logging
 - Case management (create, view, edit, delete)
 - Scan upload and 6-stage preprocessing pipeline
 - Design document (architecture, database schema, wireframes)
+- U-Net trained on ARCADE (syntax and stenosis tasks)
+
+In progress:
+- Artery segmentation in the app (Run segmentation button)
+
+Planned:
+- Stenosis detection and severity, explainable AI
+- Reports, testing, Docker and deployment
 
 ## Run locally
-Backend: cd backend, pip install -r requirements.txt, python -m uvicorn app.main:app --reload
-Frontend: cd frontend, npm install, npm run dev
+Backend:
+cd backend
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+
+Frontend:
+cd frontend
+npm install
+npm run dev
