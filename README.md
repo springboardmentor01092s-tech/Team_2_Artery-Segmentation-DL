@@ -12,7 +12,7 @@ Upload scan -> Validation -> Normalization -> Noise reduction ->
 Contrast enhancement -> ROI extraction -> Model input -> Segmentation ->
 Stenosis detection -> Report
 
-## Milestone 1 
+## Milestone 
 - React + FastAPI + SQLite project setup
 - JWT authentication with role-based access and audit logging
 - Case management (create, view, edit, delete)
