@@ -1,6 +1,12 @@
 venv/
+.venv/
 __pycache__/
+*.pyc
 artery.db
 data/
 eda_output/
 node_modules/
+backend/uploads/
+*.pt
+*.pth
+.env
