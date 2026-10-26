@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-10-23",
+  "as_of": "2026-10-26",
   "scope": "Development-exposed validation;historical test bindings preserved. Not independent final or clinical performance.",
   "tasks": [
     {
@@ -121,6 +121,24 @@
       "outcome": "baseline_retained_with_crossfit_voxel_score_improvement",
       "inference_connected": false,
       "research_voxel_score_improvement": true
+    },
+    {
+      "task_id": "dca_frozen_ensemble_20261026",
+      "title": "DCA frozen artery ensemble",
+      "validation_support": "20development frames",
+      "baseline_result": "Own model Dice0.783754; ARCADE model0.518347; equal-probability ensemble0.753075. EnsembleFP100612 vsown72655; rejected.",
+      "outcome": "rejected_ensemble_keep_individual_baselines_no_pooling_or_training",
+      "inference_connected": false,
+      "report_locations": "local_integration/20261026/RESULTS.md"
+    },
+    {
+      "task_id": "arcade_frozen_ensemble_20261026",
+      "title": "ARCADE frozen artery ensemble",
+      "validation_support": "200development frames",
+      "baseline_result": "Own model Dice0.827277; DCA model0.677952; equal-probability ensemble0.806036. EnsembleFN421430 vsown344760; rejected.",
+      "outcome": "rejected_ensemble_keep_individual_baselines_no_pooling_or_training",
+      "inference_connected": false,
+      "report_locations": "local_integration/20261026/RESULTS.md"
     }
   ],
   "calibration_studies": [
