@@ -52,6 +52,26 @@ def test_disconnected_lines_are_not_joined():
     assert result["centerline_length"] == pytest.approx(8.)
 
 
+def test_exported_graph_edges_reconstruct_world_length_without_duplicates():
+    affine = np.diag([.5, .7, 2., 1.])
+    result = analyze_volume_mask(line(), affine, spatial_unit="mm")
+    points = np.asarray(result["centerline_coordinates_xyz"])
+    edges = result["centerline_edges"]
+    assert len(edges) == 4
+    assert all(a < b for a, b in edges)
+    assert len({tuple(edge) for edge in edges}) == len(edges)
+    assert sum(np.linalg.norm(points[b] - points[a]) for a, b in edges) == pytest.approx(result["centerline_length"])
+
+
+def test_exported_graph_does_not_bridge_disconnected_structures():
+    mask = line(); mask[1, 1, 2:7] = True
+    result = analyze_volume_mask(mask)
+    points = result["centerline_indices_ijk"]
+    assert len(result["centerline_edges"]) == 8
+    assert all(points[a][0] == points[b][0] for a, b in result["centerline_edges"])
+    assert analyze_volume_mask(np.zeros((3, 3, 3), dtype=bool))["centerline_edges"] == []
+
+
 @pytest.mark.parametrize("mask", [np.ones((2, 2)), np.full((3, 3, 3), 2),
                                   np.full((3, 3, 3), np.nan)])
 def test_invalid_masks_are_rejected(mask):

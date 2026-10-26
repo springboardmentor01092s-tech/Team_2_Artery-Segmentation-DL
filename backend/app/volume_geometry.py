@@ -87,9 +87,14 @@ def analyze_volume_mask(mask, affine=None, *, spatial_unit=None, max_voxels=128*
     if any(np.take(binary, index, axis=axis).any() for axis in range(3) for index in (0, -1)):
         flags.append("mask_touches_boundary_measurements_may_be_clipped")
     world = [(axes @ np.array(point) + transform[:3, 3]).tolist() for point in points]
+    point_index = {point: index for index, point in enumerate(points)}
+    edges = [[point_index[point], point_index[other]]
+             for point in points for other in neighbors[point] if point < other]
     return dict(mask_voxels=int(binary.sum()), connected_components=int(components),
                 centerline_voxels=len(points), centerline_indices_ijk=[list(map(int, p)) for p in points],
                 centerline_coordinates_xyz=world, array_axis_convention="ijk_to_world_xyz",
+                centerline_edges=edges,
+                centerline_edge_convention="undirected_pairs_of_zero_based_centerline_point_indices",
                 centerline_length=length, length_unit=unit, endpoint_count=len(endpoints),
                 grouped_branch_points=int(branches),
                 mask_volume=float(binary.sum()*abs(np.linalg.det(axes))),
