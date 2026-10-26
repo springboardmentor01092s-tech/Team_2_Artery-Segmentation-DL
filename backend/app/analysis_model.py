@@ -178,7 +178,14 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
                             probability_map: np.ndarray | None = None,
                             threshold: float = 0.5) -> dict:
     """Describe 2D mask topology, approximate centerlines, and local mask widths."""
-    binary = postprocess_mask(mask)
+    values = np.asarray(mask)
+    if values.ndim != 2 or not values.size or not np.isfinite(values).all():
+        raise ValueError("mask must be a finite, nonempty 2D array")
+    if spacing_mm is not None:
+        spacing = np.asarray(spacing_mm, dtype=float)
+        if spacing.shape != (2,) or not np.isfinite(spacing).all() or np.any(spacing <= 0):
+            raise ValueError("spacing_mm must contain two finite positive axis spacings")
+    binary = postprocess_mask(values)
     probabilities = None if probability_map is None else np.asarray(probability_map, dtype=np.float32)
     if probabilities is not None and (probabilities.shape != binary.shape or not np.isfinite(probabilities).all()):
         raise ValueError("probability_map must be finite and match the binary mask shape")
@@ -188,7 +195,7 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
         raise ValueError("threshold must be between 0 and 1")
     skeleton = _skeletonize(binary)
     height, width = binary.shape
-    calibrated = bool(spacing_mm and len(spacing_mm) == 2 and all(value > 0 for value in spacing_mm))
+    calibrated = spacing_mm is not None
     unit = "mm" if calibrated else "px"
     sy, sx = spacing_mm if calibrated else (1.0, 1.0)
 
@@ -391,13 +398,14 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
                 max_tortuosity = ratio if max_tortuosity is None else max(max_tortuosity, ratio)
 
     # Estimate local diameter from each sampled skeleton point to mask boundary.
-    background = np.argwhere(~binary)
     sample_points = sorted(skeleton_points)[::max(1, len(skeleton_points) // 1500)] if skeleton_points else []
     diameters = []
-    if len(background):
+    if (~binary).any():
+        from scipy.ndimage import distance_transform_edt
+
+        radii = distance_transform_edt(binary, sampling=(sy, sx))
         for y, x in sample_points:
-            distances = np.hypot((background[:, 0] - y) * sy, (background[:, 1] - x) * sx)
-            radius = float(distances.min())
+            radius = float(radii[y, x])
             if radius > 0:
                 diameters.append(2 * radius)
 
@@ -456,8 +464,12 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
         "mask_pixels": mask_pixels, "centerline_pixels": total_skeleton_pixels,
         "centerline_length": round(centerline_length, 2), "diameter_unit": unit,
         "mean_diameter": round(float(np.mean(diameters)), 2) if diameters else None,
-        "minimum_diameter": round(float(np.percentile(diameters, 10)), 2) if diameters else None,
-        "maximum_diameter": round(float(np.percentile(diameters, 90)), 2) if diameters else None,
+        "minimum_diameter": round(float(np.min(diameters)), 2) if diameters else None,
+        "maximum_diameter": round(float(np.max(diameters)), 2) if diameters else None,
+        "diameter_p10": round(float(np.percentile(diameters, 10)), 2) if diameters else None,
+        "diameter_p90": round(float(np.percentile(diameters, 90)), 2) if diameters else None,
+        "diameter_method": "twice_centerline_distance_to_background_pixel_center",
+        "diameter_scope": "sampled_2d_mask_width_not_validated_lumen_or_stenosis_measurement",
         "diameter_cv": round(float(np.std(diameters) / np.mean(diameters)), 3) if diameters and np.mean(diameters) else None,
         "diameter_samples": len(diameters), "connected_components": len(components),
         "vessel_candidates": candidate_rows[:20], "boundary_pixels": int(boundary_mask.sum()),

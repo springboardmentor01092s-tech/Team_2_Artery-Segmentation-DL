@@ -71,3 +71,40 @@ def test_centerline_map_contains_mask_paths_and_graph_nodes(tmp_path):
     with Image.open(__import__("io").BytesIO(rendered)) as image:
         assert image.size == (256, 256)
         assert np.count_nonzero(np.asarray(image)) > 100
+
+
+@pytest.mark.parametrize("spacing", [(0.4, 0.7), None])
+def test_diameter_extrema_and_percentiles_match_independent_distance_reference(spacing):
+    from app.analysis_model import _skeletonize, postprocess_mask
+
+    mask = np.zeros((48, 48), dtype=bool)
+    mask[5:40, 20:27] = True
+    mask[18:30, 15:32] = True
+    binary = postprocess_mask(mask)
+    skeleton = sorted(map(tuple, np.argwhere(_skeletonize(binary))))
+    points = skeleton[::max(1, len(skeleton) // 1500)]
+    background = np.argwhere(~binary)
+    sy, sx = spacing or (1.0, 1.0)
+    widths = [2 * np.hypot((background[:, 0] - y) * sy,
+                          (background[:, 1] - x) * sx).min() for y, x in points]
+    result = analyze_vessel_geometry(mask, spacing)
+    assert result["minimum_diameter"] == round(float(np.min(widths)), 2)
+    assert result["maximum_diameter"] == round(float(np.max(widths)), 2)
+    assert result["mean_diameter"] == round(float(np.mean(widths)), 2)
+    assert result["diameter_p10"] == round(float(np.percentile(widths, 10)), 2)
+    assert result["diameter_p90"] == round(float(np.percentile(widths, 90)), 2)
+    assert result["diameter_unit"] == ("mm" if spacing else "px")
+
+
+@pytest.mark.parametrize("spacing", [(float("inf"), 1), (float("nan"), 1),
+                                     (0, 1), (-1, 1), (1,), (1, 2, 3)])
+def test_invalid_spacing_cannot_produce_calibrated_measurements(spacing):
+    with pytest.raises(ValueError, match="spacing_mm"):
+        analyze_vessel_geometry(_y_vessel(), spacing)
+
+
+@pytest.mark.parametrize("mask", [np.zeros((2, 2, 2)), np.zeros((0, 2)),
+                                  np.array([[float("nan")]])])
+def test_invalid_mask_cannot_produce_measurements(mask):
+    with pytest.raises(ValueError, match="mask"):
+        analyze_vessel_geometry(mask)
