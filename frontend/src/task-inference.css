@@ -1,0 +1,20 @@
+.task-inference{display:grid;gap:20px;min-width:0;border:1px solid hsl(var(--border));border-radius:16px;padding:24px;background:hsl(var(--card))}.task-inference h3,.task-inference h4,.task-inference p{margin:0;line-height:1.6}.task-inference form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.task-inference label{display:grid;gap:8px;font-size:.9rem;min-width:0}.task-inference select,.task-inference button{min-height:44px;border:1px solid hsl(var(--border));border-radius:9px;padding:10px 12px;background:hsl(var(--background));color:hsl(var(--foreground));font:inherit;max-width:100%}.task-inference button{cursor:pointer}.task-inference button:disabled{opacity:.5;cursor:default}.task-inference .task-confirm{display:flex;align-items:center;grid-column:1/-1}.task-inference input[type=checkbox]{width:18px;height:18px;flex-shrink:0}.task-inference img{width:min(100%,640px);height:auto;border-radius:12px}.task-inference code,.task-inference pre{overflow-wrap:anywhere;white-space:pre-wrap;font-size:.8rem}.task-inference pre{max-height:360px;overflow:auto}.task-inference details{padding:16px;border:1px solid hsl(var(--border));border-radius:10px}.task-artifacts{display:flex;gap:12px;flex-wrap:wrap}.task-inference button:focus-visible,.task-inference select:focus-visible{outline:2px solid currentColor;outline-offset:3px}@media(max-width:700px){.task-inference form{grid-template-columns:minmax(0,1fr)}.task-inference{padding:18px}}
+.app-shell .case-assets-layout { display: flex; flex-direction: column; gap: 24px; align-items: stretch; }
+.app-shell .case-assets-layout > * { width: 100%; min-width: 0; margin: 0; box-sizing: border-box; }
+.app-shell .case-assets-layout > .panel { order: 1; }
+.app-shell .case-assets-layout > .viewer { order: 2; }
+.app-shell .case-assets-layout > .task-inference { order: 3; }
+.app-shell .case-assets-layout > nav { order: 4; }
+.app-shell .case-assets-layout > .panel { padding: 28px; }
+.app-shell .case-assets-layout > .viewer > img { width: 100%; max-height: 560px; object-fit: contain; background: #111; }
+.app-shell .task-inference form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; width: 100%; max-width: none; margin: 0; }
+.app-shell .task-inference form > label { display: grid; min-width: 0; gap: 10px; margin: 0; align-content: start; }
+.app-shell .task-inference form select { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; height: 48px; text-overflow: ellipsis; }
+.app-shell .task-inference form > .task-confirm { display: flex; grid-column: 1 / -1; align-items: flex-start; gap: 12px; line-height: 1.6; }
+.app-shell .task-inference form > .task-confirm input { margin: 3px 0 0; }
+.app-shell .task-inference form > button { grid-column: 1 / -1; justify-self: start; margin: 0; min-height: 48px; }
+.app-shell .task-inference { padding: 28px; overflow-wrap: anywhere; }
+@media (max-width: 800px) {
+  .app-shell .task-inference form { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .case-assets-layout > .panel, .app-shell .case-assets-layout > .task-inference { padding: 18px; }
+}

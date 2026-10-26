@@ -1,16 +1,26 @@
-# Research workflow and authoritative outputs
+# End-to-end research workflow
 
-1. Authenticate through existing session/JWT APIs. Backend role/action grants and case access apply independently of visible UI controls.
-2. Clinician/researcher creates or selects an authorized research case, confirms pseudonymous metadata, anatomy, modality and task. Current inference accepts coronary XCA; CT/CTA/MRA remain volume preparation/export. Modality is operator-confirmed, not inferred by a validated classifier.
-3. Upload an eligible de-identified asset. API validates size, decoded content, dimensions and selection; stores UUID references privately, original hash and processing record. Multi-frame DICOM requires a frame; 3D data stays in the volume route. Selected frames are not automatically whole-study findings. Tag checks cannot rule out all identifiers or burned-in text.
-4. Preprocessing produces the recorded 512² preview, ROI/padding/resize transform and spacing if available. Optional enhancement is explicitly outside baseline performance validation. Original, preview and result coordinate frames are distinct.
-5. Request analysis using an approved compatible pinned release. Proposed persistent job endpoint returns an ID immediately, records pending/processing/completed/failed states, selected version and input hashes. Repeated submission of the same idempotency key returns its existing job; a new intentional run preserves previous results. Startup interruption must be explicit, never a silent retry of a possibly completed run.
-6. Artery mask and raw pixel scores come from the preserved artery checkpoint. Vessel graph/diameter/length consume that mask. Empty masks block meaningful vessel measurements. 2D measurements remain projection-dependent and tied to segmentation; px is not mm without spacing. Cross-sectional area is not inferred from projected 2D area.
-7. The compatible stenosis instance-mask model consumes its own image contract. Its existing architecture does not take centerlines or an artery mask as neural inputs; do not change it or pretend otherwise. Candidate-to-vessel association is a separate optional algorithm and remains unavailable without verification. Save candidate IDs, source category 26, masks/coordinates and raw scores; a candidate is not a confirmed lesion.
-8. Severity is conditional. This release lacks a validated candidate-local diameter/reference-segment protocol, so return `insufficient_evidence` with null diameters, percentage and category. Do not convert global diameter percentiles, model scores, mask area or CADICA strings into clinical severity. Human review is a separate record.
-9. Persist a versioned structured result with model hashes, input transforms, stage statuses, private artifact URLs, measurements, score meaning, warnings, evidence and review state. Large masks/float score arrays stay in authorized file storage. History binds to the saved event, not whichever model is active later.
-10. Deterministic explanation sections describe only that saved object. Every statement points to its stage/candidate/measurement/evidence field; missing values stay missing. Dataset-level validation is separate from current-image findings. No independent image interpretation or disease-probability generation is requested from an LLM.
-11. UI displays progress, original/preview, overlays, centerline, candidates, units, quality warnings, limitations and explanation. Researchers compare immutable runs/export permitted data; clinicians review/comment and submit/approve report revisions according to existing grants. Reports retain model/version and human-versus-algorithm distinctions.
-12. ML engineers inspect metadata/evidence and submit evaluated candidates through a separately governed workflow. Interactive uploads never start training. Administrators manage accounts/grants/configuration and audit evidence; neither role bypasses case ownership or silently changes historical predictions.
+Login → authorized case → validated upload → preview and metadata confirmation →
+explicit Run analysis / queued job → pinned model input → artery segmentation →
+conditional mask-derived vessel geometry + compatible image-based stenosis model →
+candidate coordinate mapping → structured result and deterministic explanation →
+authenticated overlays/measurements → human review and permitted export.
 
-Current audited state versus planned additions is in INTEGRATION_AUDIT.md and INTEGRATION_PLAN.md. Acceptance requires tests and representative de-identified manual review, including the other laptop; source presence alone does not establish completion.
+Inference and training remain separate. Upload does not train or silently start
+analysis before metadata confirmation. AnalysisJob records pending/processing/
+completed/failed; AnalysisEvent preserves prior results. Worker rechecks access,
+model version and saved-input digest. New model candidates require independent
+review and never auto-promote.
+
+Current 2D detector consumes its image input, not centerline tensors. Vessel
+association remains not_assessed. Severity returns insufficient_evidence without
+validated candidate-local/reference measurements. Missing spacing means pixel
+units, never invented millimetres. No detection does not establish a healthy case.
+
+CT/CTA/MRA uploads remain preparation-only for inference until a compatible,
+reviewed volumetric adapter/model contract is implemented and verified. Do not
+silently route a volume or slice into the current 2D coronary checkpoint.
+
+Model evaluation views use dataset/split-labelled records, never per-image
+confidence claims. The explanation is generated from persisted structured fields;
+no external language model independently diagnoses the upload.

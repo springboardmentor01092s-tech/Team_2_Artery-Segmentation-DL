@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { apiUrl } from "./api";
 import { Button } from "./components/prismui/button";
+import VolumeInference from './VolumeInference';
 
-export default function VolumeIntake({ caseId, token }: { caseId: string; token: string }) {
+export default function VolumeIntake({ caseId, token, inferenceEligible = false, readOnly = false,anatomy='coronary' }: { caseId: string; token: string; inferenceEligible?: boolean; readOnly?: boolean;anatomy?:string }) {
   const [source, setSource] = useState<File | null>(null);
   const [mask, setMask] = useState<File | null>(null);
   const [reference, setReference] = useState<File | null>(null);
@@ -46,6 +47,8 @@ export default function VolumeIntake({ caseId, token }: { caseId: string; token:
   }
 
   return <section className="intake-pipeline">
+    {inferenceEligible && <VolumeInference caseId={caseId} token={token} readOnly={readOnly} anatomy={anatomy} />}
+    {!readOnly && <details><summary>Optional generic volume preparation and export (not model inference)</summary>
     <h3>3D volume preparation · Research only</h3>
     <p>Separate from 2D X-ray inference. NIfTI files must be de-identified, in millimetres, and contain at most 32 million voxels. No 3D prediction or training starts here.</p>
     <form className="case-details-form" onSubmit={prepare}>
@@ -64,6 +67,6 @@ export default function VolumeIntake({ caseId, token }: { caseId: string; token:
       <Button type="submit" disabled={!source || busy}>{busy ? "Preparing volume…" : "Prepare and download volume"}</Button>
       {error && <p className="message error" role="alert">{error}</p>}
       {message && <p className="message success" role="status">{message}</p>}
-    </form>
+    </form></details>}
   </section>;
 }

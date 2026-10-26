@@ -3,6 +3,8 @@ from sqlalchemy import text
 
 
 ADDITIONS = {
+    'volume_analyses': {'input_kind': "VARCHAR(32) DEFAULT 'unspecified'",'model_key':"VARCHAR(64) DEFAULT 'imagecas'"},
+    "clinical_reviews": {"analysis_event_id": "VARCHAR(36)", "image_id": "VARCHAR(36)"},
     "cases": {
         "modalities_json": "TEXT",
         "intended_tasks_json": "TEXT",
@@ -48,6 +50,8 @@ def upgrade_local_schema(engine):
     with engine.begin() as connection:
         for table, columns in ADDITIONS.items():
             existing = {row[1] for row in connection.execute(text(f"PRAGMA table_info({table})"))}
+            if not existing:
+                continue  # Tables absent in older partial schemas are created by metadata.create_all.
             new_workflow_column = table == "cases" and "workflow_status" not in existing
             new_processing_column = table == "cases" and "processing_status" not in existing
             new_task_column = table == "cases" and "intended_task" not in existing

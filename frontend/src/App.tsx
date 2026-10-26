@@ -20,11 +20,15 @@ import ModelWorkspace from "./ModelWorkspace";
 import AnalysisWorkbench from "./AnalysisWorkbench";
 import ReportsPage from "./ReportsPage";
 import VolumeIntake from "./VolumeIntake";
+import VolumeInference from './VolumeInference';
+import TaskInference from './TaskInference';
 import NotificationBell from "./NotificationBell";
 import Alert1 from "./components/watermelon/alert-1";
 import ViewerWorkspace from "./ViewerWorkspace";
 import RoleWorkspace from "./RoleWorkspace";
 import ReviewQueue from "./ReviewQueue";
+import ReviewAssessment from "./ReviewAssessment";
+import { runForImage } from './reviewEvidence';
 import ScreenShareSelect from "./ScreenShareSelect";
 import { CreateNewDisclosure } from "./components/watermelon/create-new-disclosure";
 import { standardPipelines, type StandardPipeline } from "./preprocessingPipelines";
@@ -43,10 +47,12 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => { restoreUserDesign(user?.id); }, [user?.id]);
   const [activeView, setActiveView] = useState<SidebarView>("overview");
+  const [reviewWorkspace, setReviewWorkspace] = useState(false);
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [selectedImageId, setSelectedImageId] = useState("");
   const [preview, setPreview] = useState("");
+  const [previewOwner, setPreviewOwner] = useState('');
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [overlay, setOverlay] = useState("");
@@ -115,8 +121,10 @@ function App() {
   activeTokenRef.current = token;
   const selected = cases.find((item) => item.id === selectedId);
   const selectedImage = selected?.images.find((item) => item.id === selectedImageId) || selected?.images.at(-1);
+  const selectedAnalysis = runForImage(selectedImage?.id, analysis);
   const selectedImageRef = useRef(selectedImage?.id);
   selectedImageRef.current = selectedImage?.id;
+  const overlayRequest = useRef(0);
   const matchingCases = cases.filter((item) =>
     (caseStatus === "all" || item.status === caseStatus) &&
     (caseModality === "all" || item.modality === caseModality) &&
@@ -256,7 +264,7 @@ function App() {
       })
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
-        if (active) setPreview(objectUrl);
+        if (active) { setPreviewOwner(item.id); setPreview(objectUrl); }
       })
       .catch((cause: Error) => setError(cause.message));
     return () => {
@@ -288,7 +296,7 @@ function App() {
         if (!active) return;
         setAnalysis(result);
         const response = await fetch(apiUrl(result.overlay_url), { headers: { Authorization: `Bearer ${token}` } });
-        if (!response.ok) throw new Error("Analysis overlay unavailable");
+        if (!response.ok) { if (active) setOverlay(''); return; }
         objectUrl = URL.createObjectURL(await response.blob());
         if (active) setOverlay(objectUrl);
       })
@@ -297,14 +305,17 @@ function App() {
   }, [selectedImage?.id, selectedImage?.latest_analysis_id, token]);
 
   async function showAnalysis(result: AnalysisResult) {
+    if (selectedImageRef.current !== result.image_id) return;
+    const sequence = ++overlayRequest.current;
+    setAnalysis(result);
+    setOverlay(previous => { if (previous) URL.revokeObjectURL(previous); return ''; });
     setError("");
     try {
       const response = await fetch(apiUrl(result.overlay_url), { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error("Analysis overlay unavailable");
-      if (selectedImageRef.current !== result.image_id) return;
       const objectUrl = URL.createObjectURL(await response.blob());
+      if (selectedImageRef.current !== result.image_id || sequence !== overlayRequest.current) { URL.revokeObjectURL(objectUrl); return; }
       setOverlay((previous) => { if (previous) URL.revokeObjectURL(previous); return objectUrl; });
-      setAnalysis(result);
     } catch (cause) { setError((cause as Error).message); }
   }
 
@@ -583,10 +594,9 @@ function App() {
         <Button type="button" variant="outline" className="wm-social-button" disabled={!capabilities.google} onClick={() => window.location.assign(apiUrl("/api/auth/oauth/google/start"))}>
           <GoogleLogo /> Continue with Google
         </Button>
-        <Button type="button" variant="outline" className="wm-social-button" disabled aria-describedby="institutional-sso-help">
+        <Button type="button" variant="outline" className="wm-social-button" disabled title="Institutional SSO is not configured">
           <Building2 className="social-icon" aria-hidden="true" /> Hospital / University SSO
         </Button>
-        <p id="institutional-sso-help" className="wm-auth-help">Single sign-on (SSO) lets you use your university or hospital account. Not yet available: an administrator must connect your institution’s identity provider. Institutional sign-in does not automatically grant clinical or administrator access.</p>
         {!capabilities.google && <p className="wm-auth-help">Google sign-in is unavailable until OAuth credentials are configured.</p>}
       </div>
     ) : undefined;
@@ -652,13 +662,6 @@ function App() {
             <Button className="wm-auth-submit" disabled={busy}>{busy ? "Please wait…" : registering ? "Create account" : "Sign in"}</Button>
           </form>
         )}
-        {!registering && !resetting && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname) && demoAccounts.length > 0 &&
-          <section aria-label="Local demo accounts" className="mt-6 space-y-3">
-            <p className="caption">Local demonstration accounts · choose a workspace</p>
-            <div className="flex flex-wrap gap-2">{demoAccounts.filter((account) => account.email.endsWith(".demo@example.com")).map((account) =>
-              <Button key={account.id} type="button" variant="outline" onClick={() => switchAccount(account)}>{account.label || account.role.replaceAll("_", " ")}</Button>
-            )}</div>
-          </section>}
       </Auth7>
       </>
     );
@@ -741,11 +744,24 @@ function App() {
             />
           )}
           {activeView === "models" && canViewModels(user.role) && <ModelWorkspace token={token} />}
-          {activeView === "analysis" && canReadCases(user.role) && <><>{error && <Alert1 tone="error" title="Action could not be completed" onDismiss={() => setError("")}>{error}</Alert1>}{notice && <Alert1 tone="success" title="Update completed" onDismiss={() => setNotice("")}>{notice}</Alert1>}</><AnalysisWorkbench token={token} cases={cases} selectedCase={selected} selectedImage={selectedImage} processedPreview={preview} overlay={overlay} analysis={analysis} history={history} modelsReady={modelsReady} analysisBusy={analysisBusy} jobStatus={analysisJob?.status} canRunAnalysis={selected?.permissions?.can_run_analysis ?? canCreateCases(user.role)} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} /></>}
-          {activeView === "reports" && canReadCases(user.role) && <ReportsPage token={token} role={user.role} cases={cases} selectedCase={selected} selectedImage={selectedImage} analysis={analysis} preview={preview} overlay={overlay} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onAnalysis={() => setActiveView("analysis")} />}
+          {(activeView === "analysis" || activeView === 'reviews' && reviewWorkspace) && canReadCases(user.role) && <>
+            {error && <Alert1 tone="error" title="Action could not be completed" onDismiss={() => setError("")}>{error}</Alert1>}
+            {notice && <Alert1 tone="success" title="Update completed" onDismiss={() => setNotice("")}>{notice}</Alert1>}
+            {activeView === 'reviews' && <Button variant="outline" onClick={() => setReviewWorkspace(false)}>Back to review queue</Button>}
+            <AnalysisWorkbench onImageReview={() => setActiveView('analysis')} reviewMode={activeView === 'reviews'}
+              assessment={activeView === 'reviews' && selected ? <ReviewAssessment key={`${selected.id}:${analysis?.id}`} token={token} role={user.role} caseRecord={selected} analysis={analysis?.image_id === selectedImage?.id ? analysis : null} onSaved={updated => setCases(items => items.map(c => c.id === updated.id ? updated : c))} /> : undefined}
+              onReview={selected?.permissions?.can_review ? () => { setReviewWorkspace(true); setActiveView('reviews'); } : undefined}
+              token={token} cases={cases} selectedCase={selected} selectedImage={selectedImage} processedPreview={previewOwner === selectedImage?.id ? preview : ''}
+              overlay={selectedAnalysis ? overlay : ''} analysis={selectedAnalysis}
+              history={history.filter(r => r.image_id === selectedImage?.id)} modelsReady={modelsReady} analysisBusy={analysisBusy}
+              jobStatus={analysisJob?.status} canRunAnalysis={selected?.permissions?.can_run_analysis ?? canCreateCases(user.role)}
+              onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId}
+              onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} />
+          </>}
+          {activeView === "reports" && canReadCases(user.role) && <ReportsPage token={token} role={user.role} cases={cases} selectedCase={selected} selectedImage={selectedImage} analysis={analysis?.image_id === selectedImage?.id ? analysis : null} history={history.filter(r => r.image_id === selectedImage?.id)} onSelectAnalysis={showAnalysis} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onAnalysis={() => setActiveView("analysis")} />}
           {activeView === "account" && <AccountPanel token={token} user={user} onUser={setUser} onLogout={clearSession} />}
           {(["admin", "permissions", "access", "audit"] as string[]).includes(activeView) && user?.role === "admin" && <AdminPanel key={activeView} section={activeView === "admin" ? "users" : activeView as "permissions" | "access" | "audit"} token={token} currentUser={user} />}
-          {activeView === "reviews" && (user.role === "doctor" || user.role === "clinician" || user.role === "admin") && <ReviewQueue cases={cases} onOpen={id => { setSelectedId(id); setCaseSection("reviews"); setActiveView("cases"); }} />}
+          {activeView === "reviews" && !reviewWorkspace && (user.role === "doctor" || user.role === "clinician" || user.role === "admin") && <ReviewQueue cases={cases} onOpen={id => { setSelectedId(id); setSelectedImageId(''); setReviewWorkspace(true); }} />}
           {activeView === "cases" && (newCaseOpen || caseFinderOpen) && canReadCases(user.role) && caseActionsPage}
           {(activeView === "cases" || activeView === "uploads") && !(activeView === "cases" && (newCaseOpen || caseFinderOpen)) && canReadCases(user.role) && (
           <>
@@ -759,7 +775,7 @@ function App() {
           {!selected ? (
             <div className="placeholder">{user.role === "viewer" ? "Select an assigned case from the sidebar to view." : "Create a de-identified case to upload an angiography image."}</div>
           ) : (
-            <div className="analysis-grid">
+            <div className={`analysis-grid ${caseSection === 'assets' ? 'case-assets-layout' : ''}`}>
               {caseSection === "overview" && <CaseWorkflow caseRecord={selected} token={token} role={user.role}
                 onUpdated={(updated) => setCases((items) => items.map((item) => item.id === updated.id ? updated : item))}
                 onDeleted={(id) => { setCases((items) => items.filter((item) => item.id !== id)); setSelectedId(""); setSelectedImageId(""); setAnalysis(null); setOverlay(""); setActiveView("overview"); }}
@@ -771,21 +787,22 @@ function App() {
                 onSaved={(updated) => setCases((items) => items.map((item) => item.id === updated.id ? updated : item))} />}
               {caseSection === "assets" && <>
               {selected.permissions?.can_upload ?? user.role !== "viewer" ? (
-                <Card className="panel">
-                  <h3>Upload image</h3>
-                  <p className="muted">CoroVision AI · {selected.modality === "XCA" ? "Image intake and preprocessing" : "Separate research volume preparation"}</p>
+                <Card className={`panel ${selected.modality !== 'XCA' ? 'volume-assets-panel' : ''}`}>
+                  <h3>{selected.modality === 'XCA' ? 'Upload image' : '3D volume workspace'}</h3>
+                  <p className="muted">CoroVision AI · {selected.modality === "XCA" ? "Image intake and preprocessing" : "Separate research volume workflow"}</p>
                   <fieldset className="upload-mode-picker">
                     <legend>What are you uploading?</legend>
-                    <button type="button" className={uploadMode === "inference" ? "active" : ""} onClick={() => setUploadMode("inference")}><strong>{selected.modality === "XCA" ? "Case image preparation" : "Volume preparation export"}</strong><small>{selected.modality === "XCA" ? "De-identified coronary angiography frames" : "No compatible volume inference model is connected"}</small></button>
+                    <button type="button" className={uploadMode === "inference" ? "active" : ""} onClick={() => setUploadMode("inference")}><strong>{selected.modality === "XCA" ? "Case image preparation" : "Research volume workflow"}</strong><small>{selected.modality === "XCA" ? "De-identified coronary angiography frames" : selected.anatomy === 'aorta' && ['CT', 'CTA'].includes(selected.modality) ? 'Pinned AortaSeg 3D research segmentation' : selected.modality === 'CTA' && selected.anatomy === 'coronary' ? 'Pinned ImageCAS and ImageCAS-X 3D research segmentation' : 'Preparation only; no compatible inference model'}</small></button>
                     {(user.role === "researcher" || user.role === "admin") && <button type="button" className={uploadMode === "dataset" ? "active" : ""} onClick={() => setUploadMode("dataset")}><strong>Research dataset</strong><small>Images paired with annotations for training and evaluation</small></button>}
                   </fieldset>
-                  {["CT", "CTA", "MRI", "MRA"].includes(selected.modality) && (user.role === "researcher" || user.role === "admin") ? <VolumeIntake key={selected.id} caseId={selected.id} token={token} /> : uploadMode === "dataset" ? <div className="dataset-intake-note">
+                  {selected.modality !== 'XCA' ? <VolumeIntake key={selected.id} caseId={selected.id} token={token} readOnly={user.role !== 'researcher' && user.role !== 'admin'} anatomy={selected.anatomy} inferenceEligible={(selected.anatomy==='coronary'&&(selected.modalities||[selected.modality]).includes('CTA'))||(selected.anatomy==='aorta'&&(selected.modalities||[selected.modality]).some(m=>m==='CT'||m==='CTA'))} /> : uploadMode === "dataset" ? <div className="dataset-intake-note">
                     <h4>ARCADE research dataset</h4>
                     <p>Preserve the official <strong>syntax</strong> and <strong>stenosis</strong> tasks and their train, validation, and test splits. Keep each task’s image files paired with its own COCO annotation JSON and class schema.</p>
                     <p>Dataset annotation conversion, split checks, duplicate auditing, and preprocessing use the ARCADE dataset pipeline. The case uploader below is for inference images and must not be used to turn annotation files into case images.</p>
                     <code>python3 -m ml.preprocessing.run_preprocessing --data-root arcade --output-root data/processed/arcade</code>
                     <Button type="button" variant="outline" onClick={() => setActiveView("models")}>Open model evaluation</Button>
                   </div> : <>
+                  {selected.anatomy === 'coronary' && selected.modalities?.includes('CTA') && <details><summary>Separate coronary CTA volume workflow</summary><VolumeIntake caseId={selected.id} token={token} inferenceEligible readOnly={user.role !== 'researcher' && user.role !== 'admin'} /></details>}
                   <ol className="processing-stepper" aria-label="Image intake steps">
                     <li className={files.length ? "complete" : "active"}><span>1</span><div><strong>Select</strong><small>Images and options</small></div></li>
                     <li className={uploadProgress ? "active" : selected.images.length ? "complete" : ""}><span>2</span><div><strong>Validate</strong><small>Check and prepare</small></div></li>
@@ -835,6 +852,7 @@ function App() {
                 <Card className="panel">
                   <div className="viewer-heading"><h3>Study Intake</h3><span>Read-only</span></div>
                   <p className="muted">This assignment does not allow image uploads. Upload requires case ownership or edit access and a role with upload permission.</p>
+                  {((selected.anatomy==='coronary'&&(selected.modalities||[selected.modality]).includes('CTA'))||(selected.anatomy==='aorta'&&(selected.modalities||[selected.modality]).some(m=>m==='CT'||m==='CTA'))) && <VolumeInference caseId={selected.id} token={token} anatomy={selected.anatomy} readOnly />}
                   <div className="metadata">
                     <div><span>Modality</span><strong>{selected.modality}</strong></div>
                     <div><span>Status</span><strong>{selected.status}</strong></div>
@@ -842,15 +860,17 @@ function App() {
                   </div>
                 </Card>
               )}
-              <Card className="panel viewer">
+              {selected.modality === 'XCA' && <Card className="panel viewer">
                 <div className="viewer-heading"><h3>Step 3 of 3 · Quality check</h3><span>512 × 512</span></div>
                 {selected.images.length > 1 && <label className="image-picker" htmlFor="case-image">Image<ScreenShareSelect id="case-image" value={selectedImage?.id || ""} onChange={(event) => setSelectedImageId(event.target.value)}>{selected.images.map((item) => <option key={item.id} value={item.id}>{item.original_name} · {item.id.slice(0, 8)}</option>)}</ScreenShareSelect></label>}
                 {preview ? <img src={preview} alt={`Processed preview for case ${selected.case_code}`} /> : <div className="image-empty">No images uploaded for this case yet.</div>}
                 {selectedImage && <><p className="caption">Source: {selectedImage.original_name} · Original dimensions: {selectedImage.width} × {selectedImage.height} · Source spacing: {selectedImage.spacing_mm || "unavailable"}{selectedImage.processed_spacing_mm ? ` · Processed content spacing: ${selectedImage.processed_spacing_mm} mm` : ""}</p>
                   <details className="preprocessing-steps"><summary>Preprocessing record · {selectedImage.processing_record?.pipeline_version || "legacy"}</summary><p>Profile: {selectedImage.processing_record?.profile || "standard"} · Pipeline: {selectedImage.processing_record?.standard_pipeline || "custom / legacy"} · Denoising: {selectedImage.processing_record?.options?.denoise ? "on" : "off"} · Contrast enhancement: {selectedImage.processing_record?.options?.contrast_enhancement ? "on" : "off"}</p><ol>{(selectedImage.preprocessing || []).map((step) => <li key={step}>{step.replaceAll("_", " ")}</li>)}</ol>{selectedImage.processing_record?.warnings?.map((warning) => <Alert1 tone="warning" announce={false} title="Preprocessing warning" key={warning}>{warning.replaceAll("_", " ")}</Alert1>)}<p>The trained model applies its documented 3×3 median and clipped autocontrast input transform at inference. Compare model overlays with the preserved original before interpreting results.</p>{selectedImage.roi_box && <p>ROI: {selectedImage.roi_box}</p>}{selectedImage.frame_index !== null && <p>DICOM frame index: {selectedImage.frame_index}</p>}{selectedImage.page_index != null && <p>PDF page: {selectedImage.page_index + 1}</p>}</details></>}
-              </Card>
+              </Card>}
               </>}
-              {caseSection === "history" && !selectedImage && <Card className="panel"><h3>No analysis history yet</h3><p>Prepare a supported image first. Only saved results appear here; a prepared volume is not an analysis result.</p></Card>}
+              {caseSection === 'history' && ((selected.anatomy==='coronary'&&(selected.modalities||[selected.modality]).includes('CTA'))||(selected.anatomy==='aorta'&&(selected.modalities||[selected.modality]).some(m=>m==='CT'||m==='CTA'))) && <VolumeInference caseId={selected.id} token={token} anatomy={selected.anatomy} readOnly />}
+              {caseSection === 'assets' && selected.anatomy==='coronary' && (selected.modalities||[selected.modality]).includes('XCA') && <TaskInference key={selected.id+':tasks'} caseId={selected.id} token={token} images={selected.images} canRun={selected.permissions?.can_run_analysis??false}/>}
+              {caseSection === "history" && !selectedImage && selected.modality === 'XCA' && <Card className="panel"><h3>No 2D analysis history yet</h3><p>Prepare a supported 2D image first. 3D results, when available, are listed separately.</p></Card>}
               {caseSection === "history" && selectedImage && <Card className="panel analysis-panel">
                 <div className="viewer-heading"><h3>AI vessel analysis</h3><span>Research only</span></div>
                 <p className="caption">Selected source: {selectedImage.original_name}. Choose a different image under Assets & preparation to inspect its history.</p>

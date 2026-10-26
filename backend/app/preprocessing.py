@@ -28,11 +28,22 @@ class InvalidImage(ValueError):
     pass
 
 
-def content_geometry(width, height, roi_box=None):
+def content_geometry(width, height, roi_box=None, model_resize=False):
     """Record resize/padding geometry using the same aspect rule as Pillow."""
     crop_width = roi_box[2]-roi_box[0] if roi_box else width
     crop_height = roi_box[3]-roi_box[1] if roi_box else height
     out_width, out_height = crop_width, crop_height
+    if model_resize:
+        if crop_width > crop_height:
+            out_width, out_height = TARGET_SIZE, max(1, round(crop_height / crop_width * TARGET_SIZE))
+        elif crop_height > crop_width:
+            out_width, out_height = max(1, round(crop_width / crop_height * TARGET_SIZE)), TARGET_SIZE
+        else:
+            out_width = out_height = TARGET_SIZE
+        return {"content_size_xy": [out_width, out_height],
+                "padding_left_top_xy": [round((TARGET_SIZE-out_width)/2), round((TARGET_SIZE-out_height)/2)],
+                "source_roi_origin_xy": list(roi_box[:2]) if roi_box else [0, 0],
+                "source_pixels_per_content_pixel_xy": [crop_width/out_width, crop_height/out_height]}
     if max(crop_width, crop_height) > TARGET_SIZE:
         aspect = crop_width/crop_height
         if aspect <= 1:
@@ -52,7 +63,8 @@ def content_geometry(width, height, roi_box=None):
 def prepare_image(raw: bytes, filename: str, roi_box: tuple[int, int, int, int] | None = None,
                   frame_index: int | None = None, page_index: int | None = None,
                   denoise: bool = False, enhance: bool = False,
-                  processing_steps: list[str] | None = None) -> tuple[bytes, int, int, str, str | None]:
+                  processing_steps: list[str] | None = None,
+                  model_resize: bool = False) -> tuple[bytes, int, int, str, str | None]:
     """Return a 512px padded grayscale PNG, original dimensions, media type, spacing."""
     spacing = None
     if filename.lower().endswith((".dcm", ".dicom")):
@@ -185,6 +197,13 @@ def prepare_image(raw: bytes, filename: str, roi_box: tuple[int, int, int, int] 
         img = img.crop(roi_box)
         if processing_steps is not None:
             processing_steps.append("roi_crop")
+    if model_resize:
+        canvas = ImageOps.pad(img, (TARGET_SIZE, TARGET_SIZE), method=PILImage.Resampling.BILINEAR)
+        if processing_steps is not None:
+            processing_steps.extend(["preserved_model_bilinear_resize_and_pad", "save_lossless_png_preview"])
+        out = BytesIO()
+        canvas.save(out, format="PNG")
+        return out.getvalue(), width, height, media_type, spacing
     img.thumbnail((TARGET_SIZE, TARGET_SIZE), PILImage.Resampling.LANCZOS)
     if processing_steps is not None:
         processing_steps.extend(["aspect_preserving_resize", "512x512_padding", "save_lossless_png_preview"])
@@ -196,7 +215,7 @@ def prepare_image(raw: bytes, filename: str, roi_box: tuple[int, int, int, int] 
 
 
 def processed_spacing_mm(spacing: str | None, width: int, height: int,
-                         roi_box: tuple[int, int, int, int] | None) -> str | None:
+                         roi_box: tuple[int, int, int, int] | None, model_resize=False) -> str | None:
     """Preserve physical spacing for the unpadded, resized 2D content."""
     if not spacing:
         return None
@@ -206,7 +225,7 @@ def processed_spacing_mm(spacing: str | None, width: int, height: int,
         crop_height = roi_box[3] - roi_box[1] if roi_box else height
         if not np.isfinite([row_mm, col_mm]).all() or min(row_mm, col_mm) <= 0:
             return None
-        resized_width, resized_height = content_geometry(width, height, roi_box)["content_size_xy"]
+        resized_width, resized_height = content_geometry(width, height, roi_box, model_resize)["content_size_xy"]
         return f"{row_mm * crop_height / resized_height:.8g},{col_mm * crop_width / resized_width:.8g}"
     except (TypeError, ValueError, ZeroDivisionError):
         return None

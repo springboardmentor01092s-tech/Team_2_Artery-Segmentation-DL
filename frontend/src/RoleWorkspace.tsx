@@ -54,7 +54,7 @@ const ml: Module[] = [
   moduleItem("Detection & Severity Experiments", "Recorded stenosis-mask experiments are available; automated severity is not validated.", Crosshair, "models"),
   moduleItem("Severity Model Experiments", "Severity-labelled data and validated measurement methods are required before severity training can be enabled.", Gauge, undefined, "Validated severity workflow unavailable"),
   moduleItem("Explainability Tests", "Automated explanation-fidelity and artifact tests still need an experiment workflow.", Sparkles, undefined, "Not implemented"),
-  moduleItem("Deployment Candidates", "Candidate submission and approval gates are not implemented. ML engineers cannot activate models.", Rocket, undefined, "Approval workflow required"),
+  moduleItem("Deployment Candidates", "Import experimental candidates and submit them for independent administrator review. Approval never activates a checkpoint.", Rocket, "models"),
   moduleItem("Experiment Logs & Reports", "Inspect the experiments and reports recorded in the model workspace.", ScrollText, "models"),
 ];
 const admin: Module[] = [
@@ -76,7 +76,7 @@ export default function RoleWorkspace({ role, onOpen }: { role: string; onOpen: 
   const doctorModules = [...clinical, ...generalClinical.filter(item => ["Patient / Case Overview", "Case Follow-up"].includes(item.title))];
   const modules = role === "admin" ? [...admin, ...doctorModules] : role === "ml_engineer" ? ml : role === "technician" ? preparation : doctor ? doctorModules : research;
   const Icon = role === "admin" ? ShieldCheck : role === "ml_engineer" ? Cpu : role === "technician" ? ClipboardCheck : doctor ? Stethoscope : FlaskConical;
-  const title = role === "admin" ? "System governance" : role === "ml_engineer" ? "Model lifecycle & evaluation" : role === "technician" ? "Image preparation & quality" : doctor ? "Doctor workspace" : "Research engines & projects";
+  const title = role === "admin" ? "System governance" : role === "ml_engineer" ? "Model lifecycle & evaluation" : role === "technician" ? "Image preparation & quality" : doctor ? (role === "clinician" ? "Clinician workspace" : "Doctor workspace") : "Research engines & projects";
   return <section className="role-workspace" aria-labelledby="role-workspace-title">
     <div className="role-workspace-heading"><Icon size={28} aria-hidden="true" /><div>{role === "admin" || role === "ml_engineer" ? <h1 id="role-workspace-title">{title}</h1> : <h2 id="role-workspace-title">{title}</h2>}<p className="muted">Role-specific tools. Every case action still requires server-side authorization. Unconnected capabilities are explicitly marked.</p></div></div>
     <div className="role-module-grid">{modules.map(({ title: name, description, icon: ModuleIcon, view, status }) => <Card className="panel role-module" key={name}>

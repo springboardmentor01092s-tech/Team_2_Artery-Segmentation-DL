@@ -79,7 +79,7 @@ export default function OverviewPanel({
   const isViewer = user.role === "viewer";
 
   const roleTitle = isDoctor
-    ? "Doctor / Clinical Reviewer"
+    ? (user.role === "clinician" ? "Clinician" : "Doctor")
     : isTechnician
     ? "Technician / Data Operator"
     : isResearcher

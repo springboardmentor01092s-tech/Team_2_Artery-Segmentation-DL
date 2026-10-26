@@ -1,0 +1,93 @@
+/* Layout-only finishing layer, scoped to the saved-analysis workflow. */
+.app-shell .volume-inference { display:grid; gap:24px; min-width:0; padding:24px; border:1px solid var(--theme-line); border-radius:16px; background:var(--theme-surface); margin-bottom:24px; }
+.app-shell .volume-assets-panel, .app-shell .analysis-grid > .volume-inference { grid-column:1 / -1; }
+.app-shell .volume-assets-panel .upload-mode-picker { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:700px) { .app-shell .volume-assets-panel .upload-mode-picker { grid-template-columns:1fr; } }
+.app-shell .volume-inference :is(header,form,.volume-saved-results) { display:grid; gap:16px; min-width:0; }
+.app-shell .volume-inference :is(p,h3,h4,figure) { margin:0; line-height:1.6; overflow-wrap:anywhere; }
+.app-shell .volume-inference label { display:grid; gap:8px; min-width:0; }
+.app-shell .volume-inference .volume-confirm { display:flex; align-items:flex-start; gap:12px; font-weight:400; }
+.app-shell .volume-inference .volume-confirm input { flex:0 0 20px; width:20px; height:20px; margin-top:3px; }
+.app-shell .volume-inference select { width:100%; min-height:48px; padding:12px; background:var(--theme-surface); color:var(--theme-ink); border:1px solid var(--theme-line); border-radius:8px; }
+.app-shell .volume-slices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.app-shell .volume-slices img { width:100%; aspect-ratio:1; image-rendering:auto; border-radius:8px; }
+.app-shell .volume-slices figcaption { padding-top:8px; }
+.app-shell .volume-downloads { display:flex; flex-wrap:wrap; gap:12px; }
+.app-shell .volume-inference details { padding-top:16px; border-top:1px solid var(--theme-line); overflow-wrap:anywhere; }
+@media(max-width:700px) { .app-shell .volume-slices { grid-template-columns:1fr; } .app-shell .volume-inference {padding:16px;} }
+.app-shell :is(.workbench-page, .reports-page) { gap: 24px; min-width: 0; }
+.app-shell :is(.workbench-grid, .report-builder-grid) { gap: 24px; }
+.app-shell .workbench-grid { grid-template-columns: minmax(0, 7fr) minmax(320px, 3fr); align-items: start; }
+.app-shell :is(.workbench-viewer-panel, .workbench-findings, .report-contents, .report-sheet) { padding: clamp(20px, 2vw, 28px); min-width: 0; }
+.app-shell :is(.workbench-selectors, .report-actions) { gap: 16px; align-items: end; }
+.app-shell :is(.workbench-selectors, .report-actions, .report-contents, .review-assessment, .case-details, .case-assignment) label {
+  display: grid; gap: 8px; min-width: 0; margin: 0; color: var(--theme-ink); font-size: .875rem; font-weight: 600; line-height: 1.5;
+}
+.app-shell :is(.workbench-selectors, .report-actions, .report-contents, .review-assessment, .case-details, .case-assignment) :where(select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file])) {
+  box-sizing: border-box; display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 48px;
+  margin: 0; padding: 12px 14px; border: 1px solid var(--theme-line); border-radius: 8px;
+  background: var(--theme-surface); color: var(--theme-ink); font: inherit; font-weight: 400; line-height: 1.5;
+}
+.app-shell :is(.review-assessment, .case-details) textarea { min-height: 144px; resize: vertical; }
+.app-shell :is(.review-assessment, .case-details) textarea::placeholder { color: var(--theme-muted); font-weight: 400; opacity: 1; }
+.app-shell .workbench-findings { display: flex; flex-direction: column; gap: 20px; }
+.app-shell .workbench-findings > * { min-width: 0; margin: 0; }
+.app-shell .workbench-findings :is(h3, h4) { line-height: 1.35; }
+.app-shell .workbench-findings > .eyebrow { margin-bottom: -12px; }
+.app-shell .workbench-findings > h3 { margin-bottom: -12px; }
+.app-shell .workbench-findings .metadata { width: 100%; margin: 0; border-color: var(--theme-line); }
+.app-shell .workbench-findings .metadata > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; align-items: start; padding: 14px 0; border-color: var(--theme-line); line-height: 1.55; }
+.app-shell .workbench-findings .metadata :is(span, strong) { min-width: 0; overflow-wrap: anywhere; }
+.app-shell .workbench-findings .metadata strong { text-align: right; font-weight: 600; }
+.app-shell .workbench-findings .metadata span { color: var(--theme-muted); }
+.app-shell .workbench-findings > .primary, .app-shell .workbench-findings > button { width: 100%; margin: 0; min-height: 48px; white-space: normal; }
+.app-shell .workbench-findings .evidence-details { padding: 20px 0 0; border-color: var(--theme-line); }
+.app-shell :is(.evidence-details, .assessment-history, .report-sheet details) > summary { min-height: 44px; padding: 8px 0; cursor: pointer; font-size: .9375rem; line-height: 1.6; font-weight: 600; }
+.app-shell :is(.evidence-details, .assessment-history, .report-sheet details)[open] > summary { margin-bottom: 12px; }
+.app-shell .candidate-focus { margin: 12px 0; padding: 16px; gap: 8px; border: 1px solid var(--theme-line); border-radius: 8px; background: var(--theme-surface); color: var(--theme-ink); line-height: 1.55; }
+.app-shell .candidate-focus small { font-weight: 400; color: var(--theme-muted); }
+.app-shell .review-assessment { display: grid; gap: 20px; width: 100%; margin: 0; padding: 20px; border: 1px solid var(--theme-line); border-radius: 12px; box-shadow: none; }
+.app-shell .review-assessment > *, .app-shell .assessment-heading > * { margin: 0; min-width: 0; }
+.app-shell .assessment-heading { display: grid; gap: 8px; }
+.app-shell .assessment-heading .eyebrow { font-size: .7rem; line-height: 1.6; letter-spacing: .09em; }
+.app-shell .review-assessment h3 { font-size: 1.15rem; line-height: 1.4; }
+.app-shell .assessment-evidence { display: grid; gap: 6px; padding: 12px; border-radius: 8px; background: var(--theme-canvas); border: 1px solid var(--theme-line); }
+.app-shell .assessment-evidence span { font-size: .75rem; font-weight: 600; color: var(--theme-muted); }
+.app-shell .assessment-evidence code { overflow-wrap: anywhere; font-size: .75rem; line-height: 1.65; }
+.app-shell .review-assessment form { display: grid; gap: 24px; margin: 0; max-width: none; }
+.app-shell .review-assessment .case-form-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.app-shell .review-assessment form > button.primary { margin: 0; min-height: 48px; width: 100%; white-space: normal; padding: 12px 16px; line-height: 1.5; }
+.app-shell .assessment-history { border-top: 1px solid var(--theme-line); padding-top: 16px; }
+.app-shell .assessment-history > div { padding: 16px 0; border-top: 1px solid var(--theme-line); line-height: 1.6; }
+.app-shell .assessment-history > div :is(p, small) { display: block; margin: 8px 0 0; overflow-wrap: anywhere; }
+.app-shell .workbench-findings .privacy-note { margin: 0; padding: 16px; font-size: .8125rem; line-height: 1.7; }
+.app-shell .workbench-viewer-panel .viewer-heading { gap: 16px; align-items: baseline; flex-wrap: wrap; }
+.app-shell .workbench-viewer-panel .viewer-heading span { line-height: 1.5; }
+.app-shell .workbench-layer-tabs { gap: 8px; margin: 20px 0 16px; }
+.app-shell .workbench-toolbar { gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.app-shell .workbench-viewer-panel > .caption { margin: 16px 0 0; line-height: 1.65; }
+.app-shell .report-contents { display: grid; gap: 20px; }
+.app-shell .report-contents > * { margin: 0; }
+.app-shell .report-contents fieldset { padding: 16px; border: 1px solid var(--theme-line); border-radius: 8px; min-width: 0; }
+.app-shell .report-contents legend { padding: 0 6px; font-size: .875rem; font-weight: 600; }
+.app-shell .report-contents label.report-section-choice { display: flex; align-items: flex-start; gap: 12px; margin: 16px 0; line-height: 1.6; }
+.app-shell .report-section-choice input { margin-top: 3px; }
+.app-shell .report-contents button { margin: 0; min-height: 48px; white-space: normal; }
+.app-shell .report-sheet > * + * { margin-top: 24px; }
+.app-shell .report-sheet .report-facts { gap: 24px; margin: 0; padding: 24px 0; }
+.app-shell .report-sheet .report-facts > div { gap: 8px; line-height: 1.6; }
+.app-shell .report-sheet > section { border-top: 1px solid var(--theme-line); padding-top: 24px; }
+.app-shell .report-sheet > details { padding: 16px 0; border-top: 1px solid var(--theme-line); }
+.app-shell .report-sheet :is(p, li) { line-height: 1.7; }
+.app-shell .report-sheet li + li { margin-top: 10px; }
+.app-shell .report-images { gap: 20px; }
+.app-shell .report-images figcaption { margin-top: 10px; line-height: 1.5; }
+@media (max-width: 1100px) { .app-shell .workbench-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .app-shell :is(.workbench-grid, .report-builder-grid, .report-facts, .report-images) { grid-template-columns: minmax(0, 1fr); }
+  .app-shell :is(.workbench-selectors, .report-actions) { flex-direction: column; align-items: stretch; }
+  .app-shell :is(.workbench-selectors, .report-actions) label { flex: 0 1 auto; width: 100%; }
+  .app-shell .review-assessment { padding: 16px; }
+  .app-shell :is(.workbench-viewer-panel, .workbench-findings, .report-contents, .report-sheet) { padding: 16px; }
+}
+@media print { .app-shell .report-builder-grid { display: block; } .app-shell .report-sheet { padding: 0; } }

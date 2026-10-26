@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -27,11 +27,17 @@ from .auth_ext import identity_out, normalized_username, resolve_user, router as
 from .models import (
     ActionGrant, AnalysisEvent, AnalysisJob, AnalysisRun, AuditEvent, AuthSession, Case, CaseAccess,
     CaseComment, ClinicalReview, Image, LoginThrottle, Notification, NotificationDismissal,
-    ReportRevision, RoleAccessRequest, User, UserIdentity, UserProfile, now
+    ReportRevision, ResearchReport, VolumeAnalysis, RoleAccessRequest, User, UserIdentity, UserProfile, now
 )
 from .analysis_service import analyze, model_version, models_ready, validation_summary
 from . import trained_release
+from .evaluation_catalog import catalog as evaluation_catalog, evaluation_runs
+from .evaluation_workspace import router as evaluation_workspace_router
+from .research_progress import router as research_progress_router
+from .task_inference import router as task_inference_router
+from .models import TaskInferenceRun
 from .analysis_result import build_result
+from .operations import install_telemetry, validate_deployment_environment, telemetry_snapshot, prometheus
 from .inference_jobs import InferenceWorker
 from .action_policy import allowed_action, effective_actions, CONDITIONAL_ACTIONS
 from .case_contract import validate_case_configuration, supports_current_inference, case_modalities, case_tasks, validate_case_routes
@@ -48,9 +54,16 @@ SUPPORTED_IMAGE_EXTENSIONS = SUPPORTED_EXTENSIONS
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_deployment_environment()
     Base.metadata.create_all(bind=engine)
     upgrade_local_schema(engine)
     with SessionLocal() as db:
+        for interrupted in db.scalars(select(TaskInferenceRun).where(TaskInferenceRun.status.in_(['queued','running']))):
+            interrupted.status='failed'
+            interrupted.error='API restarted before task completion; submit a new run to retry.'
+        for interrupted in db.scalars(select(VolumeAnalysis).where(VolumeAnalysis.status.in_(['queued', 'running']))):
+            interrupted.status = 'failed'
+            interrupted.error = 'API restarted before completion; upload again to retry.'
         for run in db.scalars(select(AnalysisRun)).all():
             if db.scalar(select(AnalysisEvent).where(AnalysisEvent.image_id == run.image_id,
                                                      AnalysisEvent.overlay_path == run.overlay_path)) is None:
@@ -74,10 +87,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CoroVision AI API", version="0.1.0", lifespan=lifespan)
+install_telemetry(app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?$",
-    allow_origins=[
+    allow_origin_regex=None if os.getenv('COROVISION_ENV') == 'production' else r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+)(:\d+)?$",
+    allow_origins=os.getenv('CORS_ORIGINS', '').split(',') if os.getenv('COROVISION_ENV') == 'production' else [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:8000",
@@ -89,6 +103,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_ext_router)
+app.include_router(evaluation_workspace_router)
+app.include_router(research_progress_router)
+app.include_router(task_inference_router)
 
 
 class RegisterIn(BaseModel):
@@ -192,8 +209,10 @@ class CaseCommentIn(BaseModel):
 
 
 class ClinicalReviewIn(BaseModel):
+    analysis_event_id: str | None = None
+    image_id: str | None = None
     decision: Literal["approved", "needs_followup", "rejected", "reviewed"]
-    stenosis_severity: Literal["mild", "moderate", "severe", "none", "unspecified"] | None = "unspecified"
+    stenosis_severity: Literal["mild", "moderate", "severe", "none", "unspecified", "insufficient_evidence"] | None = "unspecified"
     notes: str | None = Field(default=None, max_length=1000)
 
 
@@ -307,13 +326,17 @@ def case_out(case: Case, db: Session | None = None, viewer: User | None = None) 
                 reviewer_name = p.display_name if p else ""
             reviews_list.append({
                 "id": r.id,
+                "version": len(case.reviews) - len(reviews_list),
                 "case_id": r.case_id,
                 "reviewer_id": r.reviewer_id,
                 "reviewer_name": reviewer_name,
+                "reviewer_role": db.get(User, r.reviewer_id).role if db and db.get(User, r.reviewer_id) else None,
+                "analysis_event_id": r.analysis_event_id,
+                "image_id": r.image_id,
                 "decision": r.decision,
                 "stenosis_severity": r.stenosis_severity,
                 "notes": r.notes,
-                "created_at": r.created_at,
+                "created_at": r.created_at.replace(tzinfo=timezone.utc) if r.created_at.tzinfo is None else r.created_at,
             })
         if reviews_list:
             latest_review = reviews_list[0]
@@ -897,16 +920,27 @@ def add_clinical_review(
     db: Session = Depends(get_db),
 ):
     case = accessible_case(case_id, user, db, required_action="review")
+    if data.analysis_event_id:
+        event = db.get(AnalysisEvent, data.analysis_event_id)
+        image = db.get(Image, event.image_id) if event else None
+        if not image or image.case_id != case.id or data.image_id != image.id:
+            raise HTTPException(422, "Review evidence must belong to the selected case and image")
+    elif data.image_id:
+        raise HTTPException(422, "Select an analysis run for an image-linked review")
+    if data.stenosis_severity == "insufficient_evidence" and not (data.notes or "").strip():
+        raise HTTPException(422, "Explain which evidence is insufficient")
     review = ClinicalReview(
         case_id=case.id,
         reviewer_id=user.id,
+        analysis_event_id=data.analysis_event_id,
+        image_id=data.image_id,
         decision=data.decision,
         stenosis_severity=data.stenosis_severity,
         notes=data.notes.strip() if data.notes else None,
     )
     db.add(review)
     case.status = f"reviewed:{data.decision}"
-    case.workflow_status = "changes_requested" if data.decision in {"needs_followup", "rejected"} else "reviewed"
+    case.workflow_status = "changes_requested" if data.decision in {"needs_followup", "rejected"} or data.stenosis_severity == 'insufficient_evidence' else "reviewed"
     case.report_status = "draft"
     audit(db, user.id, f"clinical_review:{data.decision}", case.id)
     notify_case(db, case, user.id, "clinical_review", f"{case.case_code} clinical review: {data.decision}")
@@ -1123,7 +1157,9 @@ async def upload_image(
             roi_box = (x, y, x + width, y + height)
         except (ValueError, TypeError):
             reject_upload(422, "ROI must be x,y,width,height in pixels")
+    model_resize = trained_release.configured() and upload_modality == "XCA"
     signature = {"profile": profile, "standard_pipeline": standard_pipeline,
+                 "model_resize": model_resize,
                  "denoise": denoise, "enhance": enhance, "roi_box": list(roi_box) if roi_box else None,
                  "frame_index": frame_index, "page_index": page_index}
     for existing in db.scalars(select(Image).where(Image.case_id == case.id, Image.source_sha256 == source_sha256)):
@@ -1141,7 +1177,7 @@ async def upload_image(
     try:
         preview, width, height, media_type, spacing = prepare_image(
             raw, filename, roi_box, frame_index, page_index, denoise=denoise, enhance=enhance,
-            processing_steps=processing_steps)
+            processing_steps=processing_steps, model_resize=model_resize)
     except InvalidImage as exc:
         reject_upload(422, str(exc))
     image_id = str(uuid4())
@@ -1168,7 +1204,8 @@ async def upload_image(
         "pipeline_version": "2.2",
         "standard_pipeline": standard_pipeline if profile == "standard" else None,
         "request_signature": signature,
-        "resize_geometry": content_geometry(width, height, roi_box),
+        "resize_geometry": content_geometry(width, height, roi_box, model_resize),
+        "model_input_resize": "PIL.ImageOps.pad/BILINEAR" if model_resize else "legacy_thumbnail/LANCZOS",
         "profile": profile,
         "options": {"denoise": denoise, "contrast_enhancement": enhance},
         "source_format": media_type,
@@ -1186,7 +1223,7 @@ async def upload_image(
     image = Image(
         id=image_id, case_id=case.id, original_name=filename, original_path=str(source),
         preview_path=str(processed), content_type=media_type, width=width, height=height,
-        spacing_mm=spacing, processed_spacing_mm=processed_spacing_mm(spacing, width, height, roi_box),
+        spacing_mm=spacing, processed_spacing_mm=processed_spacing_mm(spacing, width, height, roi_box, model_resize),
         roi_box=roi, frame_index=frame_index, page_index=page_index,
         preprocessing_json=json.dumps(steps),
         preprocessing_config_json=json.dumps(config),
@@ -1285,6 +1322,148 @@ def prepare_case_volume(
                         headers={"Content-Disposition": 'attachment; filename="corovision_volume_prepared.zip"'})
 
 
+def volume_run_out(row):
+    from .volume_inference import SYNTHETIC_FIXTURE_HASHES
+    result = json.loads(row.result_json) if row.result_json else None
+    base = f'/api/cases/{row.case_id}/volumes/analyses/{row.id}'
+    return {'id':row.id, 'case_id':row.case_id, 'status':row.status,'model_key':row.model_key or 'imagecas',
+            'created_at':(row.created_at.replace(tzinfo=timezone.utc) if row.created_at.tzinfo is None else row.created_at).isoformat(), 'source_sha256':row.source_sha256,
+            'error':row.error, 'result':result,
+            'input_kind':'synthetic_fixture' if row.source_sha256 in SYNTHETIC_FIXTURE_HASHES else row.input_kind or 'unspecified',
+            'artifacts': {name:base+'/artifacts/'+name for name in
+                          ['mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json']}
+                         if row.status == 'completed' else {}}
+
+
+def execute_volume_analysis(run_id):
+    from .volume_inference import JOB_SLOTS
+    try:
+        _execute_volume_analysis(run_id)
+    finally:
+        JOB_SLOTS.release()
+
+
+def _execute_volume_analysis(run_id):
+    from .volume_inference import RUN_LOCK, run_inference
+    with RUN_LOCK, SessionLocal() as db:
+        row = db.get(VolumeAnalysis, run_id)
+        if row is None or row.status != 'queued':
+            return
+        row.status = 'running'
+        db.commit()
+        folder = STORAGE/'volumes'/row.id
+        try:
+            source = next(folder.glob('source.nii*'))
+            result = run_inference(source, folder/'outputs') if (row.model_key or 'imagecas')=='imagecas' else run_inference(source, folder/'outputs',row.model_key)
+            result.update({'analysis_id':row.id, 'case_id':row.case_id,
+                           'source_sha256':row.source_sha256,
+                           'input_kind':row.input_kind,
+                           'completed_at':now().isoformat()})
+            row.result_json = json.dumps(result, allow_nan=False)
+            (folder/'outputs'/'result.json').write_text(row.result_json)
+            row.status = 'completed'
+            audit(db, row.created_by, 'research_3d_inference_completed', row.case_id)
+        except Exception:
+            # Do not expose file paths, image metadata or model internals to clients.
+            import logging
+            logging.getLogger('corovision.operations').error('volume_inference_failed run=%s', row.id)
+            row.status = 'failed'
+            row.error = '3D inference failed. Check input eligibility and checkpoint installation; no result was produced.'
+        db.commit()
+
+
+@app.get('/api/volume-models')
+def volume_models(user: User = Depends(require_case_role)):
+    from .volume_inference import model_status
+    return [model_status(key) for key in ['imagecas','imagecasx','aorta_aligned']]
+
+
+@app.post('/api/cases/{case_id}/volumes/analyses', status_code=202)
+def create_volume_analysis(case_id: str, background: BackgroundTasks, file: UploadFile = File(...),
+                           hu_confirmed: bool = Form(False), research_confirmed: bool = Form(False),
+                           input_kind: Literal['medical_study','synthetic_fixture'] = Form('medical_study'),
+                           model_key: Literal['imagecas','imagecasx','aorta_aligned'] = Form('imagecas'),
+                           user: User = Depends(require_roles('researcher', 'admin')),
+                           db: Session = Depends(get_db)):
+    from .volume_inference import JOB_SLOTS, MAX_UPLOAD_BYTES as VOLUME_UPLOAD_LIMIT, checkpoint_path, inspect_input
+    from tempfile import TemporaryDirectory
+    import shutil
+    case = accessible_case(case_id, user, db, required_action='upload')
+    if not allowed_action(user, 'analysis:run', db) or not allowed_action(user, 'case:upload', db):
+        raise HTTPException(403, '3D inference requires upload and analysis permissions')
+    from .task_models import SPECS,installed
+    spec=SPECS[model_key]
+    eligible={'CT','CTA'} if model_key=='aorta_aligned' else {'CTA'}
+    if not (eligible & set(case_modalities(case))) or case.anatomy != spec['anatomy']:
+        raise HTTPException(422, 'Selected volume model is incompatible with case modality/anatomy')
+    if not hu_confirmed or not research_confirmed:
+        raise HTTPException(422, 'Confirm original CT Hounsfield units and research-only use')
+    if not (checkpoint_path().is_file() if model_key=='imagecas' else installed(model_key)):
+        raise HTTPException(503, 'Selected hash-pinned 3D checkpoint is not installed')
+    if db.scalar(select(func.count()).select_from(VolumeAnalysis).where(VolumeAnalysis.status.in_(['queued','running']))) >= 2:
+        raise HTTPException(429, '3D queue is full; wait for an existing run to finish')
+    filename = (file.filename or '').lower()
+    if not filename.endswith(('.nii','.nii.gz')):
+        raise HTTPException(415, 'Use a de-identified scalar NIfTI .nii or .nii.gz')
+    suffix = '.nii.gz' if filename.endswith('.gz') else '.nii'
+    with TemporaryDirectory(prefix='corovision-3d-') as temporary:
+        source = Path(temporary)/('source'+suffix)
+        count, digest = 0, hashlib.sha256()
+        with source.open('wb') as stream:
+            while chunk := file.file.read(2*1024*1024):
+                count += len(chunk)
+                if count > VOLUME_UPLOAD_LIMIT:
+                    raise HTTPException(413, '3D NIfTI upload exceeds 384 MiB; generic preparation and 2D limits are separate')
+                digest.update(chunk)
+                stream.write(chunk)
+        if count == 0:
+            raise HTTPException(413, 'Choose a non-empty NIfTI file')
+        try:
+            inspect_input(source)  # Header-only validation; heavy preprocessing runs once, in the job.
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        except Exception:
+            raise HTTPException(422, 'Invalid NIfTI header; require finite scalar 3D CT in millimetres, at most 96 million voxels')
+        if not JOB_SLOTS.acquire(blocking=False):
+            raise HTTPException(429, '3D queue is full; wait for an existing run to finish')
+        try:
+            row = VolumeAnalysis(id=str(uuid4()), case_id=case.id, created_by=user.id,
+                                 source_sha256=digest.hexdigest(), input_kind=input_kind, status='queued',model_key=model_key)
+            folder = STORAGE/'volumes'/row.id
+            folder.mkdir(parents=True, exist_ok=False)
+            shutil.copyfile(source, folder/('source'+suffix))
+            db.add(row)
+            audit(db, user.id, 'research_3d_inference_queued', case.id)
+            db.commit()
+            response = volume_run_out(row)
+        except Exception:
+            JOB_SLOTS.release()
+            raise
+    background.add_task(execute_volume_analysis, row.id)
+    return response
+
+
+@app.get('/api/cases/{case_id}/volumes/analyses')
+def list_volume_analyses(case_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    accessible_case(case_id, user, db)
+    return [volume_run_out(row) for row in db.scalars(select(VolumeAnalysis).where(
+        VolumeAnalysis.case_id == case_id).order_by(VolumeAnalysis.created_at.desc()).limit(50))]
+
+
+@app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/artifacts/{name}')
+def volume_artifact(case_id: str, run_id: str, name: str,
+                    user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    accessible_case(case_id, user, db)
+    row = db.get(VolumeAnalysis, run_id)
+    allowed = {'mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json'}
+    if row is None or row.case_id != case_id or row.status != 'completed' or name not in allowed:
+        raise HTTPException(404, 'Volume artifact not found')
+    path = STORAGE/'volumes'/row.id/'outputs'/name
+    if not path.is_file():
+        raise HTTPException(404, 'Volume artifact missing')
+    return FileResponse(path, media_type='image/png' if name.endswith('.png') else 'application/json' if name.endswith('.json') else 'application/gzip', filename=name)
+
+
 @app.get("/api/images/{image_id}/preview")
 def image_preview(image_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     image = db.get(Image, image_id)
@@ -1347,8 +1526,21 @@ def event_out(event: AnalysisEvent) -> dict:
             "vessel_analysis": evaluation.get("vessel_analysis", {}),
             "model_scores": evaluation.get("model_scores", {}),
             "structured_result": evaluation.get("structured_result"),
-            "created_at": event.created_at, "research_only": True,
+            "created_at": event.created_at.replace(tzinfo=timezone.utc) if event.created_at.tzinfo is None else event.created_at, "research_only": True,
             "interpretation": "Pixel masks are uncalibrated research outputs; no clinical stenosis grade is inferred."}
+
+
+@app.get("/api/evaluation/runs")
+def list_evaluation_runs(user: User = Depends(require_roles(*ROLE_MODEL_MANAGERS))):
+    return evaluation_catalog()
+
+
+@app.get("/api/evaluation/runs/{record_id}")
+def get_evaluation_run(record_id: str, user: User = Depends(require_roles(*ROLE_MODEL_MANAGERS))):
+    record = next((item for item in evaluation_runs() if item["id"] == record_id), None)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Evaluation report not found")
+    return record
 
 
 @app.get("/api/analysis/status")
@@ -1386,7 +1578,8 @@ def analysis_status(user: User = Depends(current_user)):
     instance_models_ready = bool(instance_arch in {"maskrcnn_resnet50_fpn", "maskrcnn_resnet50_fpn_v2"} and
                                  all((instance_root / task / instance_arch / "best.pt").is_file()
                                      for task in ("syntax", "stenosis")))
-    return {"models_ready": models_ready(), "model_version": model_version(),
+    from .task_models import catalog as task_catalog
+    return {"models_ready": models_ready(), "model_version": model_version(),"task_connections":task_catalog(),
             "trained_release": trained_release.status(),
             "validation": validation_summary(), "comparison": comparison,
             "selection": selection, "test_report": test_report,
@@ -1533,6 +1726,15 @@ def analysis_input(image_id, user, db):
         raise HTTPException(422, "Only XCA image assets can reach the current 2D models")
     if not supports_current_inference(db.get(Case, image.case_id)):
         raise HTTPException(status_code=422, detail="The current research models require X-ray coronary angiography")
+    if trained_release.configured():
+        config = json.loads(image.preprocessing_config_json or "{}")
+        options = config.get("options", {})
+        if options.get("denoise") or options.get("contrast_enhancement") or config.get("roi_box_xyxy"):
+            raise HTTPException(422, "Preserved checkpoints require the unenhanced full-image Standard pipeline; upload a Standard copy for inference")
+        if "robust_high_bit_depth_intensity_normalization" in config.get("steps", []):
+            raise HTTPException(422, "High-bit-depth normalization is not verified against the preserved checkpoint contract")
+        if config.get("model_input_resize") != "PIL.ImageOps.pad/BILINEAR" and (image.width, image.height) != (512, 512):
+            raise HTTPException(422, "Re-upload this image using the verified bilinear model-input pipeline")
     if not models_ready():
         raise HTTPException(status_code=503, detail="Verified research model artifacts or inference dependencies are unavailable")
     return image
@@ -1637,7 +1839,7 @@ def perform_analysis(image_id, user, db, job=None):
         audit(db, user.id, 'analysis_job_completed', image.case_id)
     db.commit()
     db.refresh(run)
-    return event_out(event) if job else analysis_out(run)
+    return event_out(event)
 
 
 def execute_analysis_job(db, job):
@@ -1790,6 +1992,36 @@ def _explanation_file(base_path: str, kind: str) -> Path:
     return Path(base_path).with_name(f"{Path(base_path).stem}.{kind}.png")
 
 
+@app.get('/api/images/{image_id}/analyses/{event_id}/panels')
+def image_panel_inventory(image_id: str, event_id: str,
+                          user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    from .image_panels import inventory
+    image = db.get(Image, image_id)
+    if not image:
+        raise HTTPException(404, 'Image not found')
+    accessible_case(image.case_id, user, db, required_action='read')
+    event = db.get(AnalysisEvent, event_id)
+    if not event or event.image_id != image.id:
+        raise HTTPException(404, 'Analysis not found')
+    return {'analysis_run_id': event.id, 'image_id': image.id, 'model_version': event.model_version,
+            'panels': inventory(image, event)}
+
+
+@app.get('/api/images/{image_id}/analyses/{event_id}/panels/{kind}')
+def image_panel_artifact(image_id: str, event_id: str, kind: str,
+                         user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    from .image_panels import paths, boundary_png
+    from fastapi.responses import Response
+    manifest = image_panel_inventory(image_id, event_id, user, db)
+    panel = next((p for p in manifest['panels'] if p['key'] == kind), None)
+    if not panel or not panel['available']:
+        raise HTTPException(404, 'No saved artifact for this panel')
+    files = paths(db.get(Image, image_id), db.get(AnalysisEvent, event_id))
+    if kind == 'boundary':
+        return Response(boundary_png(files['artery_mask']), media_type='image/png')
+    return FileResponse(files[kind], media_type=None if kind == 'original' else 'image/png')
+
+
 @app.get("/api/images/{image_id}/analyses/{event_id}/map/{kind}")
 def history_explanation_map(image_id: str, event_id: str, kind: str,
                             user: User = Depends(require_case_role), db: Session = Depends(get_db)):
@@ -1831,7 +2063,9 @@ def get_analysis(image_id: str, user: User = Depends(require_case_role), db: Ses
     run = db.scalar(select(AnalysisRun).where(AnalysisRun.image_id == image_id))
     if not run:
         raise HTTPException(status_code=404, detail="Analysis not found")
-    return analysis_out(run)
+    event = db.scalar(select(AnalysisEvent).where(AnalysisEvent.image_id == image_id,
+                                                AnalysisEvent.overlay_path == run.overlay_path))
+    return event_out(event) if event else analysis_out(run)
 
 
 @app.get("/api/images/{image_id}/analysis/overlay")
@@ -1925,7 +2159,7 @@ def set_report_approval_permission(
 
 
 class RoleRequestIn(BaseModel):
-    requested_role: Literal["researcher", "clinician", "ml_engineer"]
+    requested_role: Literal["researcher", "doctor", "clinician", "ml_engineer"]
     reason: str = Field(min_length=20, max_length=2000)
 
 
@@ -2041,6 +2275,130 @@ def all_audit(actor: User = Depends(require_roles("admin")), db: Session = Depen
          "case_id": event.case_id, "created_at": event.created_at}
         for event in events
     ]
+
+
+class ResearchReportIn(BaseModel):
+    image_id: str
+    analysis_event_id: str
+    sections: list[Literal['images', 'measurements', 'candidates', 'review', 'appendix']] = Field(default_factory=lambda: ['images', 'measurements', 'candidates', 'review'], max_length=5)
+
+
+def research_report_access(case_id, user, db):
+    case = accessible_case(case_id, user, db, required_action='read')
+    if user.role not in ROLE_EXPORTERS or not allowed_action(user, 'analysis:export', db):
+        raise HTTPException(403, 'Research snapshots require export permission; approved clinical reports use the existing report workflow')
+    return case
+
+
+@app.post('/api/cases/{case_id}/research-reports', status_code=201)
+def create_research_report(case_id: str, data: ResearchReportIn,
+                           user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    from .research_reporting import NOTICE
+    case = research_report_access(case_id, user, db)
+    image = db.get(Image, data.image_id)
+    event = db.get(AnalysisEvent, data.analysis_event_id)
+    if not image or image.case_id != case.id or not event or event.image_id != image.id:
+        raise HTTPException(422, 'Select a saved analysis belonging to this case and image')
+    reviews = [r for r in case_out(case, db, user)['reviews'] if r['analysis_event_id'] == event.id and r['image_id'] == image.id]
+    version = (db.scalar(select(func.max(ResearchReport.version)).where(ResearchReport.case_id == case.id)) or 0) + 1
+    report = ResearchReport(id=str(uuid4()), case_id=case.id, image_id=image.id,
+                            analysis_event_id=event.id, version=version, created_by=user.id)
+    result = event_out(event)
+    structured = result.get('structured_result') or {}
+    snapshot = {'schema_version': 'corovision.research-report.v1', 'report_id': report.id,
+                'version': version, 'generated_at': now().isoformat(), 'generated_by': user.id,
+                'sections': sorted(set(data.sections)), 'case': {'id': case.id, 'case_code': case.case_code,
+                'modality': json.loads(image.preprocessing_config_json or '{}').get('modality', case.modality), 'anatomy': case.anatomy, 'scan_date': case.scan_date},
+                'image': {'id': image.id, 'original_name': image.original_name, 'width': image.width, 'height': image.height},
+                'analysis': json.loads(json.dumps(result, default=str)), 'human_review': reviews[0] if reviews else None,
+                'review_history': reviews, 'provenance': {'models': structured.get('models', {'status': 'Historical checkpoint references unavailable'}),
+                'preprocessing': structured.get('input', {}).get('preprocessing', json.loads(image.preprocessing_config_json or '{}'))},
+                'limitations': [NOTICE, *structured.get('limitations', []),
+                    'No run-linked human assessment recorded.' if not reviews else 'Human assessment is separate from the model output.']}
+    from .image_panels import inventory
+    snapshot['image_panels'] = inventory(image, event) if 'images' in data.sections else []
+    report.snapshot_json = json.dumps(snapshot, default=str)
+    db.add(report)
+    audit(db, user.id, f'research_report_generated:v{version}:{event.id}', case.id)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, 'Another report was saved simultaneously; retry to allocate the next version')
+    return json.loads(report.snapshot_json)
+
+
+@app.get('/api/cases/{case_id}/research-reports')
+def list_research_reports(case_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    research_report_access(case_id, user, db)
+    return [{'id': r.id, 'version': r.version, 'image_id': r.image_id, 'analysis_event_id': r.analysis_event_id,
+             'created_at': json.loads(r.snapshot_json)['generated_at']} for r in db.scalars(select(ResearchReport).where(ResearchReport.case_id == case_id)
+                                                          .order_by(ResearchReport.version.desc()))]
+
+
+@app.get('/api/cases/{case_id}/research-reports/{report_id}')
+def get_research_report(case_id: str, report_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    research_report_access(case_id, user, db)
+    row = db.get(ResearchReport, report_id)
+    if not row or row.case_id != case_id:
+        raise HTTPException(404, 'Research snapshot not found')
+    return json.loads(row.snapshot_json)
+
+
+@app.get('/api/cases/{case_id}/research-reports/{report_id}/export/{format}')
+def export_research_report(case_id: str, report_id: str, format: Literal['json', 'csv', 'pdf'],
+                           user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+    from .research_reporting import tabular, pdf_bytes
+    snapshot = get_research_report(case_id, report_id, user, db)
+    if format == 'json':
+        content, media = json.dumps(snapshot, indent=2), 'application/json'
+    elif format == 'csv':
+        content, media = tabular(snapshot), 'text/csv'
+    else:
+        image = db.get(Image, snapshot['image']['id'])
+        event = db.get(AnalysisEvent, snapshot['analysis']['id'])
+        from .image_panels import report_images
+        content, media = pdf_bytes(snapshot, report_images(image, event, snapshot.get('image_panels'))), 'application/pdf'
+    audit(db, user.id, f'research_report_exported:{report_id}:{format}', case_id)
+    db.commit()
+    return Response(content, media_type=media, headers={'Content-Disposition': f'attachment; filename="research-report-v{snapshot["version"]}.{format}"'})
+
+
+@app.get('/api/health/live')
+def liveness():
+    return {'status': 'alive', 'research_only': True}
+
+
+@app.get('/api/health/ready')
+def readiness(db: Session = Depends(get_db)):
+    from fastapi.responses import JSONResponse
+    from sqlalchemy import text
+    try:
+        db.execute(text('SELECT 1'))
+        database_ready = True
+    except Exception:
+        database_ready = False
+    inference_ready = models_ready()
+    ready = database_ready and inference_ready
+    return JSONResponse({'status': 'ready' if ready else 'degraded', 'database': database_ready,
+                         'inference': inference_ready, 'research_only': True}, status_code=200 if ready else 503)
+
+
+@app.get('/api/admin/operations')
+def operations_snapshot(user: User = Depends(require_roles('admin')), db: Session = Depends(get_db)):
+    import shutil
+    from sqlalchemy import func
+    jobs = dict(db.execute(select(AnalysisJob.status, func.count()).group_by(AnalysisJob.status)).all())
+    return {**telemetry_snapshot(), 'analysis_jobs': jobs,
+            'storage_free_bytes': shutil.disk_usage(STORAGE).free, 'models_ready': models_ready(),
+            'workers_supported': 1, 'clinical_validation': False, 'training_dispatch': 'not_connected'}
+
+
+@app.get('/api/admin/metrics')
+def operations_metrics(user: User = Depends(require_roles('admin'))):
+    from fastapi.responses import Response
+    return Response(prometheus(telemetry_snapshot()), media_type='text/plain; version=0.0.4')
 
 
 frontend_dist = BASE_DIR / "frontend" / "dist"

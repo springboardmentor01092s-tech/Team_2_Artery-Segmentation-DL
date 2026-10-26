@@ -1,0 +1,52 @@
+import { useEffect, useState } from "react";
+import { request } from "./api";
+import { comparable, filterRuns, metricText, type EvaluationReport, type EvaluationRun } from "./evaluationData";
+
+const sections = ["Overview & reports", "Training & validation", "Datasets & splits", "Prediction review", "Error analysis", "Approval & history"];
+export default function EvaluationExplorer({ token }: { token: string }) {
+  const [data, setData] = useState<EvaluationReport | null>(null);
+  const [error, setError] = useState("");
+  const [section, setSection] = useState(sections[0]);
+  const [query, setQuery] = useState("");
+  const [task, setTask] = useState("all");
+  const [architecture, setArchitecture] = useState("all");
+  const [sort, setSort] = useState("architecture");
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<EvaluationRun | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    request<EvaluationReport>("/api/evaluation/runs", token).then(result => { if (active) setData(result); }).catch(cause => { if (active) setError(cause.message); });
+    return () => { active = false; };
+  }, [token]);
+  const rows = filterRuns(data?.runs ?? [], query, task, architecture, sort);
+  const compared = (data?.runs ?? []).filter(run => compareIds.includes(run.id));
+  const compatible = compared.length > 1 && compared.every(run => comparable(compared[0], run));
+  function exportReport() {
+    if (!data) return;
+    const blob = new Blob([JSON.stringify({ ...data, runs: rows, export_scope: "Filtered imported validation reports; not a new evaluation" }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = "corovision-evaluation-report.json"; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  return <section className="model-analytics" aria-labelledby="evaluation-explorer-title">
+    <div className="cv-model-heading"><div><p className="eyebrow">EVALUATION RECORDS</p><h3 id="evaluation-explorer-title">Research evaluation workspace</h3></div><button type="button" disabled={!data} onClick={exportReport}>Export filtered report · JSON</button></div>
+    {error ? <p role="alert" className="message error">{error}</p> : !data ? <p role="status">Loading evaluation catalog…</p> : <>
+      <div className="evaluation-summary-grid">{[["Evaluated checkpoints", data.summary.evaluated_models], ["Imported reports", data.summary.imported_evaluation_records], ["Approved for research", data.summary.approved_models], ["Experiments running", data.summary.running_experiments], ["Pending review", data.summary.pending_review], ["Failed experiments", data.summary.failed_experiments]].map(([label, value]) => <article className="cv-model-card" key={String(label)}><span>{label}</span><strong>{value ?? "—"}</strong><small>{value == null ? "No persisted workflow data" : "From pinned release manifest"}</small></article>)}</div>
+      <div className="cv-model-navigation" role="group" aria-label="Evaluation workspace sections">{sections.map(name => <button key={name} type="button" aria-pressed={section === name} onClick={() => setSection(name)}>{name}</button>)}</div>
+      {section === sections[0] && <>
+        <div className="cv-model-filters"><label>Search records<input value={query} onChange={event => { setQuery(event.target.value); setPage(0); }} placeholder="Model, task or dataset" /></label><label>Task<select value={task} onChange={event => { setTask(event.target.value); setPage(0); }}><option value="all">All tasks</option>{Array.from(new Set(data.runs.map(run => run.task))).map(name => <option key={name}>{name}</option>)}</select></label><label>Architecture<select value={architecture} onChange={event => { setArchitecture(event.target.value); setPage(0); }}><option value="all">All architectures</option>{Array.from(new Set(data.runs.map(run => run.model.architecture))).map(name => <option key={name}>{name}</option>)}</select></label><label>Sort<select value={sort} onChange={event => setSort(event.target.value)}><option value="architecture">Architecture A–Z</option><option value="dice">Recorded Dice (not cross-task ranking)</option></select></label></div>
+        <p className="caption">{rows.length} report records. Evaluation timestamps, runtime, hardware and formal approval were not imported. Dice sorting does not establish model comparability.</p>
+        <div className="table-scroll"><table><caption>Development-exposed validation · pinned checkpoint reports</caption><thead><tr><th scope="col">Compare</th><th scope="col">Model / task</th><th scope="col">Dataset / split</th><th scope="col">Images</th><th scope="col">Dice / IoU</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead><tbody>{rows.slice(page * 5, page * 5 + 5).map(run => <tr key={run.id}><td><input type="checkbox" aria-label={`Compare ${run.model.architecture} ${run.task}`} checked={compareIds.includes(run.id)} onChange={event => setCompareIds(ids => event.target.checked ? [...ids, run.id] : ids.filter(id => id !== run.id))} /></td><th scope="row">{run.model.architecture}<br /><small>{run.task}</small></th><td>{run.dataset.name}<br />{run.dataset.split}</td><td>{run.sample_counts.images ?? "Not recorded"}</td><td>{run.metrics.map(m => metricText(m.value)).join(" / ")}</td><td>{run.approval_status ?? "Approval not recorded"}</td><td><button type="button" onClick={() => setSelected(run)}>Inspect report</button></td></tr>)}</tbody></table>{!rows.length && <p>No reports match these filters.</p>}</div>
+        <div className="cv-model-navigation"><button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</button><span>Page {page + 1} of {Math.max(1, Math.ceil(rows.length / 5))}</span><button type="button" disabled={(page + 1) * 5 >= rows.length} onClick={() => setPage(p => p + 1)}>Next</button></div>
+        {compared.length > 0 && <article className="cv-model-card"><h4>{compared.length} selected for comparison</h4>{compared.length < 2 ? <p>Select another report.</p> : !compatible ? <p role="status">Direct comparison blocked: task, dataset version, split, metric aggregation and protocol must match. Current release reports are distinct tasks and lack versioned comparison protocols.</p> : <div className="table-scroll"><table><caption>Candidate minus baseline metric differences</caption><thead><tr><th>Metric</th>{compared.slice(1).map(run => <th key={run.id}>{run.model.architecture}</th>)}</tr></thead><tbody>{compared[0].metrics.map((metric, index) => <tr key={metric.name}><th>{metric.name}</th>{compared.slice(1).map(run => <td key={run.id}>{metricText(metric.value == null || run.metrics[index].value == null ? null : run.metrics[index].value! - metric.value)}</td>)}</tr>)}</tbody></table></div>}</article>}
+        {selected && <article className="cv-model-card"><div className="cv-model-heading"><h4>Report · {selected.model.architecture}</h4><button type="button" onClick={() => setSelected(null)}>Close details</button></div><dl className="cv-model-status"><dt>Record ID</dt><dd>{selected.id}</dd><dt>Checkpoint SHA-256</dt><dd>{selected.model.checkpoint_sha256}</dd><dt>Dataset & protocol</dt><dd>{selected.dataset.name} · {selected.dataset.split} · {selected.protocol.description}</dd><dt>Source</dt><dd>{selected.source}</dd>{selected.metrics.map(metric => <div key={metric.name}><dt>{metric.name} · {metric.unit} · {metric.aggregation}</dt><dd>{metricText(metric.value)} — {metric.definition}</dd></div>)}<dt>History / runtime / hardware</dt><dd>Not recorded in imported report</dd></dl><p className="caption">Imported report, not a newly executed evaluation. No independent-final-test or clinical-performance claim.</p></article>}
+      </>}
+      {section === sections[1] && <article className="cv-model-card"><h4>Epoch history not imported</h4><p>Training loss, validation trends, learning rate, optimizer, batch size, best epoch and early stopping are not available in the release manifest. No curves or overfitting warning can be computed.</p><p className="caption">Training stays external and paused. Supply versioned epoch logs and the training workspace link to connect this section.</p></article>}
+      {section === sections[2] && <article className="cv-model-card"><h4>Dataset and split provenance</h4><p>Connected reports use ARCADE validation, with 200 images reported for each task. These task counts must not be summed as unique images.</p><p>Dataset version, patient independence, train/test counts, annotation audits, duplicates, prevalence and exclusions are not recorded in the imported manifest.</p><p className="caption">The task evidence catalog below includes shared-cohort and pseudo-reference limitations. Validation is development-exposed, not an independent final test.</p></article>}
+      {section === sections[3] && <article className="cv-model-card"><h4>Evaluation prediction artifacts unavailable</h4><p>No evaluation sample IDs, ground-truth masks, predictions or coordinate bindings were imported. The case analysis viewer is a separate authorized inference workflow; its images must not be represented as evaluation ground truth.</p><p className="caption">2D overlays, error maps and 3D slice review require stored, authorized evaluation artifacts and spatial metadata.</p></article>}
+      {section === sections[4] && <article className="cv-model-card"><h4>Sample-level error analysis unavailable</h4><p>No per-sample scores, reference labels, detection matches or prediction scores were imported. Distributions, confusion matrices, PR/ROC curves and reference measurement errors cannot be calculated from aggregate Dice.</p><p className="caption">Recorded task-level failure narratives remain available below. Missing centerline or severity references are not replaced with inferred labels.</p></article>}
+      {section === sections[5] && <article className="cv-model-card"><h4>Approval is separate from activation</h4><p>No candidate approval ledger, predefined acceptance criteria or signed reviewer decisions are connected. Checkpoint verification and inference readiness do not mean approved for research.</p><p className="caption">No approval or promotion action is enabled. Existing deployment records remain in Monitoring and Deployment history. Baselines and historical reports are preserved.</p></article>}
+    </>}
+  </section>;
+}

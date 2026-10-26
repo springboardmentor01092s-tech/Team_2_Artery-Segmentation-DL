@@ -44,11 +44,25 @@ def ready():
         return False
 
 
+def current_research_evidence():
+    from .task_models import catalog
+    evidence=json.loads((ROOT/'ml/releases/research_evidence_20261023.json').read_text())
+    connections={row['id']:row for row in catalog()}
+    for row in evidence['tasks']:
+        connection=connections.get(row['task_id'])
+        if connection:
+            row['inference_connected']=connection['connected']
+            row['connection_state']=connection['state']
+    evidence['limitations']=[text for text in evidence.get('limitations',[]) if not text.startswith('Only the two listed')]
+    evidence['limitations'].append('Connection status is the current hash-verified research adapter registry; historical metrics remain unchanged. Connected does not mean clinically validated or newly improved.')
+    return evidence
+
+
 def status():
     return dict(version=RELEASE['version'], configured=configured(), ready=ready() if configured() else False,
                 input_contract='512x512 prepared coronary X-ray; grayscale0..1 artery,RGB0..1 stenosis; no extra autocontrast or morphology',
                 models=RELEASE['models'], limitations=RELEASE['limitations'], research_only=True,
-                research_evidence=json.loads((ROOT / 'ml/releases/research_evidence_20261023.json').read_text()),
+                research_evidence=current_research_evidence(),
                 clinical_calibration=False, training_controls_connected=False)
 
 

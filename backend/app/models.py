@@ -38,6 +38,34 @@ class RoleAccessRequest(Base):
     decision_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class VolumeAnalysis(Base):
+    __tablename__ = 'volume_analyses'
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    case_id: Mapped[str] = mapped_column(ForeignKey('cases.id'), index=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey('users.id'))
+    status: Mapped[str] = mapped_column(String(20), default='queued')
+    source_sha256: Mapped[str] = mapped_column(String(64))
+    model_key: Mapped[str] = mapped_column(String(64),default='imagecas')
+    input_kind: Mapped[str] = mapped_column(String(32), default='unspecified')
+    result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class TaskInferenceRun(Base):
+    __tablename__='task_inference_runs'
+    id: Mapped[str]=mapped_column(String(36),primary_key=True,default=uid)
+    case_id: Mapped[str]=mapped_column(ForeignKey('cases.id'),index=True)
+    image_id: Mapped[str]=mapped_column(ForeignKey('images.id'),index=True)
+    created_by: Mapped[str]=mapped_column(ForeignKey('users.id'))
+    task_id: Mapped[str]=mapped_column(String(64))
+    input_sha256: Mapped[str]=mapped_column(String(64))
+    status: Mapped[str]=mapped_column(String(20),default='queued')
+    result_json: Mapped[str|None]=mapped_column(Text,nullable=True)
+    error: Mapped[str|None]=mapped_column(String(300),nullable=True)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),default=now)
+
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
@@ -179,12 +207,27 @@ class ClinicalReview(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     case_id: Mapped[str] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     reviewer_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    analysis_event_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    image_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     decision: Mapped[str] = mapped_column(String(32))  # approved, needs_followup, rejected, reviewed
     stenosis_severity: Mapped[str | None] = mapped_column(String(32), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     case: Mapped[Case] = relationship(back_populates="reviews")
     reviewer: Mapped[User] = relationship(back_populates="clinical_reviews")
+
+
+class ResearchReport(Base):
+    __tablename__ = "research_reports"
+    __table_args__ = (UniqueConstraint("case_id", "version"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    case_id: Mapped[str] = mapped_column(ForeignKey("cases.id"), index=True)
+    image_id: Mapped[str] = mapped_column(ForeignKey("images.id"))
+    analysis_event_id: Mapped[str] = mapped_column(ForeignKey("analysis_events.id"))
+    version: Mapped[int] = mapped_column(Integer)
+    snapshot_json: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 class ReportRevision(Base):
@@ -305,4 +348,41 @@ class AuditEvent(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     action: Mapped[str] = mapped_column(String(80))
     case_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class EvaluationExperiment(Base):
+    __tablename__ = "evaluation_experiments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="experimental")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class EvaluationDecision(Base):
+    __tablename__ = "evaluation_decisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    experiment_id: Mapped[str] = mapped_column(ForeignKey("evaluation_experiments.id"), index=True)
+    reviewer_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    decision: Mapped[str] = mapped_column(String(32))
+    notes: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class EvaluationPolicy(Base):
+    __tablename__ = "evaluation_policies"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    payload_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class EvaluationSampleReview(Base):
+    __tablename__ = "evaluation_sample_reviews"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    experiment_id: Mapped[str] = mapped_column(ForeignKey("evaluation_experiments.id"), index=True)
+    sample_id: Mapped[str] = mapped_column(String(100))
+    reviewer_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    notes: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

@@ -4,9 +4,9 @@ export const KEY = "corovision-local-demo-accounts";
 
 export type SavedAccount = { id: string; name: string; email: string; role: string; token: string; label?: string };
 
-/** Consolidate demo choices only; never merge different people's identities or records. */
+/** Keep Doctor and Clinician distinct; deduplicate demo choices within each role only. */
 export function demoAccountChoices(accounts: SavedAccount[], currentRole?: string): SavedAccount[] {
-  const canonical = (role: string) => role === "clinician" ? "doctor" : role;
+  const canonical = (role: string) => role;
   const seen = new Set<string>();
   if (currentRole) seen.add(canonical(currentRole));
   return [...accounts].sort((a, b) => Number(b.email === "doctor.demo@example.com") - Number(a.email === "doctor.demo@example.com"))
