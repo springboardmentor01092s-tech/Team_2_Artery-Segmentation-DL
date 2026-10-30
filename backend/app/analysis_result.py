@@ -121,7 +121,11 @@ def build_result(*, event_id, job_id, image, case, version, scores, vessel, arte
         result_id=event_id, job_id=job_id, case_id=case.id, asset_id=image.id,
         created_at=timestamp, model_version=version,
         models=dict(checkpoint_sha256=scores.get("checkpoint_sha256", {}),
-                    approval_scope="preserved_research_baseline" if scores.get("trained_release") else "legacy_research_provider"),
+                    approval_scope="preserved_research_baseline" if scores.get("trained_release") else "legacy_research_provider",
+                    explainability=scores.get("explainability", {
+                        "gradcam": {"status": "unavailable", "reason": "No method-specific attribution record supplied."},
+                        "attention": {"status": "unavailable", "reason": "No attention-map record supplied."},
+                    })),
         input=dict(modality=config.get("modality", case.modality), modality_source="operator_declared",
                    anatomy=case.anatomy, source_sha256=image.source_sha256,
                    prepared_sha256=image.processed_sha256, preprocessing=config),

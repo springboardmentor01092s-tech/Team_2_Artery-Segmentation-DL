@@ -22,6 +22,37 @@ def test_missing_evidence_never_invents_progress(monkeypatch,tmp_path):
     assert result['telemetry']['confirmed_running_jobs'] is None
     assert not result['tasks'] and not result['activity']
     assert all(not row['available'] for row in result['evidence'])
+    assert result['task_proof']==[]
+
+
+def test_kaggle_result_tampering_is_not_imported(monkeypatch,tmp_path):
+    isolate(monkeypatch,tmp_path)
+    path=progress.evidence_paths()['artery-kaggle-result'][1]
+    path.parent.mkdir(parents=True)
+    path.write_text('{"decision":"candidate_requires_independent_review"}')
+    result=progress.snapshot()
+    assert not result['experiments'] and result['summary']['measured_gains']==0
+    assert any('hash mismatch' in warning for warning in result['warnings'])
+
+
+def test_task_proof_requires_allowlisted_available_evidence(monkeypatch,tmp_path):
+    isolate(monkeypatch,tmp_path)
+    paths=progress.evidence_paths()
+    path=paths['task-proof'][1];path.parent.mkdir(parents=True)
+    rows=[dict(id='one',title='Masks',status='software_verified',evidence_id='task-verification'),
+          dict(id='two',title='Severity',status='blocked'),
+          dict(id='three',title='Fake completion',status='complete'),
+          dict(id='one',title='Duplicate',status='blocked')]
+    path.write_text(json.dumps(dict(schema_version=1,tasks=rows)))
+    result=progress.snapshot()['task_proof']
+    assert len(result)==2 and result[0]['status']=='verification_required'
+    paths['task-verification'][1].write_text('Dated software verification only')
+    assert progress.snapshot()['task_proof'][0]['status']=='software_verified'
+    rows[0]['evidence_id']=['invalid']
+    path.write_text(json.dumps(dict(schema_version=1,tasks=rows)))
+    assert progress.snapshot()['task_proof'][0]['status']=='verification_required'
+    path.write_text(json.dumps(dict(schema_version=1,tasks=None)))
+    assert progress.snapshot()['task_proof']==[]
 
 
 def test_regression_and_corrupt_inventory(monkeypatch,tmp_path):

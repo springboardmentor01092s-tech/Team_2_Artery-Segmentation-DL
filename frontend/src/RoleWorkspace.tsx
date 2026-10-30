@@ -46,7 +46,7 @@ const generalClinical: Module[] = [
 ];
 const ml: Module[] = [
   moduleItem("Dataset Registry", "Provenance and dataset-grant management need a connected registry. No patient-case access is granted.", Database, undefined, "Registry not connected"),
-  moduleItem("Training Jobs", "Training is paused at the user's request. No jobs are started from this screen.", PauseCircle, undefined, "Paused · Job controls not connected"),
+  moduleItem("Training Jobs", "Kaggle jobs require verified dataset versions, a finite budget and available resources. No jobs are started from this screen.", PauseCircle, undefined, "Job controls not connected"),
   moduleItem("Compute & GPU Monitor", "Live resource monitoring requires a connected compute agent; no simulated usage is shown.", Cpu, undefined, "Monitor not connected"),
   moduleItem("Model Registry", "Inspect recorded weights, versions, task provenance and checkpoint fingerprints.", Boxes, "models"),
   moduleItem("Evaluation Lab & Model Comparison", "Review recorded validation, held-out results and architecture comparisons.", BarChart3, "models"),

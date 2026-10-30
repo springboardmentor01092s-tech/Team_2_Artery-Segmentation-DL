@@ -188,9 +188,15 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
         raise ValueError("threshold must be between 0 and 1")
     skeleton = _skeletonize(binary)
     height, width = binary.shape
-    calibrated = bool(spacing_mm and len(spacing_mm) == 2 and all(value > 0 for value in spacing_mm))
+    # Metadata must not turn non-finite or malformed spacing into physical units.
+    try:
+        spacing_values = np.asarray(spacing_mm, dtype=float)
+        calibrated = bool(spacing_values.shape == (2,) and np.isfinite(spacing_values).all()
+                          and (spacing_values > 0).all())
+    except (TypeError, ValueError):
+        calibrated = False
     unit = "mm" if calibrated else "px"
-    sy, sx = spacing_mm if calibrated else (1.0, 1.0)
+    sy, sx = spacing_values if calibrated else (1.0, 1.0)
 
     def neighbors(point, points):
         y, x = point
@@ -429,6 +435,9 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
                           for group in skeleton_components)
     perimeter = (top_edges + bottom_edges) * sx + (left_edges + right_edges) * sy
     quality_flags = []
+    if spacing_mm is not None and not calibrated:
+        quality_flags.append({"code": "invalid_physical_spacing", "severity": "review",
+                              "message": "Physical spacing is invalid; geometry is reported in pixels, not millimeters."})
     if not mask_pixels:
         quality_flags.append({"code": "empty_prediction", "severity": "warning", "message": "No artery pixels were predicted."})
     if len(components) > 1:
@@ -460,6 +469,15 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
         "maximum_diameter": round(float(np.percentile(diameters, 90)), 2) if diameters else None,
         "diameter_cv": round(float(np.std(diameters) / np.mean(diameters)), 3) if diameters and np.mean(diameters) else None,
         "diameter_samples": len(diameters), "connected_components": len(components),
+        "diameter_method": "twice_nearest_background_pixel_center_distance",
+        "diameter_sampling": "sorted_skeleton_points_stride_max_1_floor_count_div_1500",
+        "diameter_summary_semantics": {"minimum_diameter": "10th_percentile",
+                                       "maximum_diameter": "90th_percentile",
+                                       "mean_diameter": "arithmetic_mean"},
+        "diameter_measurement_scope": "global_mask_width_summary_not_candidate_local_lumen_diameter",
+        "diameter_uncertainty": None,
+        "diameter_reference_validation": "unavailable",
+        "suitable_for_automatic_severity": False,
         "vessel_candidates": candidate_rows[:20], "boundary_pixels": int(boundary_mask.sum()),
         "boundary_length": round(perimeter, 2), "branching_points": junction_count,
         "endpoints": endpoint_count, "branch_segments": branch_segments,

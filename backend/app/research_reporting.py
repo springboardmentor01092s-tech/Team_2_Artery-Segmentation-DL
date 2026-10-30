@@ -27,6 +27,8 @@ def tabular(snapshot):
     if 'measurements' not in snapshot['sections']:
         for key in ['centerline_length', 'mean_diameter', 'measurement_unit']:
             fields.pop(key)
+    else:
+        fields['reviewed_stenosis_measurements'] = json.dumps(snapshot.get('reviewed_stenosis_measurements', []), ensure_ascii=False)
     if 'review' not in snapshot['sections']:
         for key in ['human_review_id', 'human_assessed_severity']:
             fields.pop(key)
@@ -114,6 +116,16 @@ def pdf_bytes(snapshot, image_paths):
             else:
                 paragraph(value)
     paragraph('Warnings, missing stages and limitations', 'Heading2')
+    if 'measurements' in snapshot['sections']:
+        paragraph('Separate reviewed stenosis measurements', 'Heading2')
+        records = snapshot.get('reviewed_stenosis_measurements', [])
+        if not records:
+            paragraph('No calibrated local/reference measurement record saved for this run. Estimated narrowing unavailable.')
+        for record in records:
+            result = record['result']
+            paragraph(f"Record {record['id']} | Candidate {result['candidate_id']} | Reviewer {record['created_by']}")
+            paragraph(result['explanation']['text'])
+            paragraph(f"Severity: {result['severity'].get('category') or 'Not assessable'} | Calibration: {result['calibration_evidence']} | Measurement evidence: {result['measurement_evidence']}")
     for warning in snapshot['limitations']:
         paragraph(warning)
     for flag in vessel.get('quality_flags', []):

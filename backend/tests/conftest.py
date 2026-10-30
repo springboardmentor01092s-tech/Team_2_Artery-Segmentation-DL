@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 _temp = TemporaryDirectory()
 os.environ["DATABASE_URL"] = f"sqlite:///{Path(_temp.name) / 'test.db'}"
 os.environ["STORAGE_DIR"] = str(Path(_temp.name) / "storage")
-os.environ["JWT_SECRET"] = "test-only-secret-value"
+os.environ["JWT_SECRET"] = "test-only-not-production-secret-value-32-bytes"
 os.environ["COROVISION_MODEL_PROVIDER"] = "legacy"  # Unit tests do not consume developer-installed weights.
 os.environ["COROVISION_INFERENCE_WORKER"] = "0"  # Queue tests dispatch deterministically unless explicitly enabled.
 

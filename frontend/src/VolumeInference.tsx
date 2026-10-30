@@ -21,9 +21,22 @@ export default function VolumeInference({caseId, token, readOnly = false,anatomy
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [previews, setPreviews] = useState<Record<string,string>>({});
+  const [report, setReport] = useState<null | {analysis_run_id:string; model_id:string; explanation:{text:string}; stages:Record<string,{status:string;reason:string}>}>(null);
+  const [reportError,setReportError] = useState('');
   const selected = runs.find(r => r.id === chosen) || runs[0];
   const active = runs.some(r => ['queued','running'].includes(r.status));
   const headers = {Authorization: `Bearer ${token}`};
+
+  useEffect(() => {
+    let disposed=false;
+    setReport(null); setReportError('');
+    if (selected?.status === 'completed') void fetch(apiUrl(`/api/cases/${caseId}/volumes/analyses/${selected.id}/report/json`),
+      {headers:{Authorization:`Bearer ${token}`}}).then(async response=>{
+        if(!response.ok) throw new Error('Saved 3D explanation/report unavailable for this account or run.');
+        return response.json();
+      }).then(value=>{if(!disposed)setReport(value);}).catch(cause=>{if(!disposed)setReportError(cause.message);});
+    return ()=>{disposed=true;};
+  },[caseId,selected?.id,selected?.status,token]);
 
   useEffect(() => {
     let disposed = false;
@@ -82,7 +95,9 @@ export default function VolumeInference({caseId, token, readOnly = false,anatomy
   async function download(name: string) {
     if (!selected) return;
     try {
-      const response = await fetch(apiUrl(selected.artifacts[name]), {headers});
+      const reportFormat = name === 'research-report.json' ? 'json' : name === 'research-report.csv' ? 'csv' : null;
+      const endpoint = reportFormat ? `/api/cases/${caseId}/volumes/analyses/${selected.id}/report/${reportFormat}` : selected.artifacts[name];
+      const response = await fetch(apiUrl(endpoint), {headers});
       if (!response.ok) throw new Error('Artifact unavailable or access expired');
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a'); link.href = url; link.download = name; link.click();
@@ -120,6 +135,18 @@ export default function VolumeInference({caseId, token, readOnly = false,anatomy
             {previews[slice.artifact] ? <img src={previews[slice.artifact]} alt={`Predicted coronary overlay on ${slice.axis} slice ${slice.coarse_index}`} /> : <p>Loading saved preview…</p>}
             <figcaption>{slice.axis} · coarse slice {slice.coarse_index}</figcaption></figure>)}</div></details>
           <div className="volume-downloads"><Button onClick={() => void download('mask_source.nii.gz')}>Download source-grid mask</Button><Button onClick={() => void download('probability_coarse.nii.gz')}>Download coarse probability volume</Button><Button onClick={() => void download('result.json')}>Download result JSON</Button></div>
+          <section aria-label="3D explanation and stage report">
+            <h4>3D explanation and downstream stage availability</h4>
+            {reportError ? <p role="alert">{reportError}</p> : !report ? <p role="status">Loading saved-run report…</p> : <>
+              <p>Run {report.analysis_run_id} · {report.model_id}</p>
+              <p>{report.explanation.text}</p>
+              <dl>{Object.entries(report.stages).map(([name,item])=><div key={name} style={{marginBlock:'1rem'}}>
+                <dt><strong>{name.replaceAll('_',' ')} — {item.status.replaceAll('_',' ')}</strong></dt>
+                <dd style={{marginInlineStart:0}}>{item.reason}</dd>
+              </div>)}</dl>
+              <div className="volume-downloads"><Button onClick={()=>void download('research-report.json')}>Export 3D research JSON</Button><Button onClick={()=>void download('research-report.csv')}>Export 3D stage CSV</Button></div>
+            </>}
+          </section>
           <details><summary>Model limitations and provenance</summary><p>Run: {selected.id}. Predictions use the pinned ImageCAS checkpoint; the mask is resampled back to source geometry without recovering lost detail.</p><ul>{selected.result.limitations.map(value => <li key={value}>{value}</li>)}</ul></details>
         </>}
       </>}

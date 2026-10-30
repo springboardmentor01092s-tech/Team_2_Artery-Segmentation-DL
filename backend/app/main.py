@@ -27,7 +27,7 @@ from .auth_ext import identity_out, normalized_username, resolve_user, router as
 from .models import (
     ActionGrant, AnalysisEvent, AnalysisJob, AnalysisRun, AuditEvent, AuthSession, Case, CaseAccess,
     CaseComment, ClinicalReview, Image, LoginThrottle, Notification, NotificationDismissal,
-    ReportRevision, ResearchReport, VolumeAnalysis, RoleAccessRequest, User, UserIdentity, UserProfile, now
+    ReportRevision, ResearchReport, StenosisMeasurement, VolumeAnalysis, RoleAccessRequest, User, UserIdentity, UserProfile, now
 )
 from .analysis_service import analyze, model_version, models_ready, validation_summary
 from . import trained_release
@@ -1464,6 +1464,25 @@ def volume_artifact(case_id: str, run_id: str, name: str,
     return FileResponse(path, media_type='image/png' if name.endswith('.png') else 'application/json' if name.endswith('.json') else 'application/gzip', filename=name)
 
 
+@app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/report/{format}')
+def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'csv'],
+                           user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    research_report_access(case_id, user, db)
+    row = db.get(VolumeAnalysis, run_id)
+    if not row or row.case_id != case_id:
+        raise HTTPException(404, 'Volume analysis not found')
+    from .volume_reporting import snapshot, csv_text
+    try:
+        document = snapshot(volume_run_out(row))
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if format == 'json':
+        return document
+    from fastapi.responses import Response
+    return Response(csv_text(document), media_type='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename="volume-{row.id}.csv"'})
+
+
 @app.get("/api/images/{image_id}/preview")
 def image_preview(image_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     image = db.get(Image, image_id)
@@ -2283,6 +2302,80 @@ class ResearchReportIn(BaseModel):
     sections: list[Literal['images', 'measurements', 'candidates', 'review', 'appendix']] = Field(default_factory=lambda: ['images', 'measurements', 'candidates', 'review'], max_length=5)
 
 
+class StenosisMeasurementIn(BaseModel):
+    model_config = {'extra': 'forbid', 'allow_inf_nan': False}
+    image_id: str
+    analysis_event_id: str
+    candidate_id: str = Field(min_length=1, max_length=180)
+    minimum_diameter_mm: float = Field(ge=0)
+    reference_diameter_mm: float = Field(gt=0)
+    measurement_frame: str = Field(min_length=1, max_length=180)
+    reference_segment_id: str = Field(min_length=1, max_length=180)
+    protocol_id: str = Field(min_length=1, max_length=180)
+    calibration_evidence: str = Field(min_length=8, max_length=1000)
+    measurement_evidence: str = Field(min_length=8, max_length=1000)
+    calibration_verified: Literal[True]
+    reference_selection_reviewed: Literal[True]
+
+    @field_validator('calibration_verified', 'reference_selection_reviewed', mode='before')
+    @classmethod
+    def explicit_attestation(cls, value):
+        if value is not True:
+            raise ValueError('Explicit true attestation required')
+        return value
+
+    @field_validator('minimum_diameter_mm', 'reference_diameter_mm', mode='before')
+    @classmethod
+    def numeric_not_boolean(cls, value):
+        if isinstance(value, bool):
+            raise ValueError('Numeric diameter required')
+        return value
+
+
+@app.post('/api/cases/{case_id}/stenosis-measurements', status_code=201)
+def record_stenosis_measurement(case_id: str, data: StenosisMeasurementIn,
+        user: User = Depends(require_roles(*ROLE_CLINICAL_REVIEWERS)), db: Session = Depends(get_db)):
+    case = accessible_case(case_id, user, db, required_action='read')
+    if not case_out(case, db, user)['permissions']['can_review']:
+        raise HTTPException(403, 'A case clinician reviewer is required')
+    image, event = db.get(Image, data.image_id), db.get(AnalysisEvent, data.analysis_event_id)
+    if not image or image.case_id != case.id or not event or event.image_id != image.id:
+        raise HTTPException(422, 'Measurement must reference a saved analysis in this case')
+    candidates = (event_out(event).get('structured_result') or {}).get('candidates', [])
+    candidate = next((c for c in candidates if c.get('candidate_id') == data.candidate_id), None)
+    if candidate is None:
+        raise HTTPException(422, 'Candidate is absent from the selected saved run')
+    from .stenosis_measurements import calculate
+    try:
+        result = calculate(data)
+    except (ValueError, OSError, TypeError, KeyError):
+        raise HTTPException(422, 'Inconsistent measurements or unavailable/invalid severity protocol')
+    identity = str(uuid4())
+    snapshot = dict(schema_version='corovision.stenosis-measurement.v1', id=identity,
+        case_id=case.id, image_id=image.id, analysis_event_id=event.id,
+        created_by=user.id, created_at=now().isoformat(), source='reviewer_supplied',
+        model_version=event.model_version, candidate=candidate, result=result)
+    snapshot['content_sha256'] = hashlib.sha256(json.dumps(snapshot, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    db.add(StenosisMeasurement(id=identity, case_id=case.id, image_id=image.id,
+        analysis_event_id=event.id, created_by=user.id, snapshot_json=json.dumps(snapshot, allow_nan=False)))
+    audit(db, user.id, f'stenosis_measurement_recorded:{identity}:{event.id}', case.id)
+    db.commit()
+    return snapshot
+
+
+@app.get('/api/cases/{case_id}/stenosis-measurements')
+def list_stenosis_measurements(case_id: str, analysis_event_id: str,
+        user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    case = accessible_case(case_id, user, db, required_action='read')
+    event = db.get(AnalysisEvent, analysis_event_id)
+    image = db.get(Image, event.image_id) if event else None
+    if image is None or image.case_id != case.id:
+        raise HTTPException(404, 'Saved analysis not found in this case')
+    return [json.loads(row.snapshot_json) for row in db.scalars(select(StenosisMeasurement)
+        .where(StenosisMeasurement.case_id == case.id, StenosisMeasurement.analysis_event_id == event.id)
+        .order_by(StenosisMeasurement.created_at.desc()))]
+
+
 def research_report_access(case_id, user, db):
     case = accessible_case(case_id, user, db, required_action='read')
     if user.role not in ROLE_EXPORTERS or not allowed_action(user, 'analysis:export', db):
@@ -2317,6 +2410,9 @@ def create_research_report(case_id: str, data: ResearchReportIn,
                     'No run-linked human assessment recorded.' if not reviews else 'Human assessment is separate from the model output.']}
     from .image_panels import inventory
     snapshot['image_panels'] = inventory(image, event) if 'images' in data.sections else []
+    snapshot['reviewed_stenosis_measurements'] = [json.loads(row.snapshot_json) for row in db.scalars(
+        select(StenosisMeasurement).where(StenosisMeasurement.case_id == case.id,
+        StenosisMeasurement.analysis_event_id == event.id).order_by(StenosisMeasurement.created_at.desc()))]
     report.snapshot_json = json.dumps(snapshot, default=str)
     db.add(report)
     audit(db, user.id, f'research_report_generated:v{version}:{event.id}', case.id)

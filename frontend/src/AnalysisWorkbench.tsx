@@ -8,6 +8,7 @@ import { Card } from "./components/prismui/card";
 import { apiUrl } from "./api";
 import { candidateViewport } from './reviewEvidence';
 import ImagePanelGallery from './ImagePanelGallery';
+import StenosisMeasurements from './StenosisMeasurements';
 
 type Props = {
   onImageReview?: () => void;
@@ -215,6 +216,7 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
       </div>
       {analysis && <Card className="panel"><details className="evidence-details"><summary>Model provenance, structured explanation & limitations</summary><pre className="provenance-json">{JSON.stringify({ model: analysis.model_version, models: analysis.structured_result?.models, preprocessing: analysis.structured_result?.input || selectedImage.processing_record }, null, 2)}</pre><ResultEvidence result={analysis.structured_result} /></details></Card>}
       {analysis && <Card className="panel"><ImagePanelGallery token={token} imageId={selectedImage.id} runId={analysis.id} modelVersion={analysis.model_version} /></Card>}
+      {analysis && selectedCase && <Card className="panel"><StenosisMeasurements key={analysis.id} token={token} caseId={selectedCase.id} imageId={selectedImage.id} runId={analysis.id} candidates={analysis.structured_result?.candidates.map(c=>c.candidate_id)||[]} canReview={!!selectedCase.permissions?.can_review} /></Card>}
       <AnalysisHistory imageId={selectedImage.id} token={token} history={history} onSelect={onSelectAnalysis} />
     </>}
   </div>;

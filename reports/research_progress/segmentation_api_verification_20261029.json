@@ -1,0 +1,62 @@
+{
+  "proof_rows": [
+    {
+      "id": "baseline-implementation",
+      "title": "Baseline segmentation model implementation",
+      "status": "software_verified",
+      "detail": "Preserved trained adapter executed on 29 October. Saved event 7974f2f0-2d49-453a-b8b7-1e0febebf51d; model corovision-preserved-2d-20261023. Workflow proof, not independent accuracy validation.",
+      "required_proof": "Architecture, checkpoint identity and completed actual inference.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "advanced-implementation",
+      "title": "Advanced segmentation architecture implementation",
+      "status": "software_verified",
+      "detail": "Attention U-Net, U-Net++ and configurable 3D prototypes implemented outside app; 110 research software tests passed 29 October. Untrained; no advanced accuracy claim.",
+      "required_proof": "Architecture source and shape/contract tests; training is tracked separately.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "mask-generation",
+      "title": "Generate artery masks",
+      "status": "software_verified",
+      "detail": "Fresh application job 7c455aec-c2b3-4902-b76c-2677a8643836 completed; 8,927 artery pixels and six saved run-linked panels. No reference mask for image-specific accuracy.",
+      "required_proof": "Actual completed model execution with saved mask and source/run identity.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "centerline-execution",
+      "title": "Centerline extraction: actual application run",
+      "status": "software_verified",
+      "detail": "Fresh saved centerline and graph: 797.96 px, 2 junctions, 4 endpoints. Synthetic checks pass; anatomical reference validation remains pending.",
+      "required_proof": "Saved centerline, graph and geometry tests.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "segmentation-comparison",
+      "title": "Baseline versus advanced segmentation comparison",
+      "status": "blocked",
+      "detail": "Advanced architecture has no trained checkpoint. Historical baseline values and rejected postprocessing trials cannot substitute for a matched advanced-model comparison.",
+      "required_proof": "Trained advanced checkpoint, identical eligible reference cohort, per-case metrics and comparison against baseline.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "segmentation-performance-report",
+      "title": "Segmentation performance evidence",
+      "status": "verification_required",
+      "detail": "Existing 200-case development-validation baseline Dice/IoU and rejected Kaggle comparison are saved. Fresh demonstration has no reference mask; advanced performance report remains pending.",
+      "required_proof": "Pinned cohort/reference/protocol, per-case metrics and honest missing-result handling.",
+      "evidence_id": "segmentation-proof"
+    },
+    {
+      "id": "training",
+      "title": "Training, augmentation, stopping and checkpoint management",
+      "status": "blocked",
+      "detail": "29 October request explicitly includes segmentation training. No job launched: exact source/label/preprocessing protocol, remote input versions and usable free Kaggle resources remain unverified. Authorization alone is not training proof.",
+      "required_proof": "Exact source/version/split hashes, seed, finite budget, history, stopping reason and immutable checkpoint.",
+      "evidence_id": "segmentation-proof"
+    }
+  ],
+  "evidence_http": 200,
+  "checked_at": "2026-10-29T04:47:28.293657+00:00"
+}

@@ -230,6 +230,17 @@ class ResearchReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
+class StenosisMeasurement(Base):
+    __tablename__ = "stenosis_measurements"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    case_id: Mapped[str] = mapped_column(ForeignKey("cases.id"), index=True)
+    image_id: Mapped[str] = mapped_column(ForeignKey("images.id"))
+    analysis_event_id: Mapped[str] = mapped_column(ForeignKey("analysis_events.id"), index=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    snapshot_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
 class ReportRevision(Base):
     __tablename__ = "report_revisions"
     __table_args__ = (UniqueConstraint("case_id", "version"),)
