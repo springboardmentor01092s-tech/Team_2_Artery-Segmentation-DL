@@ -29,6 +29,8 @@ class Case(Base):
     analysis_status = Column(String, default="Pending")
     model_version = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True, index=True)
@@ -37,4 +39,13 @@ class AuditLog(Base):
     role = Column(String)
     action = Column(String, nullable=False)
     detail = Column(String)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class SegmentationResult(Base):
+    __tablename__ = "segmentation_results"
+    id = Column(Integer, primary_key=True, index=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False, index=True)
+    task = Column(String, nullable=False)
+    result_json = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

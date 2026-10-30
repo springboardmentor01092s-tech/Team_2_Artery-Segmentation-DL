@@ -39,6 +39,18 @@ const ROLE_INFO = {
   },
 };
 
+const NAV = [
+  ["cases", "Cases"],
+  ["syntax", "Segmentation"],
+  ["stenosis", "Stenosis"],
+];
+
+const TITLES = {
+  cases: ["Case Management", "Create, review and manage patient cases"],
+  syntax: ["Segmentation", "Segment coronary arteries and measure vessels (syntax model)"],
+  stenosis: ["Stenosis", "Find suspected stenosis regions (stenosis model)"],
+};
+
 const inputCls =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
 
@@ -96,6 +108,14 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [stages, setStages] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [view, setView] = useState("cases"); // "cases" | "syntax" | "stenosis"
+
+  // segmentation
+  const [seg, setSeg] = useState(null); // result currently shown in the panel
+  const [segAll, setSegAll] = useState({}); // saved results of the open case, by task
+  const [segMap, setSegMap] = useState({}); // {caseId: ["syntax", ...]} for the lists
+  const [segBusy, setSegBusy] = useState(false);
+  const [segCaseId, setSegCaseId] = useState(null);
 
   const canWrite = ["clinician", "admin"].includes(user?.role);
   const canPreprocess = ["clinician", "admin", "data_scientist"].includes(user?.role);
@@ -110,11 +130,21 @@ export default function Dashboard() {
     navigate("/login");
   };
 
+  const loadSummary = async () => {
+    try {
+      const s = await api.get("/cases/results/summary");
+      setSegMap(s.data);
+    } catch {
+      /* ignore: the lists still work without badges */
+    }
+  };
+
   const loadCases = async () => {
     try {
       const res = await api.get("/cases");
       setCases(res.data);
       setError("");
+      await loadSummary();
     } catch (e) {
       if (e.response?.status === 401) logout();
       else setError("Could not load cases. Is the backend running?");
@@ -218,6 +248,53 @@ export default function Dashboard() {
     }
   };
 
+  // run the model (and save the result on the server)
+  const runSegment = async (id, task = "syntax") => {
+    setSegBusy(true);
+    if (id !== segCaseId) setSegAll({});
+    setSegCaseId(id);
+    setError("");
+    try {
+      const res = await api.post(`/cases/${id}/segment`, null, { params: { task } });
+      setSeg({ ...res.data, ts: Date.now() });
+      setSegAll((prev) => ({ ...prev, [task]: res.data }));
+      await loadSummary();
+    } catch (e) {
+      setError(e.response?.data?.detail || "Segmentation failed.");
+    } finally {
+      setSegBusy(false);
+    }
+  };
+
+  // reopen saved results (no model run)
+  const viewResults = async (id, preferred) => {
+    try {
+      const res = await api.get(`/cases/${id}/results`);
+      const data = res.data;
+      const first =
+        preferred && data[preferred]
+          ? preferred
+          : data.syntax
+          ? "syntax"
+          : Object.keys(data)[0];
+      if (!first) {
+        setError("No saved results for this case yet.");
+        return;
+      }
+      setSegCaseId(id);
+      setSegAll(data);
+      setSeg({ ...data[first], ts: Date.now() });
+    } catch (e) {
+      setError(e.response?.data?.detail || "Could not load saved results.");
+    }
+  };
+
+  // switch task in the panel: show saved result if there is one, else run the model
+  const showTask = (t) => {
+    if (segAll[t]) setSeg({ ...segAll[t], ts: Date.now() });
+    else runSegment(segCaseId, t);
+  };
+
   const confirmDelete = async () => {
     try {
       await api.delete(`/cases/${deleteTarget.id}`);
@@ -238,9 +315,22 @@ export default function Dashboard() {
           <p className="text-xs text-slate-400">Coronary analysis platform</p>
         </div>
         <nav className="space-y-1 text-sm">
-          <div className="rounded-lg bg-indigo-600 px-3 py-2 font-medium text-white">Cases</div>
-          <div className="px-3 py-2 text-slate-500">Segmentation (soon)</div>
-          <div className="px-3 py-2 text-slate-500">Stenosis (soon)</div>
+          {NAV.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => {
+                setView(key);
+                setSearch("");
+              }}
+              className={`block w-full rounded-lg px-3 py-2 text-left ${
+                view === key
+                  ? "bg-indigo-600 font-medium text-white"
+                  : "text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
           <div className="px-3 py-2 text-slate-500">Reports (soon)</div>
         </nav>
         <button
@@ -255,8 +345,8 @@ export default function Dashboard() {
       <div className="flex-1">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold">Case Management</h2>
-            <p className="text-xs text-slate-500">Create, review and manage patient cases</p>
+            <h2 className="text-lg font-semibold">{TITLES[view][0]}</h2>
+            <p className="text-xs text-slate-500">{TITLES[view][1]}</p>
           </div>
 
           {/* Profile menu */}
@@ -333,124 +423,256 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Total cases" value={stats.total} color="text-indigo-600" />
-            <StatCard label="Awaiting analysis" value={stats.pending} color="text-amber-600" />
-            <StatCard label="With scan uploaded" value={stats.withImage} color="text-emerald-600" />
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by patient ID, gender, region..."
-                className={`${inputCls} max-w-sm`}
-              />
-              {canWrite && (
-                <button
-                  onClick={openNew}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                  + New Case
-                </button>
-              )}
+          {view === "cases" && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <StatCard label="Total cases" value={stats.total} color="text-indigo-600" />
+              <StatCard label="Awaiting analysis" value={stats.pending} color="text-amber-600" />
+              <StatCard label="With scan uploaded" value={stats.withImage} color="text-emerald-600" />
             </div>
+          )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Patient ID</th>
-                    <th className="px-4 py-3">Age / Gender</th>
-                    <th className="px-4 py-3">Modality</th>
-                    <th className="px-4 py-3">Region</th>
-                    <th className="px-4 py-3">Scan date</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {loading && (
+          {view === "cases" ? (
+            /* ---------- Cases ---------- */
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by patient ID, gender, region..."
+                  className={`${inputCls} max-w-sm`}
+                />
+                {canWrite && (
+                  <button
+                    onClick={openNew}
+                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  >
+                    + New Case
+                  </button>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                     <tr>
-                      <td colSpan="7" className="px-4 py-10 text-center text-slate-400">
-                        Loading cases...
-                      </td>
+                      <th className="px-4 py-3">Patient ID</th>
+                      <th className="px-4 py-3">Age / Gender</th>
+                      <th className="px-4 py-3">Modality</th>
+                      <th className="px-4 py-3">Region</th>
+                      <th className="px-4 py-3">Scan date</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
-                  )}
-                  {!loading && filtered.length === 0 && (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-10 text-center text-slate-400">
-                        {canWrite ? 'No cases yet. Click "New Case" to add one.' : "No cases to show."}
-                      </td>
-                    </tr>
-                  )}
-                  {filtered.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-medium">
-                        <div className="flex items-center gap-3">
-                          {c.image_path && (
-                            <img
-                              src={`${API_URL}/uploads/${c.image_path}`}
-                              alt="scan"
-                              className="h-10 w-10 rounded object-cover"
-                            />
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading && (
+                      <tr>
+                        <td colSpan="7" className="px-4 py-10 text-center text-slate-400">
+                          Loading cases...
+                        </td>
+                      </tr>
+                    )}
+                    {!loading && filtered.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="px-4 py-10 text-center text-slate-400">
+                          {canWrite ? 'No cases yet. Click "New Case" to add one.' : "No cases to show."}
+                        </td>
+                      </tr>
+                    )}
+                    {filtered.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium">
+                          <div className="flex items-center gap-3">
+                            {c.image_path && (
+                              <img
+                                src={`${API_URL}/uploads/${c.image_path}`}
+                                alt="scan"
+                                className="h-10 w-10 rounded object-cover"
+                              />
+                            )}
+                            {c.patient_id}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.age ?? "-"} / {c.gender ?? "-"}
+                        </td>
+                        <td className="px-4 py-3">{c.imaging_modality ?? "-"}</td>
+                        <td className="px-4 py-3">{c.anatomical_region ?? "-"}</td>
+                        <td className="px-4 py-3">{c.scan_date ?? "-"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge status={c.analysis_status} />
+                            {(segMap[c.id] || []).map((t) => (
+                              <span
+                                key={t}
+                                className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right">
+                          {canWrite && (
+                            <label className="mr-3 cursor-pointer text-emerald-600 hover:underline">
+                              {c.image_path ? "Replace scan" : "Upload scan"}
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg"
+                                className="hidden"
+                                onChange={(e) => uploadImage(c.id, e.target.files[0])}
+                              />
+                            </label>
                           )}
-                          {c.patient_id}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {c.age ?? "-"} / {c.gender ?? "-"}
-                      </td>
-                      <td className="px-4 py-3">{c.imaging_modality ?? "-"}</td>
-                      <td className="px-4 py-3">{c.anatomical_region ?? "-"}</td>
-                      <td className="px-4 py-3">{c.scan_date ?? "-"}</td>
-                      <td className="px-4 py-3">
-                        <Badge status={c.analysis_status} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        {canWrite && (
-                          <label className="mr-3 cursor-pointer text-emerald-600 hover:underline">
-                            {c.image_path ? "Replace scan" : "Upload scan"}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              className="hidden"
-                              onChange={(e) => uploadImage(c.id, e.target.files[0])}
-                            />
-                          </label>
-                        )}
-                        {canPreprocess && c.image_path && (
-                          <button
-                            onClick={() => preprocess(c.id)}
-                            className="mr-3 text-slate-700 hover:underline"
-                          >
-                            Preprocess
-                          </button>
-                        )}
-                        {canWrite && (
-                          <button
-                            onClick={() => openEdit(c)}
-                            className="mr-3 text-indigo-600 hover:underline"
-                          >
-                            Edit
-                          </button>
-                        )}
-                        {canWrite && (
-                          <button
-                            onClick={() => setDeleteTarget(c)}
-                            className="text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          {canPreprocess && c.image_path && (
+                            <button
+                              onClick={() => preprocess(c.id)}
+                              className="mr-3 text-slate-700 hover:underline"
+                            >
+                              Preprocess
+                            </button>
+                          )}
+                          {canPreprocess && c.image_path && (
+                            <button
+                              onClick={() => runSegment(c.id, "syntax")}
+                              disabled={segBusy && segCaseId === c.id}
+                              className="mr-3 text-violet-600 hover:underline disabled:opacity-50"
+                            >
+                              {segBusy && segCaseId === c.id ? "Segmenting..." : "Segment"}
+                            </button>
+                          )}
+                          {(segMap[c.id] || []).length > 0 && (
+                            <button
+                              onClick={() => viewResults(c.id)}
+                              className="mr-3 text-fuchsia-600 hover:underline"
+                            >
+                              Results
+                            </button>
+                          )}
+                          {canWrite && (
+                            <button
+                              onClick={() => openEdit(c)}
+                              className="mr-3 text-indigo-600 hover:underline"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {canWrite && (
+                            <button
+                              onClick={() => setDeleteTarget(c)}
+                              className="text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ---------- Segmentation / Stenosis ---------- */
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 p-4">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by patient ID, gender, region..."
+                  className={`${inputCls} max-w-sm`}
+                />
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Patient ID</th>
+                      <th className="px-4 py-3">Age / Gender</th>
+                      <th className="px-4 py-3">Region</th>
+                      <th className="px-4 py-3">Model</th>
+                      <th className="px-4 py-3">Result</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading && (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-10 text-center text-slate-400">
+                          Loading cases...
+                        </td>
+                      </tr>
+                    )}
+                    {!loading && filtered.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-10 text-center text-slate-400">
+                          No cases to show.
+                        </td>
+                      </tr>
+                    )}
+                    {filtered.map((c) => {
+                      const done = (segMap[c.id] || []).includes(view);
+                      const busy = segBusy && segCaseId === c.id;
+                      return (
+                        <tr key={c.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium">
+                            <div className="flex items-center gap-3">
+                              {c.image_path && (
+                                <img
+                                  src={`${API_URL}/uploads/${c.image_path}`}
+                                  alt="scan"
+                                  className="h-10 w-10 rounded object-cover"
+                                />
+                              )}
+                              {c.patient_id}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {c.age ?? "-"} / {c.gender ?? "-"}
+                          </td>
+                          <td className="px-4 py-3">{c.anatomical_region ?? "-"}</td>
+                          <td className="px-4 py-3">{view === "syntax" ? "U-Net (syntax)" : "U-Net (stenosis)"}</td>
+                          <td className="px-4 py-3">
+                            {!c.image_path ? (
+                              <span className="text-xs text-slate-400">No scan uploaded</span>
+                            ) : done ? (
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                                Done
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                                Not run
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-right">
+                            {canPreprocess && c.image_path && (
+                              <button
+                                onClick={() => runSegment(c.id, view)}
+                                disabled={busy}
+                                className="mr-3 text-violet-600 hover:underline disabled:opacity-50"
+                              >
+                                {busy ? "Running..." : done ? "Re-run" : "Run"}
+                              </button>
+                            )}
+                            {done && (
+                              <button
+                                onClick={() => viewResults(c.id, view)}
+                                className="text-fuchsia-600 hover:underline"
+                              >
+                                View result
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -573,6 +795,89 @@ export default function Dashboard() {
             <div className="mt-4 text-right">
               <button
                 onClick={() => setStages(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Segmentation results */}
+      {seg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold">
+                Segmentation result ({seg.task})
+              </h3>
+              <div className="flex items-center gap-2">
+                {segBusy && <span className="text-xs text-slate-500">Running...</span>}
+                {["syntax", "stenosis"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => showTask(t)}
+                    disabled={segBusy}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+                      seg.task === t
+                        ? "bg-indigo-600 text-white"
+                        : "border border-slate-300 text-slate-700"
+                    } disabled:opacity-50`}
+                  >
+                    {t}
+                    {segAll[t] ? " ✓" : ""}
+                  </button>
+                ))}
+                <button
+                  onClick={() => runSegment(segCaseId, seg.task)}
+                  disabled={segBusy}
+                  className="rounded-lg border border-violet-300 px-3 py-1.5 text-xs font-medium text-violet-700 disabled:opacity-50"
+                >
+                  Re-run
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                ["Overlay", seg.overlay_url],
+                ["Mask", seg.mask_url],
+                ["Centerline", seg.vessel?.centerline_url],
+              ]
+                .filter(([, u]) => u)
+                .map(([name, u]) => (
+                  <div key={name}>
+                    <img
+                      src={`${API_URL}${u}?t=${seg.ts}`}
+                      alt={name}
+                      className="w-full rounded-lg border"
+                    />
+                    <p className="mt-1 text-center text-xs text-slate-600">{name}</p>
+                  </div>
+                ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <MiniStat value={`${seg.foreground_percent}%`} label="Vessel area" />
+              <MiniStat value={seg.max_probability} label="Max probability" />
+              <MiniStat value={seg.threshold} label="Threshold" />
+              <MiniStat value={seg.model_version} label="Model" />
+            </div>
+
+            {seg.vessel && (
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <MiniStat value={seg.vessel.vessel_segments} label="Segments" />
+                <MiniStat value={`${seg.vessel.centerline_length_px}px`} label="Centerline" />
+                <MiniStat value={`${seg.vessel.mean_diameter_px}px`} label="Mean diameter" />
+                <MiniStat value={`${seg.vessel.max_diameter_px}px`} label="Max diameter" />
+                <MiniStat value={`${seg.vessel.min_diameter_px}px`} label="Min diameter" />
+              </div>
+            )}
+
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setSeg(null)}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
               >
                 Close

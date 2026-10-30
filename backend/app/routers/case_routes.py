@@ -1,6 +1,8 @@
 import os
+import json
 import uuid
 import shutil
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from .. import models, schemas, auth
@@ -63,6 +65,23 @@ def list_cases(
     return q.order_by(models.Case.id.desc()).all()
 
 
+@router.get("/results/summary")
+def results_summary(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    """Which tasks have saved results, per case: {"2": ["syntax", "stenosis"]}"""
+    q = db.query(models.SegmentationResult.case_id, models.SegmentationResult.task).join(
+        models.Case, models.Case.id == models.SegmentationResult.case_id
+    )
+    if user.role not in VIEW_ALL_ROLES:
+        q = q.filter(models.Case.owner_id == user.id)
+    summary = {}
+    for case_id, task in q.all():
+        summary.setdefault(case_id, []).append(task)
+    return summary
+
+
 @router.get("/{case_id}", response_model=schemas.CaseOut)
 def get_case(
     case_id: int,
@@ -96,6 +115,9 @@ def delete_case(
 ):
     case = get_case_for_user(case_id, db, user, write=True)
     info = f"patient {case.patient_id} (case {case.id})"
+    db.query(models.SegmentationResult).filter(
+        models.SegmentationResult.case_id == case.id
+    ).delete()
     db.delete(case)
     db.commit()
     log_action(db, user, "delete_case", info)
@@ -150,3 +172,95 @@ def preprocess_case(
             for s in stages
         ]
     }
+
+
+@router.post("/{case_id}/segment")
+def segment_case(
+    case_id: int,
+    task: str = "syntax",
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    from ..ml import predict_mask, MODEL_INFO
+
+    case = get_case_for_user(case_id, db, user)
+    require_role(user, PREPROCESS_ROLES, "Your role cannot run analysis")
+    if task not in MODEL_INFO:
+        raise HTTPException(status_code=400, detail="task must be 'syntax' or 'stenosis'")
+    if not case.image_path:
+        raise HTTPException(status_code=400, detail="Upload a scan first")
+    try:
+        out = predict_mask(
+            os.path.join(UPLOAD_DIR, case.image_path),
+            task,
+            os.path.join(UPLOAD_DIR, "results"),
+            f"case_{case_id}_{task}",
+        )
+        from ..analysis import analyze_vessels
+        results_dir = os.path.join(UPLOAD_DIR, "results")
+        vessel = analyze_vessels(
+            os.path.join(UPLOAD_DIR, case.image_path),
+            os.path.join(results_dir, out["mask"]),
+            results_dir,
+            f"case_{case_id}_{task}",
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Analysis failed: {e}")
+
+    case.model_version = out["model_version"]
+    case.analysis_status = "Analysis complete"
+
+    payload = {
+        "task": task,
+        "mask_url": f"/uploads/results/{out['mask']}",
+        "overlay_url": f"/uploads/results/{out['overlay']}",
+        "foreground_percent": out["foreground_percent"],
+        "max_probability": out["max_probability"],
+        "threshold": out["threshold"],
+        "model_version": out["model_version"],
+        "vessel": {
+            **vessel,
+            "clean_url": f"/uploads/results/{vessel['clean']}",
+            "centerline_url": f"/uploads/results/{vessel['centerline']}",
+        },
+    }
+
+    # save (or replace) the result for this case + task
+    saved = (
+        db.query(models.SegmentationResult)
+        .filter(
+            models.SegmentationResult.case_id == case.id,
+            models.SegmentationResult.task == task,
+        )
+        .first()
+    )
+    if saved:
+        saved.result_json = json.dumps(payload)
+        saved.created_at = datetime.now(timezone.utc)
+    else:
+        db.add(
+            models.SegmentationResult(
+                case_id=case.id, task=task, result_json=json.dumps(payload)
+            )
+        )
+    db.commit()
+    log_action(db, user, f"segment_{task}", f"case {case.id}")
+    return payload
+
+
+@router.get("/{case_id}/results")
+def get_saved_results(
+    case_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    """Saved segmentation results for a case, by task: {"syntax": {...}, "stenosis": {...}}"""
+    case = get_case_for_user(case_id, db, user)
+    rows = (
+        db.query(models.SegmentationResult)
+        .filter(models.SegmentationResult.case_id == case.id)
+        .all()
+    )
+    return {r.task: json.loads(r.result_json) for r in rows}
