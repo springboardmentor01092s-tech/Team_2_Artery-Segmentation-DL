@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "scope": "saved evidence export; no new evaluation",
+  "historical_models": [
+    {
+      "task": "syntax",
+      "model": "maskrcnn_resnet50_fpn",
+      "cases": 200,
+      "dice": 0.7431800550109317,
+      "iou": 0.5913178398974213,
+      "precision": 0.8296728171736537,
+      "recall": 0.6730183973456216,
+      "task_f1_reported": 0.1839098883437856,
+      "instance_f1_iou50": 0.4691075514874142,
+      "cohort_status": "historical declared validation; per-case identity not independently reproduced",
+      "source": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-syntax-training/v2/corovision_syntax/models/syntax/comparison_report.json"
+    },
+    {
+      "task": "syntax",
+      "model": "maskrcnn_resnet50_fpn_v2",
+      "cases": 200,
+      "dice": 0.7257000915979277,
+      "iou": 0.5694892441041844,
+      "precision": 0.8465531358155731,
+      "recall": 0.6350421372982951,
+      "task_f1_reported": 0.20251831493161418,
+      "instance_f1_iou50": 0.48721071863581,
+      "cohort_status": "historical declared validation; per-case identity not independently reproduced",
+      "source": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-syntax-training/v2/corovision_syntax/models/syntax/comparison_report.json"
+    },
+    {
+      "task": "stenosis",
+      "model": "maskrcnn_resnet50_fpn",
+      "cases": 200,
+      "dice": 0.5713550516446102,
+      "iou": 0.39992795431946604,
+      "precision": 0.5395445791504085,
+      "recall": 0.607151492963985,
+      "task_f1_reported": 0.4393944477569922,
+      "instance_f1_iou50": 0.4020618556701031,
+      "cohort_status": "historical declared validation; per-case identity not independently reproduced",
+      "source": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-stenosis-training/v2/corovision_stenosis/models/stenosis/comparison_report.json"
+    },
+    {
+      "task": "stenosis",
+      "model": "maskrcnn_resnet50_fpn_v2",
+      "cases": 200,
+      "dice": 0.5547941960186186,
+      "iou": 0.38388594516450336,
+      "precision": 0.5539143578641953,
+      "recall": 0.5556768336915181,
+      "task_f1_reported": 0.42210649143159584,
+      "instance_f1_iou50": 0.4252336448598131,
+      "cohort_status": "historical declared validation; per-case identity not independently reproduced",
+      "source": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-stenosis-training/v2/corovision_stenosis/models/stenosis/comparison_report.json"
+    }
+  ],
+  "paired_postprocessing": {
+    "baseline": {
+      "mean_dice": 0.8272773138933874,
+      "mean_precision": 0.8443600533723558,
+      "mean_recall": 0.821873792933815,
+      "tp": 1534098,
+      "fp": 288082,
+      "fn": 344760
+    },
+    "candidate": {
+      "mean_dice": 0.8272789856418467,
+      "mean_precision": 0.8443352310733329,
+      "mean_recall": 0.8219028876714006,
+      "tp": 1534144,
+      "fp": 288144,
+      "fn": 344714
+    },
+    "delta": 1.6717484592199128e-06,
+    "decision": "rejected_baseline_retained",
+    "elapsed_seconds": 47.773692951999976,
+    "training_performed": false,
+    "new_inference": false,
+    "limitation": "Development-exposed image-level validation; no independent patient, anatomical branch or clinical validity claim"
+  },
+  "paired_cases": 200,
+  "sources": [
+    {
+      "path": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-syntax-training/v2/corovision_syntax/models/syntax/comparison_report.json",
+      "sha256": "77b039f24cc27425740d4e258eadf4da130923c119ff09b7ebf5311e10363c11",
+      "bytes": 106827
+    },
+    {
+      "path": "CoroVision_Kaggle_Offline_20261024/runs/mokshagnamannam/corovision-arcade-stenosis-training/v2/corovision_stenosis/models/stenosis/comparison_report.json",
+      "sha256": "36839c5ed25a1afd5bef16b2e65969027186a7fed2e6c2e908fc68d9daabe749",
+      "bytes": 60191
+    },
+    {
+      "path": "reports/research_live/kaggle/run_362745762_v1/arcade_frozen_holes_20261027/comparison.json",
+      "sha256": "c6b1c57d4e27da2ed2485b7884e6617614e18af327e2c4d7ce07acf4e96f8212",
+      "bytes": 122179
+    },
+    {
+      "path": "reports/research_live/kaggle/run_362745762_v1/arcade_frozen_holes_20261027/plan.json",
+      "sha256": "2ad13023be6b494b2190d0923013b2fd942a1340fac54fa7e3c728a7e295d613",
+      "bytes": 974
+    }
+  ],
+  "unavailable_models": [
+    "Attention U-Net (untrained)",
+    "U-Net++ (untrained)",
+    "PlannedUNet3D (untrained)"
+  ],
+  "independent_validation": false,
+  "model_activation": false
+}

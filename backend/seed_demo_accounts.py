@@ -26,6 +26,7 @@ HERE = Path(__file__).resolve().parent
 OUTPUT = HERE / "demo-credentials.json"
 ACCOUNTS = (
     ("Doctor", "doctor", "doctor_demo", "doctor.demo@example.com", "Demo Doctor"),
+    ("Clinician", "clinician", "radiologist_demo", "radiologist.demo@example.com", "Demo Clinician"),
     ("Medical Researcher", "researcher", "researcher_demo", "researcher.demo@example.com", "Demo Researcher"),
     ("Data Scientist / ML Engineer", "ml_engineer", "mlengineer_demo", "mlengineer.demo@example.com", "Demo ML Engineer"),
     ("Technician / Data Operator", "technician", "technician_demo", "technician.demo@example.com", "Demo Technician"),

@@ -1,0 +1,26 @@
+{
+  "model_id": "imagecas-coronary-unet3d-128-v1",
+  "task": "3d_coronary_segmentation",
+  "architecture": "UNet3D, width 12, GroupNorm, 2 output classes",
+  "modality": "CTA",
+  "anatomy": "coronary",
+  "checkpoint_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+  "checkpoint_epoch": 75,
+  "class_mapping": {"0": "background", "1": "coronary_artery"},
+  "preprocessing": {
+    "orientation": "nibabel as_closest_canonical RAS",
+    "tensor_spatial_axis_order": "XYZ, retained exactly from training arrays",
+    "input": "original CT HU, operator attested",
+    "clip_hu": [-200, 800],
+    "resize": "scipy.ndimage.zoom to 128 cubed, order=1, prefilter=False, grid_mode=False",
+    "normalize": "(resized_clipped_HU + 200) / 1000",
+    "storage_parity": "float16 then float32",
+    "decision": "argmax across background and artery logits",
+    "postprocessing": "none; no unvalidated component filtering"
+  },
+  "status": "explicit_research_only_integration",
+  "clinical_validated": false,
+  "native_resolution_accuracy_validated": false,
+  "source": "Connected handoff trained_models/imagecas128; original source and immutable checkpoint reused",
+  "excluded": ["ImageCAS-X substitution", "aorta/hepatic/MRA", "stenosis", "severity", "training", "clinical deployment"]
+}

@@ -73,7 +73,7 @@ function viewLabel(view: (typeof views)[number], role?: string): string {
   if (view.id === "analysis" && role === "viewer") return "AI Results";
   if (view.id === "analysis" && role === "technician") return "Image Inspection";
   if (view.id === "models" && role === "admin") return "Model Registry";
-  if (view.id === "models" && role === "ml_engineer") return "Registry & Evaluation Lab";
+  if (view.id === "models" && role === "ml_engineer") return "Model Evaluation";
   if (view.id === "reports" && role === "researcher") return "Reports & Exports";
   if (view.id === "reports" && (role === "doctor" || role === "clinician")) return "Review Reports";
   if (view.id === "analysis" && (role === "doctor" || role === "clinician")) return "Image Review";
@@ -116,8 +116,9 @@ function getInitials(nameOrEmail?: string): string {
 function formatRole(role?: string): string {
   switch (role) {
     case "doctor":
-    case "clinician":
       return "Doctor";
+    case "clinician":
+      return "Clinician";
     case "researcher":
       return "Medical Researcher";
     case "ml_engineer":
@@ -163,7 +164,7 @@ export function MacOSSidebar({
   const userRole = role || user?.role;
   const visibleViews = views.filter(({ id }) => canOpenSection(id, userRole, user?.permissions));
 
-  const displayName = (userRole === "doctor" || userRole === "clinician") && /^Demo /i.test(user?.display_name || "") ? "Demo Doctor" : user?.display_name || user?.username || user?.email || "User";
+  const displayName = (userRole === "doctor" || userRole === "clinician") && /^Demo /i.test(user?.display_name || "") ? (userRole === "clinician" ? "Demo Clinician" : "Demo Doctor") : user?.display_name || user?.username || user?.email || "User";
   const roleLabel = formatRole(userRole);
   const initials = getInitials(user?.display_name || user?.username || user?.email);
   const avatarColor = getAvatarColor(user?.email || user?.display_name || "user");
@@ -371,7 +372,7 @@ export function MacOSSidebar({
                   onClick={() => { setPopoverOpen(false); onSwitchAccount?.(account); }}
                 >
                   <RoleIcon role={account.role} />
-                  <span>{account.role === "doctor" || account.role === "clinician" ? "Demo Doctor" : account.name} <small>· {formatRole(account.role)}</small></span>
+                  <span>{account.role === "doctor" ? "Demo Doctor" : account.role === "clinician" ? "Demo Clinician" : account.name} <small>· {formatRole(account.role)}</small></span>
                 </button>)}
               </>}
 

@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set a strong private JWT_SECRET}
+      COROVISION_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:8000}
+      CV_LOCAL_DEMO_SESSIONS: "0"
+      CV_LOCAL_DEMO_SHARING: "0"
+    volumes:
+      - application-data:/data
+      - ./models/trained_release:/models:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 60s
+volumes:
+  application-data:

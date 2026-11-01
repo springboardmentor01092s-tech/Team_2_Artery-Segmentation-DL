@@ -13,6 +13,7 @@ type TrashedCase = { id: string; case_code: string; deleted_at: string };
 const ROLE_OPTIONS = [
   { value: "admin", label: "System Administrator", icon: ShieldCheck, desc: "Full user management, audit logs, system & model governance" },
   { value: "doctor", label: "Doctor", icon: Stethoscope, desc: "Case review, stenosis examination, clinical review decisions" },
+  { value: "clinician", label: "Clinician", icon: Stethoscope, desc: "Separate clinical reviewer identity with authorized case review access" },
   { value: "researcher", label: "Medical Researcher", icon: FlaskConical, desc: "De-identified cases, model evaluation, research exports" },
   { value: "ml_engineer", label: "ML Engineer", icon: Cpu, desc: "Model status and validation without case access or activation rights" },
   { value: "technician", label: "Technician / Data Operator", icon: Wrench, desc: "Case creation, DICOM/raster uploads, image quality verification" },
@@ -156,7 +157,7 @@ export default function AdminPanel({ token, currentUser, section = "users" }: { 
                 <label htmlFor={`role-${item.id}`} className="sr-only">Role for {item.email}</label>
                 <select
                   id={`role-${item.id}`}
-                  value={item.role === "clinician" ? "doctor" : item.role}
+                  value={item.role}
                   disabled={busyId === item.id || item.id === currentUser.id}
                   onChange={(event) => changeRole(item.id, event.target.value)}
                   style={{ minWidth: "160px", padding: "0.45rem 0.65rem", borderRadius: "8px" }}

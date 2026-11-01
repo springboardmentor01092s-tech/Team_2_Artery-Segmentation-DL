@@ -25,6 +25,10 @@ export type ImageRecord = {
 };
 
 export type ClinicalReviewRecord = {
+  version?: number;
+  analysis_event_id?: string | null;
+  image_id?: string | null;
+  reviewer_role?: string | null;
   id: string;
   case_id: string;
   reviewer_id: string;
@@ -153,6 +157,8 @@ export type AnalysisJob = {
 };
 
 export type StructuredResearchResult = {
+  models?: Record<string, unknown>;
+  input?: Record<string, unknown>;
   schema_version: string; result_id: string; job_id: string | null;
   stages: Record<string, { status: string; reason: string }>;
   candidates: { candidate_id: string; category_id?: number; model_score?: number;

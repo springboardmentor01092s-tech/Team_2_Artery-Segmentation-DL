@@ -197,7 +197,7 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
     height, width = binary.shape
     calibrated = spacing_mm is not None
     unit = "mm" if calibrated else "px"
-    sy, sx = spacing_mm if calibrated else (1.0, 1.0)
+    sy, sx = spacing if calibrated else (1.0, 1.0)
 
     def neighbors(point, points):
         y, x = point
@@ -472,6 +472,16 @@ def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | 
         "diameter_scope": "sampled_2d_mask_width_not_validated_lumen_or_stenosis_measurement",
         "diameter_cv": round(float(np.std(diameters) / np.mean(diameters)), 3) if diameters and np.mean(diameters) else None,
         "diameter_samples": len(diameters), "connected_components": len(components),
+        "diameter_sampling": "sorted_skeleton_points_stride_max_1_floor_count_div_1500",
+        "diameter_summary_semantics": {"minimum_diameter": "minimum_sampled_width",
+                                       "maximum_diameter": "maximum_sampled_width",
+                                       "diameter_p10": "10th_percentile",
+                                       "diameter_p90": "90th_percentile",
+                                       "mean_diameter": "arithmetic_mean"},
+        "diameter_measurement_scope": "global_mask_width_summary_not_candidate_local_lumen_diameter",
+        "diameter_uncertainty": None,
+        "diameter_reference_validation": "unavailable",
+        "suitable_for_automatic_severity": False,
         "vessel_candidates": candidate_rows[:20], "boundary_pixels": int(boundary_mask.sum()),
         "boundary_length": round(perimeter, 2), "branching_points": junction_count,
         "endpoints": endpoint_count, "branch_segments": branch_segments,

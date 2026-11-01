@@ -6,6 +6,7 @@ import { Card } from "./components/prismui/card";
 import { Input } from "./components/prismui/input";
 import { Stethoscope, CheckCircle2, AlertCircle, FileDown, ShieldAlert } from "lucide-react";
 import { taskLabel } from "./caseConfiguration";
+import { reviewLabels } from "./reviewLabels";
 
 const histories = ["hypertension", "diabetes", "prior_mi", "prior_pci", "hyperlipidemia", "none", "unknown"];
 const risks = ["smoking", "family_history", "obesity", "sedentary", "hypertension", "diabetes", "none", "unknown"];
@@ -62,6 +63,7 @@ export default function CaseDetails({
   ]);
 
   const isDoctor = userRole === "doctor" || userRole === "clinician" || userRole === "admin";
+  const labels = reviewLabels(userRole);
   const isViewer = userRole === "viewer";
   const isReadOnly = isViewer || caseRecord.permissions?.can_edit === false;
   const canExport = caseRecord.permissions?.can_export ?? (userRole === "doctor" || userRole === "clinician" || userRole === "researcher");
@@ -231,7 +233,7 @@ export default function CaseDetails({
         <div className="viewer-heading">
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Stethoscope size={20} color="#0284c7" />
-            <h3 style={{ margin: 0 }}>Research Review & Decision</h3>
+            <h3 style={{ margin: 0 }}>{labels.title}</h3>
           </div>
           {caseRecord.latest_review ? (
             <span style={{
@@ -257,7 +259,7 @@ export default function CaseDetails({
               </p>
             )}
             <small style={{ color: "#64748b" }}>
-              Reviewed by {caseRecord.latest_review.reviewer_name || "Doctor"} on {new Date(caseRecord.latest_review.created_at).toLocaleString()}
+              Reviewed by {caseRecord.latest_review.reviewer_name || "Clinical reviewer"} on {new Date(caseRecord.latest_review.created_at).toLocaleString()}
             </small>
           </div>
         )}
@@ -266,7 +268,7 @@ export default function CaseDetails({
           <form onSubmit={submitClinicalReview} className="case-details-form clinical-review-form">
             <div className="case-form-grid">
               <label>
-              Doctor’s Decision
+              {labels.decision}
                 <select value={decision} onChange={(e) => setDecision(e.target.value as any)}>
                   <option value="approved">Accepted for research review</option>
                   <option value="needs_followup">Needs Clinical Follow-up</option>
@@ -276,7 +278,7 @@ export default function CaseDetails({
               </label>
 
               <label>
-                Doctor-assessed stenosis severity (optional)
+                {labels.severity}
                 <select value={stenosisSeverity} onChange={(e) => setStenosisSeverity(e.target.value)}>
                   <option value="unspecified">Unspecified / Research</option>
                   <option value="none">None observed</option>
@@ -288,7 +290,7 @@ export default function CaseDetails({
             </div>
 
             <label>
-              Doctor’s Review Notes & Annotations
+              {labels.notes}
               <textarea
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
@@ -302,13 +304,13 @@ export default function CaseDetails({
             {reviewMessage && <p className="message success" role="status">{reviewMessage}</p>}
 
             <Button className="primary" disabled={reviewBusy} style={{ marginTop: "0.8rem" }}>
-              {reviewBusy ? "Submitting…" : "Record Doctor’s Review"}
+              {reviewBusy ? "Submitting…" : labels.submit}
             </Button>
           </form>
         ) : (
           !caseRecord.latest_review && (
             <p style={{ fontSize: "0.84rem", color: "#71717a", marginTop: "0.5rem" }}>
-              Clinical review requires the <strong>Doctor / Clinical Reviewer</strong> role and review access to this case.
+              Clinical review requires a <strong>Doctor or Clinician</strong> role and review access to this case.
             </p>
           )
         )}

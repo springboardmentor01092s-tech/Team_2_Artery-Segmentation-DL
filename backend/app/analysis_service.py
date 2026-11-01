@@ -125,7 +125,11 @@ def _gradcam(model, image, threshold: float):
             return None
         weights = gradient.mean(dim=(2, 3), keepdim=True)
         cam = torch.relu((weights * activation).sum(dim=1, keepdim=True))
-        cam = F.interpolate(cam, size=(128, 128), mode="bilinear", align_corners=False)[0, 0]
+        # Preserve the exact model-input frame. A hard-coded output size would
+        # misregister the saved attribution whenever a selected model does not
+        # use the legacy 128-square contract.
+        cam = F.interpolate(cam, size=tuple(image.shape[-2:]), mode="bilinear",
+                            align_corners=False)[0, 0]
         cam = cam - cam.min()
         cam = cam / cam.max().clamp_min(1e-8)
         return cam.detach().cpu().numpy()
@@ -224,6 +228,10 @@ def analyze(preview_path: Path, spacing_mm: tuple[float, float] | None = None) -
                   "stenosis_foreground_mean_probability": round(float(probability_maps["stenosis"][stenosis].mean()), 4) if stenosis.any() else None,
                   "calibration": "uncalibrated_mask_times_detection_scores",
                   "instance_detections": instance_detections}
+        scores["explainability"] = {
+            "gradcam": {"status": "unavailable", "reason": "Mask R-CNN adapter has no verified attribution target/layer contract."},
+            "attention": {"status": "unavailable", "reason": "This architecture does not expose attention-gate maps."},
+        }
     elif selected.get("architecture") in {"tiny_unet", "attention_unet"}:
         import torch
 
@@ -263,6 +271,21 @@ def analyze(preview_path: Path, spacing_mm: tuple[float, float] | None = None) -
         artery_probability_png = heatmap_overlay_png(preview_path, probability_maps["syntax"])
         attention_png = heatmap_overlay_png(preview_path, attention_map, "attention") if attention_map is not None else None
         gradcam_png = heatmap_overlay_png(preview_path, gradcam_map, "attention") if gradcam_map is not None else None
+        scores["explainability"] = {
+            "gradcam": ({"status": "saved", "method": "gradcam_v1",
+                         "target": "mean selected stenosis logits, or maximum logit when no pixel is selected",
+                         "layer": "bridge" if hasattr(model, "bridge") else "middle",
+                         "coordinate_frame": f"model_input_{input_size}x{input_size}",
+                         "mapping": "bilinear activation-map upsampling to the exact model-input frame",
+                         "weights_updated": False, "clinical_validated": False}
+                        if gradcam_map is not None else
+                        {"status": "unavailable", "reason": "Compatible activation/gradient capture was not produced."}),
+            "attention": ({"status": "saved", "method": "attention_gate_average_v1",
+                           "coordinate_frame": f"model_input_{input_size}x{input_size}",
+                           "faithfulness_validated": False, "clinical_validated": False}
+                          if attention_map is not None else
+                          {"status": "unavailable", "reason": "Selected architecture has no saved attention-gate map."}),
+        }
     elif model_version() == "arcade-tiny-unet-v1":
         import torch
 
@@ -288,6 +311,16 @@ def analyze(preview_path: Path, spacing_mm: tuple[float, float] | None = None) -
             "artery_foreground_mean_probability": None,
             "stenosis_foreground_mean_probability": None,
             "calibration": "unavailable_for_legacy_model",
+            "explainability": {
+                "gradcam": ({"status": "saved", "method": "gradcam_v1",
+                             "target": "mean selected stenosis logits, or maximum logit when no pixel is selected",
+                             "layer": "middle", "coordinate_frame": "model_input_128x128",
+                             "mapping": "bilinear activation-map upsampling to the exact model-input frame",
+                             "weights_updated": False, "clinical_validated": False}
+                            if gradcam_map is not None else
+                            {"status": "unavailable", "reason": "Compatible activation/gradient capture was not produced."}),
+                "attention": {"status": "unavailable", "reason": "Legacy model has no attention-gate map."},
+            },
         }
     else:
         artery_probability_map = None
@@ -297,7 +330,11 @@ def analyze(preview_path: Path, spacing_mm: tuple[float, float] | None = None) -
         probability_png, artery_probability_png, attention_png, gradcam_png = None, None, None, None
         scores = {"artery_foreground_mean_probability": None,
                   "stenosis_foreground_mean_probability": None,
-                  "calibration": "unavailable_for_pixel_model"}
+                  "calibration": "unavailable_for_pixel_model",
+                  "explainability": {
+                      "gradcam": {"status": "unavailable", "reason": "Pixel model has no convolutional attribution target."},
+                      "attention": {"status": "unavailable", "reason": "Pixel model has no attention-gate map."},
+                  }}
     from scipy import ndimage
     stenosis_components = int(ndimage.label(stenosis)[1])
     input_size = selected_input_size() if selected.get("architecture") in {

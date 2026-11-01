@@ -7,6 +7,7 @@ import "./styles.css";
 import "./apple-design.css";
 import "./design-options.css";
 import "./theme-consistency.css";
+import "./workflow-layout.css";
 import "./designPreview";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

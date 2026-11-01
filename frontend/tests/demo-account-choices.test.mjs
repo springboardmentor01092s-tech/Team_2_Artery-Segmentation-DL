@@ -17,14 +17,14 @@ const choices = [
   account('researcher', 'researcher', 'researcher.demo@example.com'),
 ];
 
-test('consolidates clinical demo choices and omits institutional demo', () => {
+test('keeps doctor and clinician distinct and omits institutional demo', () => {
   const result = demoAccountChoices(choices);
-  assert.deepEqual(Array.from(result, item => item.id), ['doctor', 'researcher']);
+  assert.deepEqual(Array.from(result, item => item.id), ['doctor', 'radiologist', 'researcher']);
   assert.equal(choices.length, 4);
 });
 
-test('hides equivalent current demo role without merging real users', () => {
+test('hides current clinician role without hiding doctor or merging real users', () => {
   const real = [account('one', 'doctor', 'one@hospital.org', 'Doctor One'), account('two', 'doctor', 'two@hospital.org', 'Doctor Two')];
   const result = demoAccountChoices([...choices, ...real], 'clinician');
-  assert.deepEqual(Array.from(result, item => item.id), ['researcher', 'one', 'two']);
+  assert.deepEqual(Array.from(result, item => item.id), ['doctor', 'researcher', 'one', 'two']);
 });

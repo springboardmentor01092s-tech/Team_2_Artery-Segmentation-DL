@@ -156,7 +156,7 @@ export default function AccountPanel({
 
   return (
     <div className="settings-page">
-      <div className="page-heading"><div><p className="eyebrow">SETTINGS</p><h2>Appearance, profile and security</h2></div><span className="stage-badge">{user.role === "clinician" || user.role === "doctor" ? "Doctor" : user.role.replace("_", " ")}</span></div>
+      <div className="page-heading"><div><p className="eyebrow">SETTINGS</p><h2>Appearance, profile and security</h2></div><span className="stage-badge">{user.role === "clinician" ? "Clinician" : user.role === "doctor" ? "Doctor" : user.role.replace("_", " ")}</span></div>
       {error && <p className="message error" role="alert">{error}</p>}
       {message && <p className="message success" role="status">{message}</p>}
       <div className="settings-grid">

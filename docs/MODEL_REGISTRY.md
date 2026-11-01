@@ -1,18 +1,33 @@
-# Model registry and approval scope
+# Inference model registry and eligibility
 
-Authoritative pinned artifact contract: `ml/releases/corovision_20261023.json`. Curated offline task evidence: `ml/releases/research_evidence_20261023.json`. Source inventories live in the separate training workspace (`../MODEL_INVENTORY.md`, `../trained_models/index.json`); they are not deployment approval lists. Preserve historical reports and do not attach them to new weights.
+The authoritative pinned release is ml/releases/corovision_20261023.json.
 
-Release `corovision-preserved-2d-20261023`, created 2026-10-23, adapters introduced at application commit `4a89e82`:
+| Model | Architecture | Checkpoint SHA-256 | Recorded validation |
+| --- | --- | --- | --- |
+| Binary coronary artery | resnet34_unet | ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c | Mean image Dice 0.8272773138933874; 200 ARCADE images |
+| ARCADE stenosis masks | maskrcnn_resnet50_fpn | f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3 | Pooled union Dice 0.56439208772936; 200 ARCADE images |
 
-| Model ID | Artifact SHA256 | Status and supported workflow | Contract |
-|---|---|---|---|
-| `arcade-binary-artery-resnet34` | `ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c` | `approved_for_research` only as preserved coronary 2D XCA baseline; no clinical approval | `models/trained_release/artery.pt`; ResNet34 U-Net; N×1×512×512 float [0,1]; repeat RGB and ImageNet mean/std internally; bilinear model features (`align_corners=False`); threshold .5; labels background=0, artery union=1 |
-| `arcade-stenosis-mask-r50` | `f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3` | `approved_for_research` only as preserved ARCADE mask baseline; no diagnostic or severity approval | `models/trained_release/stenosis.pt`; Mask R-CNN ResNet50-FPN; RGB 3×512×512 float [0,1], original internal Torchvision resizing/normalization/NMS; score .1/mask .5; foreground model label 1 corresponds to source category 26; original degenerate-contour filter |
+512×512 coronary X-ray only. Artery threshold .5; stenosis score threshold .1,
+mask threshold .5. Raw probabilities/scores are uncalibrated. Release readiness
+means hash/dependency verification, not formal approval or clinical certification.
+These are the existing preserved research baseline; this audit does not promote
+them or a new candidate. Formal policy approval is a separate persisted workflow.
 
-“Approved for research” means the previously preserved compatible baseline is allowed in this restricted research route. It does not certify clinical reliability, new experimental candidates, arbitrary input domains or all optional image enhancements. Hash verification fails closed. The archive installer and release JSON pin the input artifacts; no client checkpoint path is accepted. Rollback requires the documented legacy provider/environment selection and restart, with old weights retained.
+Drive selected_for_integration flags are historical package metadata, not approval.
+Nine task packages / 12 indexed checkpoints are inventoried in
+reports/connected_handoff_audit.json. Full bytes of non-selected checkpoints have
+not been rehashed in this audit. Keep 3D/other-anatomy and box detectors separate.
+Do not use rejected candidate weights, temperature studies or copied test metrics
+to silently replace the two active baselines.
 
-Artery validation: 200 development-exposed ARCADE syntax validation images, mean per-image Dice .8272773139 / IoU .7122207163. Stenosis masks: 200 development-exposed ARCADE stenosis validation images, pooled union Dice .5643920877 / IoU .3931380448. Aggregations differ and must remain labelled. Raw pixel and instance scores are uncalibrated for patient disease probability. Misses and false positives remain. Neither metric is per-upload accuracy. Training/validation use source ARCADE splits with audited duplicate exclusions; this release does not create an independent final-test claim. No versioned external dataset DOI beyond the existing source references is invented.
+Training architecture/preprocessing sources stay on the drive. Application
+adapters load pinned state dictionaries with weights_only=True; no uploaded path
+or training code is executed. Exact source/config and artifact digests belong in
+every imported evaluation and saved inference result.
 
-The app prepares a grayscale, aspect-preserving padded 512² preview, with optional ROI/frame/page selection and recorded transforms. Training source images used the training loader's model resize; exact parity was checked on one existing 512² development frame. Arbitrary aspect ratios, raster colors, DICOM/PDF rendering and user enhancements are not covered by that parity check. Record this domain limitation and the upload transformation; use nearest-neighbor when mapping discrete masks and continuous interpolation for image/score fields. A preview is not an original-geometry mask.
+## Separate 3D research integration
 
-Other catalogued models remain `validation_pending` for application deployment, irrespective of their offline training completion. CADICA grades, anatomical artery categories, archive lesion boxes, DCA masks, aortic/hepatic CT and ImageCAS/ImageCAS-X CTA cannot silently replace either pinned mask model. No automatic severity model or validated narrowing category standard is available. Architecture names in the supplied master prompt are possibilities, not evidence that all were trained. No new training framework or worker is copied into this application branch.
+ImageCAS coronary CTA 128³ U-Net is now available through a separate explicit
+research-only volume workflow. See [3D inference](3D_INFERENCE.md) for the pinned
+checkpoint, exact preprocessing, geometry, permissions and verification limits.
+It does not change the approved/pinned 2D model selection or enable 3D severity.
