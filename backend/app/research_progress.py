@@ -215,7 +215,7 @@ def snapshot():
     if stenosis is not None:
         experiments.append(dict(id='stenosis-threshold-364196526',task='ARCADE stenosis',
             title='Frozen detection threshold 0.25 to 0.15',status='rejected_baseline_retained',
-            metric='Instance F1 at IoU 0.5',baseline=stenosis['baseline_instance_f1'],
+            metric='Instance F1 at IoU 0.5',count_unit='instances',baseline=stenosis['baseline_instance_f1'],
             candidate=stenosis['candidate_instance_f1'],delta=stenosis['instance_f1_delta'],
             baseline_fn=211,candidate_fn=stenosis['candidate_counts']['fn'],
             baseline_fp=369,candidate_fp=stenosis['candidate_counts']['fp'],

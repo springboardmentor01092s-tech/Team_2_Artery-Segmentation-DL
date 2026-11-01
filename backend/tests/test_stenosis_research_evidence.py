@@ -25,6 +25,7 @@ def test_verified_rejection_is_visible_without_inventing_gain(monkeypatch, tmp_p
     row = next(r for r in result['experiments'] if r['id'] == 'stenosis-threshold-364196526')
     assert row['status'] == 'rejected_baseline_retained'
     assert row['metric'] == 'Instance F1 at IoU 0.5'
+    assert row['count_unit'] == 'instances'
     assert row['delta'] < 0 and row['candidate_fp'] == 492
     assert result['summary']['measured_gains'] == 0
     assert result['telemetry']['confirmed_running_jobs'] is None
