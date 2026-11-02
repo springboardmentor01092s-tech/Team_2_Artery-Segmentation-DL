@@ -1,0 +1,37 @@
+# DCA/ICA Coronary Artery Segmentation Configuration
+
+dataset:
+  images_dir: "dataset/images"
+  masks_dir: "dataset/masks"
+  splits_file: "dataset/splits.json"
+  image_size: [320, 320]
+  in_channels: 1
+  num_classes: 1
+
+training:
+  batch_size: 8
+  epochs: 35
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  seed: 42
+  early_stopping_patience: 10
+  device: "cuda"
+
+models:
+  baseline_unet:
+    name: "Baseline_UNet"
+    features: [32, 64, 128, 256, 512]
+  attention_resunet:
+    name: "Attention_ResUNet"
+    features: [32, 64, 128, 256, 512]
+
+postprocessing:
+  min_component_size: 40
+  morphology_kernel_size: 3
+
+paths:
+  checkpoints_dir: "outputs/checkpoints"
+  masks_dir: "outputs/masks"
+  visualizations_dir: "outputs/visualizations"
+  reports_dir: "outputs/reports"
+
