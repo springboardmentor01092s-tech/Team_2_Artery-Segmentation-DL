@@ -48,7 +48,11 @@ export default function ImagePanelGallery({ token, imageId, runId, modelVersion,
     <div className="image-evidence-grid">{items.map(panel => <figure key={panel.key}>
       {urls[panel.key] && !failed.includes(panel.key) ? <a href={urls[panel.key]} target="_blank" rel="noreferrer" aria-label={`Open ${panel.title}`}><img src={urls[panel.key]} alt={panel.title} loading="lazy" onError={() => setFailed(prev => [...prev, panel.key])} /></a>
         : <div className="image-evidence-empty">{!panel.available || failed.includes(panel.key) ? 'Unavailable · no verified display artifact' : 'Loading…'}</div>}
-      <figcaption><strong>{panel.title}</strong><p>{panel.description}</p></figcaption>
+      <figcaption><strong>{panel.title}</strong><p>{panel.description}</p>
+        {urls[panel.key] && !failed.includes(panel.key) && <a href={urls[panel.key]}
+          download={`${runId}-${panel.key}${panel.key === 'original' ? '' : '.png'}`}
+          aria-label={`Download ${panel.title}`}>Download saved image</a>}
+      </figcaption>
     </figure>)}</div>
   </section>;
 }

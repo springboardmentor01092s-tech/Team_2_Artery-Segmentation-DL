@@ -1,0 +1,68 @@
+.analysis-console { --console-bg:#15191f; --console-panel:#1d222a; --console-line:#353d49; --console-text:#edf1f7; --console-muted:#a6b1c1; --console-accent:#82c7ff; max-width:none; }
+.analysis-console .analysis-record-strip { display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:1px; background:var(--console-line); border:1px solid var(--console-line); border-radius:12px 12px 0 0; overflow:hidden; margin-bottom:0; }
+.analysis-record-strip > div { background:#242a34; padding:14px 18px; min-width:0; display:grid; gap:5px; }
+.analysis-record-strip span { color:#a6b1c1; font-size:10px; letter-spacing:.13em; font-weight:700; }
+.analysis-record-strip strong { color:#f2f5fb; font-size:13px; overflow-wrap:anywhere; }
+.analysis-record-strip small { color:#b8c1cf; font-size:11px; }
+.analysis-console .workbench-grid { grid-template-columns:minmax(0,1.65fr) minmax(340px,1fr); gap:0; background:var(--console-bg); border:1px solid var(--console-line); border-top:0; border-radius:0 0 12px 12px; overflow:hidden; align-items:stretch; }
+.analysis-console .workbench-grid > .panel { background:var(--console-panel); color:var(--console-text); border:0; border-radius:0; box-shadow:none; padding:18px; margin:0; }
+.analysis-console .workbench-grid .workbench-viewer-panel { background:#101419; display:grid; grid-template-columns:84px minmax(0,1fr); gap:12px; align-content:start; position:sticky; top:12px; align-self:start; }
+.analysis-console .viewer-heading { grid-column:1/-1; margin:0; color:var(--console-text); }
+.analysis-console .viewer-heading h3 { font-size:15px; color:inherit; margin:0; }
+.analysis-console .viewer-heading span { color:var(--console-muted); font-size:11px; }
+.analysis-console .workbench-layer-tabs { grid-column:1; display:flex; flex-direction:column; gap:7px; padding:0; margin:0; }
+.analysis-console .workbench-layer-tabs button { min-height:44px; width:100%; padding:8px 4px; border:1px solid var(--console-line); border-radius:7px; background:#242b35; color:#c7d0df; font-size:10px; line-height:1.3; text-align:center; }
+.analysis-console .workbench-layer-tabs button.active { background:#184e77; color:#e4f4ff; border-color:#61b2ee; box-shadow:inset 3px 0 #9bd8ff; }
+.analysis-console .workbench-layer-tabs button:disabled { opacity:.4; cursor:not-allowed; }
+.analysis-console .workbench-canvas { grid-column:2; height:min(72vh,850px); min-height:480px; border:1px solid #303844; border-radius:4px; background:#050708; }
+.analysis-console .workbench-toolbar { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:0; }
+.analysis-console .workbench-toolbar button { background:#222a35; color:#e1e9f6; border:1px solid #3a4555; border-radius:5px; min-height:36px; }
+.analysis-console .workbench-toolbar button:disabled { opacity:.35; }
+.analysis-console .workbench-viewer-panel > .caption, .analysis-console .workbench-opacity { grid-column:1/-1; color:var(--console-muted); font-size:11px; line-height:1.6; margin:0; }
+.analysis-console .workbench-findings { border-left:1px solid var(--console-line)!important; }
+.analysis-inspector-heading { border-bottom:1px solid var(--console-line); margin-bottom:16px; padding-bottom:14px; }
+.analysis-inspector-heading .eyebrow { color:#88caff; font-size:10px; letter-spacing:.14em; }
+.analysis-inspector-heading h3 { font-size:20px; margin:6px 0; color:var(--console-text); }
+.analysis-inspector-heading p { font-size:12px; color:var(--console-muted); margin:0; }
+.analysis-console .workbench-findings h3, .analysis-console .workbench-findings strong, .analysis-console .workbench-findings summary { color:var(--console-text); }
+.analysis-console .workbench-findings .caption, .analysis-console .workbench-findings .muted, .analysis-console .workbench-findings .metadata span { color:var(--console-muted); }
+.analysis-console .workbench-findings .metadata > div { border-color:var(--console-line); }
+.analysis-console .workbench-findings .metadata strong { font-size:12px; }
+.analysis-console .workbench-findings .evidence-details { border:1px solid var(--console-line); background:#181e26; border-radius:8px; margin:16px 0; padding:12px; }
+.analysis-console .workbench-findings summary { font-size:13px; font-weight:650; }
+.analysis-console .workbench-findings .privacy-note { color:#b7c4d5; background:#252f3b; border-color:#52708e; font-size:11px; }
+.analysis-console .candidate-focus { display:grid; gap:6px; width:100%; background:#252d39; color:#e6edf8; border:1px solid #46556c; border-radius:6px; padding:12px; margin-top:9px; text-align:left; }
+.analysis-console .candidate-focus[aria-pressed=true] { background:#17496b; border-color:#78c6ff; }
+.analysis-console .candidate-focus small { color:#b7c4d5; }
+.analysis-console .width-profile-review label { display:flex; align-items:center; gap:12px; font-size:12px; }
+.analysis-console .width-profile-review select { background:#28313e; color:#eff5fc; border:1px solid #4c5c71; padding:8px; border-radius:5px; }
+.analysis-console .width-profile-review svg { background:#090d12; color:#9caec4; margin:14px 0; border:1px solid #323d4b; border-radius:5px; }
+.analysis-console .width-profile-review polyline { stroke:#67c9ff; }
+.profile-sample-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:14px 0 0; }
+.profile-sample-summary > div { display:grid; gap:7px; padding:10px 8px; border:1px solid #3c4858; border-radius:5px; }
+.profile-sample-summary span { font-size:10px; color:#b8c5d8; }
+.profile-sample-summary strong { font-size:17px; font-variant-numeric:tabular-nums; }
+.profile-sample-summary small { font-size:10px; font-weight:400; }
+.analysis-console .width-profile-review > button { background:#254965; border:1px solid #5686aa; color:#eaf6ff; border-radius:6px; padding:10px 12px; font-size:12px; }
+.analysis-console button:focus-visible, .analysis-console select:focus-visible { outline:3px solid #81c8ff; outline-offset:3px; }
+@media(max-width:1150px) { .analysis-console .workbench-grid { grid-template-columns:minmax(0,1fr); } .analysis-console .workbench-grid .workbench-viewer-panel { position:static; } .analysis-console .workbench-findings { border-left:0!important; border-top:1px solid var(--console-line)!important; } }
+@media(max-width:650px) { .analysis-console .analysis-record-strip { grid-template-columns:1fr; } .analysis-console .workbench-grid .workbench-viewer-panel { grid-template-columns:1fr; padding:10px; } .analysis-console .workbench-layer-tabs { grid-column:1; flex-direction:row; flex-wrap:wrap; } .analysis-console .workbench-layer-tabs button { width:auto; flex:1 0 70px; } .analysis-console .workbench-canvas { grid-column:1; min-height:320px; height:60vh; } }
+
+.analysis-console .workbench-grid .workbench-findings { max-height:850px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#52647a #1d222a; }
+.analysis-console .workbench-canvas { height:min(68vh,650px); min-height:420px; }
+.analysis-console .workbench-findings .eyebrow { color:#a6b9ce; }
+.analysis-console .workbench-findings .metadata { display:grid; grid-template-columns:minmax(0,1fr)!important; }
+.analysis-console .workbench-findings .metadata > div { display:flex; justify-content:space-between; gap:12px; padding:9px 0; min-width:0; }
+.analysis-console .workbench-findings .metadata > div > * { min-width:0; }
+.analysis-console .workbench-findings .metadata strong { max-width:58%; text-align:right; }
+.analysis-console .workbench-findings .evidence-details { padding:12px!important; }
+@media(max-width:1150px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; overflow:visible; } }
+
+.analysis-console .caption input[type="checkbox"] { width:16px; height:16px; min-height:0; display:inline-block; vertical-align:middle; margin-right:6px; }
+.analysis-console .selected-lesion-inspector { padding:12px; border:1px solid #637e99; border-radius:8px; margin-bottom:16px; background:#172533; }
+.analysis-console .selected-lesion-inspector button { background:#2b4359; border:1px solid #6d8aa6; color:#e9f5ff; padding:6px; border-radius:4px; font-size:11px; }
+
+/* Keep selected-region measurements and graph visible beside the source image. */
+.analysis-console .selected-lesion-inspector .metadata > div { padding:4px 0; }
+.analysis-console .workbench-grid .workbench-findings { max-height:1200px; }
+@media(max-width:1150px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; } }

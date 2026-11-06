@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { apiUrl } from './api';
 
-type Record = {id:string; analysis_event_id:string; created_at:string; result:{narrowing_percent:number; minimum_diameter:number; reference_diameter:number; severity:{status:string;category:string|null}; explanation:{text:string}}};
+type Record = {id:string; analysis_event_id:string; created_at:string; result:{narrowing_percent:number; minimum_diameter:number; reference_diameter:number; severity:{status:string;category:string|null;protocol_id?:string;protocol_version?:string;reference?:string}; explanation:{text:string}}};
 type Props = {token:string;caseId:string;imageId:string;runId:string;candidates:string[];canReview:boolean};
 
 export default function StenosisMeasurements({token,caseId,imageId,runId,candidates,canReview}:Props) {
@@ -36,12 +36,14 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
     finally{setSaving(false);}
   }
   return <section aria-label="Reviewed stenosis measurements">
-    <h3>Reviewed diameter reduction</h3>
+    <h3>Clinician-protocol severity and reviewed diameter reduction</h3>
     <p className="caption">Separate clinician-supplied measurements for this saved run. Model scores and global mask widths are not reference diameters. New entries preserve previous records.</p>
     {error&&<p role="alert">{error}</p>}
     {loading?<p role="status">Loading reviewed measurements…</p>:!rows.length?<p>No reviewed measurements saved for this run. Narrowing and severity remain unavailable.</p>:rows.map(row=><article key={row.id} className="evidence-details">
       <strong>{row.result.narrowing_percent.toFixed(2)}% estimated diameter reduction</strong>
-      <p>{row.result.explanation.text}</p><p>Severity: {row.result.severity.category||'Not assessable — no approved reference protocol'}</p>
+      <p>{row.result.explanation.text}</p><p>Protocol category: {row.result.severity.category||'Not assessable — no approved reference protocol'}</p>
+      {row.result.severity.category&&<p>Protocol: {row.result.severity.protocol_id} · version {row.result.severity.protocol_version} · reference {row.result.severity.reference}. Research classification from reviewed measurements; clinical validation is not established.</p>}
+      <p className="caption">This measurement-based category is separate from CADICA source-grade predictions.</p>
       <small>Record {row.id} · {new Date(row.created_at).toLocaleString()}</small>
     </article>)}
     {canReview&&candidates.length>0&&<details><summary>Record calibrated local/reference measurements</summary>

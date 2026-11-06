@@ -28,7 +28,7 @@ type DashboardAnalytics = {
   clinician_severity_distribution: Record<string, number>;
   processing_status: Record<string, number>;
   validation_performance: Record<string, { validation_dice: number; validation_images: number }>;
-  recent_analyses: { id: string; case_id: string; case_code: string; image_name: string; model_version: string; created_at: string; stenosis_pixels: number; model_flagged_region: boolean; stenosis_mask_components: number }[];
+  recent_analyses: { id: string; case_id: string; case_code: string; image_name: string; model_version: string; created_at: string; stenosis_pixels: number; stenosis_mask_status?: 'recorded' | 'not_saved' | 'not_assessed' | 'unknown'; model_flagged_region: boolean; stenosis_mask_components: number }[];
 };
 
 export default function OverviewPanel({
@@ -165,7 +165,7 @@ export default function OverviewPanel({
         </div>
         <div className="overview-analytics-grid">
           <Card className="panel"><div className="viewer-heading"><h3>Recent analyses</h3><span>{analytics.recent_analyses.length} latest runs</span></div>
-            {analytics.recent_analyses.length ? analytics.recent_analyses.map((item) => <button className="analysis-feed-row" key={item.id} type="button" onClick={() => onOpenCase(item.case_id)}><span><strong>{item.case_code}</strong><small>{item.image_name} · {item.model_version}</small></span><span className={item.model_flagged_region ? "flagged" : "not-flagged"}>{item.stenosis_mask_components > 1 ? `${item.stenosis_mask_components} disconnected model regions` : item.model_flagged_region ? "Review flag" : "No mask pixels"}<small>{new Date(item.created_at).toLocaleString()}</small></span></button>) : <p className="muted">No completed model runs yet.</p>}
+            {analytics.recent_analyses.length ? analytics.recent_analyses.map((item) => <button className="analysis-feed-row" key={item.id} type="button" onClick={() => onOpenCase(item.case_id)}><span><strong>{item.case_code}</strong><small>{item.image_name} · {item.model_version}</small></span><span className={item.model_flagged_region ? "flagged" : "not-flagged"}>{item.stenosis_mask_status === "not_assessed" ? "Not assessed" : item.stenosis_mask_status === "not_saved" ? "Mask count not saved" : item.stenosis_mask_status === "unknown" ? "Mask count unavailable" : item.stenosis_mask_components > 1 ? `${item.stenosis_mask_components} disconnected model regions` : item.model_flagged_region ? "Review flag" : "No mask pixels"}<small>{new Date(item.created_at).toLocaleString()}</small></span></button>) : <p className="muted">No completed model runs yet.</p>}
           </Card>
           <Card className="panel"><div className="viewer-heading"><h3>Processing status</h3><span>Cases</span></div>
             {Object.entries(analytics.processing_status).length ? Object.entries(analytics.processing_status).map(([status, count]) => <div className="processing-row" key={status}><span>{status.replaceAll("_", " ")}</span><strong>{count}</strong></div>) : <p className="muted">No case processing records yet.</p>}

@@ -148,3 +148,43 @@ def test_nonfinite_measurements_rejected_and_no_severity_from_global_diameter():
     assert result['severity']['narrowing_percent'] is None
     with pytest.raises(ValueError):
         build_result(**arguments, vessel={'mean_diameter': float('nan')})
+
+
+def test_new_job_persists_source_width_profiles_with_exact_mask_identity(monkeypatch):
+    import hashlib
+    import numpy as np
+    mask = np.zeros((512, 512), dtype=np.uint8)
+    mask[8:12, 4:26] = 255
+    stream = BytesIO()
+    Image.fromarray(mask).save(stream, format='PNG')
+    mask_bytes = stream.getvalue()
+
+    def synthetic_analysis(path, spacing):
+        values = list(fake_analysis(path, spacing))
+        values[1] = 88
+        values[3] = {'quality_flags': [], 'centerline_paths': [dict(path_id='P1',
+            path_type='centerline', coordinates_xy=[[x, 9] for x in range(5, 25)])],
+            'branch_points': [{'node_id': 'J1', 'x': 10, 'y': 9}]}
+        values[8] = {'instance_detections': [], '_artifacts': {'artery_mask': mask_bytes}}
+        return tuple(values)
+
+    monkeypatch.setattr(main, 'models_ready', lambda: True)
+    monkeypatch.setattr(main, 'analyze', synthetic_analysis)
+    with TestClient(main.app) as client:
+        _, owner, outsider, identity = inputs(client)
+        job = client.post(f'/api/images/{identity}/analysis/jobs', headers=owner,
+                          json={'idempotency_key': uuid4().hex}).json()
+        assert InferenceWorker(main.execute_analysis_job).tick()
+        state = client.get(f'/api/analysis/jobs/{job["id"]}', headers=owner).json()
+        result = client.get(state['result_url'], headers=owner).json()
+        structured = result['structured_result']
+        bundle = structured['measurements']['vessel_analysis']['width_profiles']
+        assert bundle['analysis_run_id'] == result['id']
+        assert bundle['mask_sha256'] == hashlib.sha256(mask_bytes).hexdigest()
+        assert bundle['profiles'][0]['samples'][5]['width'] == 4
+        assert 'branch_proximity' in bundle['profiles'][0]['samples'][5]['quality_flags']
+        assert structured['severity']['narrowing_percent'] is None
+        saved_mask = client.get(structured['artifacts']['artery_mask'], headers=owner)
+        assert saved_mask.content == mask_bytes
+        assert client.get(structured['artifacts']['artery_mask'], headers=outsider).status_code == 404
+        assert client.get(state['result_url'], headers=owner).json() == result

@@ -121,6 +121,8 @@ def run_image(identity,source,output):
                     if not 1<=label<=len(classes):raise ValueError('Invalid source category')
                     item['source_class']=classes[label-1]
                     item['display_class']='lesion_candidate' if identity=='cadica_localization' else classes[label-1]
+                    item['classification_scope']='cadica_source_grade'
+                    item['clinical_severity']=None
                 draw.rectangle(box,outline=(235,140,40),width=2);draw.text((box[0],max(0,box[1]-12)),f"{label}: {score:.2f}",fill=(235,140,40))
                 records.append(item)
     overlay.save(output/'overlay.png')

@@ -43,6 +43,9 @@ def test_adapter_keeps_masks_and_instance_semantics(tmp_path, monkeypatch):
     assert result[8]['instance_detections'][0]['category_id']==26
     assert result[4] is None and result[7] is None  # No invented attention/Grad-CAM layer.
     assert 'absence of disease' in result[8]['absence_interpretation']
+    profile = next(item for item in trained_release.RELEASE['models'] if item['task'] == 'stenosis')
+    assert result[8]['operating_point']['stenosis_score_threshold'] == profile['score_threshold']
+    assert result[8]['explainability']['gradcam']['faithfulness_validated'] is False
 
 
 @pytest.mark.skipif(os.environ.get('CV_TEST_REAL_TRAINED_RELEASE') != '1', reason='Opt-in installed-checkpoint integration test')

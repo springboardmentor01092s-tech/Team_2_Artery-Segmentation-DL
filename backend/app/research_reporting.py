@@ -4,11 +4,22 @@ from io import BytesIO, StringIO
 import json
 from pathlib import Path
 from xml.sax.saxutils import escape
+from .evidence_status import stenosis_mask_status
 
 SECTIONS = {'images', 'measurements', 'candidates', 'review', 'appendix'}
 NOTICE = ('Research output, not a standalone diagnosis. Model scores are uncalibrated. '
           'Mask pixels do not establish narrowing or clinical severity. Missing measurements are unavailable, not zero. '
           'This research snapshot is not a clinically approved report.')
+
+
+def stenosis_count_text(result):
+    status = stenosis_mask_status(result)
+    if status == 'not_assessed':
+        return 'Not assessed'
+    if status == 'not_saved':
+        return 'Not saved'
+    count = result.get('stenosis_pixels') if isinstance(result, dict) else None
+    return f'{count} px' if count is not None else 'Unavailable'
 
 
 def tabular(snapshot):
@@ -19,7 +30,9 @@ def tabular(snapshot):
               'generated_at': snapshot['generated_at'], 'case_id': snapshot['case']['id'],
               'case_code': snapshot['case']['case_code'], 'image_id': snapshot['image']['id'],
               'analysis_run_id': result['id'], 'model_version': result['model_version'],
-              'artery_pixels': result['artery_pixels'], 'stenosis_pixels': result['stenosis_pixels'],
+              'artery_pixels': result['artery_pixels'],
+              'stenosis_pixels': result['stenosis_pixels'] if stenosis_mask_status(result) == 'recorded' else None,
+              'stenosis_mask_status': stenosis_mask_status(result),
               'centerline_length': vessel.get('centerline_length'), 'mean_diameter': vessel.get('mean_diameter'),
               'measurement_unit': vessel.get('diameter_unit'), 'human_review_id': review.get('id'),
               'human_assessed_severity': review.get('stenosis_severity'),
@@ -90,7 +103,7 @@ def pdf_bytes(snapshot, image_paths):
                 paragraph(label, 'Heading3')
                 paragraph('Artifact unavailable or source format not renderable. No substitute prediction is shown.')
     paragraph('Saved model outputs', 'Heading2')
-    paragraph(f"Artery mask: {snapshot['analysis']['artery_pixels']} px; stenosis mask: {snapshot['analysis']['stenosis_pixels']} px.")
+    paragraph(f"Artery mask: {snapshot['analysis']['artery_pixels']} px; stenosis mask: {stenosis_count_text(snapshot['analysis'])}.")
     vessel = snapshot['analysis'].get('vessel_analysis') or {}
     measurements = {key: vessel.get(key, 'Unavailable') for key in ['centerline_length', 'mean_diameter',
         'minimum_diameter', 'maximum_diameter', 'diameter_unit', 'branching_points', 'endpoints',

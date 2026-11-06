@@ -761,15 +761,13 @@ def dashboard_analytics(user: User = Depends(require_case_role), db: Session = D
             continue
         case = case_by_id[case_id]
         image = next((value for value in case["images"] if value["id"] == event.image_id), None)
-        try:
-            event_details = json.loads(event.validation_json or "{}")
-            vessel_details = event_details.get("vessel_analysis", {})
-        except (TypeError, ValueError):
-            vessel_details = {}
+        from .evidence_status import saved_analysis_metadata, stenosis_mask_status
+        event_details, vessel_details = saved_analysis_metadata(event.validation_json)
         recent.append({"id": event.id, "case_id": case_id, "case_code": case["case_code"],
                        "image_name": image["original_name"] if image else "Image",
                        "model_version": event.model_version, "created_at": event.created_at,
                        "stenosis_pixels": event.stenosis_pixels,
+                       "stenosis_mask_status": stenosis_mask_status(event_details),
                        "model_flagged_region": event.stenosis_pixels > 0,
                        "stenosis_mask_components": vessel_details.get("stenosis_mask_components", 0)})
         if len(recent) == 8:
@@ -1795,12 +1793,16 @@ def perform_analysis(image_id, user, db, job=None):
         if map_content is not None:
             overlay_path.with_name(f"{overlay_path.stem}.{map_name}.png").write_bytes(map_content)
     artifacts = {"overlay": f"/api/images/{image.id}/analyses/{event_id}/overlay"}
-    for kind, content in model_scores.pop('_artifacts', {}).items():
+    prediction_artifacts = model_scores.pop('_artifacts', {})
+    for kind, content in prediction_artifacts.items():
         if kind not in {"artery_mask", "stenosis_mask", "raw_scores"}:
             raise ValueError("Unsupported inference artifact")
         extension = 'npz' if kind == 'raw_scores' else 'png'
         overlay_path.with_name(f'{event_id}.{kind}.{extension}').write_bytes(content)
         artifacts[kind] = f'/api/images/{image.id}/analyses/{event_id}/artifacts/{kind}'
+    from .saved_width_profiles import attach_saved_width_profiles
+    vessel_analysis = attach_saved_width_profiles(vessel=vessel_analysis,
+        mask_bytes=prediction_artifacts.get('artery_mask'), image=image, event_id=event_id)
     structured = build_result(event_id=event_id, job_id=job.id if job else None, image=image,
                               case=db.get(Case, image.case_id), version=model_version(), scores=model_scores,
                               vessel=vessel_analysis, artery_pixels=artery_pixels, stenosis_pixels=stenosis_pixels,
@@ -1995,7 +1997,7 @@ def result_artifact(image_id: str, event_id: str, kind: str,
         raise HTTPException(404, 'Image not found')
     accessible_case(image.case_id, user, db, required_action='read')
     event = db.get(AnalysisEvent, event_id)
-    if not event or event.image_id != image_id or kind not in {'artery_mask', 'stenosis_mask', 'raw_scores'}:
+    if not event or event.image_id != image_id or kind not in {'artery_mask', 'stenosis_mask', 'raw_scores', 'vessel_contours_prepared'}:
         raise HTTPException(404, 'Artifact not found')
     extension = 'npz' if kind == 'raw_scores' else 'png'
     path = Path(event.overlay_path).with_name(f'{event.id}.{kind}.{extension}')

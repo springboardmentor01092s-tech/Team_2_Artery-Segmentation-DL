@@ -44,3 +44,24 @@ def test_saved_result_fails_closed_without_xai_provenance():
         stenosis_pixels=0, evidence={}, artifacts={}, timestamp="2026-10-29T00:00:00Z")
     assert result["models"]["explainability"]["gradcam"]["status"] == "unavailable"
     assert result["models"]["explainability"]["attention"]["status"] == "unavailable"
+    assert result["models"]["operating_point"] is None
+
+
+def test_saved_operating_point_and_unvalidated_attribution_are_not_reclassified():
+    from types import SimpleNamespace
+    from app.analysis_result import build_result
+
+    image = SimpleNamespace(id='image', width=512, height=512, source_sha256='source',
+        processed_sha256='prepared', preprocessing_config_json='{}')
+    point = dict(profile='preserved-profile', stenosis_score_threshold=.1, stenosis_mask_threshold=.5)
+    attribution = dict(gradcam=dict(status='unavailable', faithfulness_validated=False,
+                                   reason='No verified detector target'))
+    result = build_result(event_id='event', job_id=None, image=image,
+        case=SimpleNamespace(id='case', modality='XCA', anatomy='coronary'),
+        version='synthetic', scores=dict(operating_point=point, explainability=attribution),
+        vessel={}, artery_pixels=0, stenosis_pixels=0, evidence={}, artifacts={}, timestamp='2026-11-03')
+
+    assert result['models']['operating_point'] == point
+    assert result['models']['explainability'] == attribution
+    assert result['severity']['category'] is None
+    assert result['severity']['narrowing_percent'] is None

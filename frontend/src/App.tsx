@@ -29,6 +29,7 @@ import RoleWorkspace from "./RoleWorkspace";
 import ReviewQueue from "./ReviewQueue";
 import ReviewAssessment from "./ReviewAssessment";
 import { runForImage } from './reviewEvidence';
+import { analysisLocation, clearAnalysisLocation, pinnedRunForImage, savedImageForRequest, type SavedRunPin } from './savedRunNavigation';
 import ScreenShareSelect from "./ScreenShareSelect";
 import { CreateNewDisclosure } from "./components/watermelon/create-new-disclosure";
 import { standardPipelines, type StandardPipeline } from "./preprocessingPipelines";
@@ -118,6 +119,10 @@ function App() {
     return caseId ? { caseId, imageId: params.get("image_id") } : null;
   })());
   const activeTokenRef = useRef(token);
+  const requestedRun = useRef(new URL(window.location.href).searchParams.get('run_id'));
+  const pinnedRun = useRef<SavedRunPin | null>(null);
+  const analysisLocationWritten = useRef(false);
+  const restorationImage = useRef<string | null>(null);
   activeTokenRef.current = token;
   const selected = cases.find((item) => item.id === selectedId);
   const selectedImage = selected?.images.find((item) => item.id === selectedImageId) || selected?.images.at(-1);
@@ -154,7 +159,7 @@ function App() {
               if (choice) {
                 demoUrl.searchParams.delete("demo_role");
                 window.history.replaceState({}, "", demoUrl.pathname + demoUrl.search + demoUrl.hash);
-                switchAccount(choice);
+                switchAccount(choice, true);
               }
             }
           }
@@ -223,6 +228,7 @@ function App() {
         setDemoAccounts(forgetAccount(token));
         sessionStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(TOKEN_KEY);
+        resetAnalysisNavigation();
         setToken("");
       });
     return () => { active = false; };
@@ -237,13 +243,23 @@ function App() {
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete("case_id");
     cleanUrl.searchParams.delete("image_id");
+    cleanUrl.searchParams.delete("run_id");
     window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
     if (!allowedCase || !canOpenSection("analysis", user.role, user.permissions)) {
+      requestedRun.current = null;
       setError("The requested analysis case is unavailable for this account.");
       return;
     }
-    const image = allowedCase.images.find((item) => item.id === target.imageId) || allowedCase.images.at(-1);
+    const image = savedImageForRequest(allowedCase.images, target.imageId, requestedRun.current);
+    if (!image) {
+      requestedRun.current = null;
+      setError("The requested study image is unavailable for this account.");
+      return;
+    }
     setSelectedId(allowedCase.id);
+    pinnedRun.current = requestedRun.current ? { imageId: image.id, runId: requestedRun.current } : null;
+    requestedRun.current = null;
+    restorationImage.current = image.id;
     setSelectedImageId(image?.id || "");
     setActiveView("analysis");
   }, [cases, user, caseListToken, token, demoAccounts]);
@@ -274,6 +290,8 @@ function App() {
   }, [selectedImage?.id, token]);
 
   useEffect(() => {
+    if (requestedCaseNavigation.current || (restorationImage.current && restorationImage.current !== selectedImage?.id)) return;
+    restorationImage.current = null;
     if (!token || !selectedImage) {
       setAnalysis(null);
       setOverlay("");
@@ -288,24 +306,46 @@ function App() {
     request<{ models_ready: boolean }>("/api/analysis/status", token)
       .then((status) => { if (active) setModelsReady(status.models_ready); })
       .catch(() => { if (active) setModelsReady(false); });
+    if (pinnedRun.current?.imageId !== selectedImage.id) pinnedRun.current = null;
+    const pin = pinnedRun.current;
+    const sequence = ++overlayRequest.current;
     request<AnalysisResult[]>(`/api/images/${selectedImage.id}/analyses`, token)
-      .then((items) => { if (active) setHistory(items); })
-      .catch(() => { if (active) setHistory([]); });
-    request<AnalysisResult>(`/api/images/${selectedImage.id}/analysis`, token)
-      .then(async (result) => {
+      .then(async (items) => {
         if (!active) return;
+        setHistory(items);
+        if (sequence !== overlayRequest.current) return;
+        const result = pinnedRunForImage(items, selectedImage.id, pin);
+        if (!result) {
+          if (pin) setError("The requested saved run is unavailable. Select a run from analysis history.");
+          return;
+        }
         setAnalysis(result);
         const response = await fetch(apiUrl(result.overlay_url), { headers: { Authorization: `Bearer ${token}` } });
-        if (!response.ok) { if (active) setOverlay(''); return; }
+        if (!response.ok) { if (active && sequence === overlayRequest.current) setOverlay(''); return; }
         objectUrl = URL.createObjectURL(await response.blob());
-        if (active) setOverlay(objectUrl);
+        if (active && sequence === overlayRequest.current) setOverlay(objectUrl);
+        else URL.revokeObjectURL(objectUrl);
       })
-      .catch(() => { if (active) { setAnalysis(null); setOverlay(""); } });
+      .catch(() => { if (active && sequence === overlayRequest.current) { setAnalysis(null); setOverlay(""); } });
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [selectedImage?.id, selectedImage?.latest_analysis_id, token]);
 
+  useEffect(() => {
+    if (activeView !== 'analysis') {
+      if (analysisLocationWritten.current) {
+        window.history.replaceState({}, '', clearAnalysisLocation(window.location.href));
+        analysisLocationWritten.current = false;
+      }
+      return;
+    }
+    if (!selected || !selectedImage || !selectedAnalysis || caseListToken !== token) return;
+    window.history.replaceState({}, '', analysisLocation(window.location.href, selected.id, selectedImage.id, selectedAnalysis.id));
+    analysisLocationWritten.current = true;
+  }, [activeView, selected?.id, selectedImage?.id, selectedAnalysis?.id, caseListToken, token]);
+
   async function showAnalysis(result: AnalysisResult) {
     if (selectedImageRef.current !== result.image_id) return;
+    pinnedRun.current = { imageId: result.image_id, runId: result.id };
     const sequence = ++overlayRequest.current;
     setAnalysis(result);
     setOverlay(previous => { if (previous) URL.revokeObjectURL(previous); return ''; });
@@ -321,6 +361,7 @@ function App() {
 
   async function handleAnalysis() {
     if (!selectedImage || analysisBusy) return;
+    pinnedRun.current = null;
     const submittedImageId = selectedImage.id;
     setError("");
     setAnalysisBusy(true);
@@ -534,7 +575,18 @@ function App() {
     }
   }
 
+  function resetAnalysisNavigation() {
+    overlayRequest.current += 1;
+    pinnedRun.current = null;
+    requestedRun.current = null;
+    restorationImage.current = null;
+    requestedCaseNavigation.current = null;
+    analysisLocationWritten.current = false;
+    window.history.replaceState({}, '', clearAnalysisLocation(window.location.href));
+  }
+
   function clearSession() {
+    resetAnalysisNavigation();
     setDemoAccounts(forgetAccount(token));
     sessionStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
@@ -545,6 +597,9 @@ function App() {
     setSelectedImageId("");
     setPreview("");
     setHistory([]);
+    setAnalysis(null);
+    setOverlay('');
+    setActiveView('overview');
   }
 
   async function signOut() {
@@ -557,8 +612,9 @@ function App() {
     }
   }
 
-  function switchAccount(account: SavedAccount) {
+  function switchAccount(account: SavedAccount, preserveRequestedNavigation = false) {
     if (!localDemo || account.token === token) return;
+    if (!preserveRequestedNavigation) resetAnalysisNavigation();
     localStorage.setItem(TOKEN_KEY, account.token);
     sessionStorage.removeItem(TOKEN_KEY);
     setUser(null);

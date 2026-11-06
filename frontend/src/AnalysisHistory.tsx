@@ -45,7 +45,7 @@ export default function AnalysisHistory({ imageId, token, history, onSelect }: {
     <div className="viewer-heading"><h3>Analysis history</h3><span>{history.length} run{history.length === 1 ? "" : "s"}</span></div>
     {history.length === 0 ? <p className="muted">Run analysis to start this image’s history.</p> : <>
       <div className="history-list">{history.map((item) => <div className="history-row" key={item.id}>
-        <div><strong>{new Date(item.created_at).toLocaleString()}</strong><small>{item.model_version} · artery {item.artery_pixels.toLocaleString()} px · stenosis {item.stenosis_pixels.toLocaleString()} px</small></div>
+        <div><strong>{new Date(item.created_at).toLocaleString()}</strong><small>{item.model_version} · artery {item.artery_pixels.toLocaleString()} px · stenosis {item.structured_result?.stages.stenosis_detection?.status === 'skipped' ? 'Not assessed' : item.model_scores?.pixel_counts_unavailable ? 'Not saved' : `${item.stenosis_pixels.toLocaleString()} px`}</small></div>
         <Button type="button" variant="outline" onClick={() => onSelect(item)}>View overlay</Button>
       </div>)}</div>
       {history.length >= 2 && <div className="compare-controls">

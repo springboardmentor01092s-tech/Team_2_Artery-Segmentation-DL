@@ -101,12 +101,14 @@ export type AnalysisResult = {
   centerline_url?: string;
   artery_probability_url?: string;
   model_scores?: {
+    pixel_counts_unavailable?: boolean;
     artery_foreground_mean_probability?: number | null;
     stenosis_foreground_mean_probability?: number | null;
     calibration?: string;
   };
   validation: Record<string, { validation_dice: number; validation_images: number }>;
   vessel_analysis?: {
+    width_profiles?: unknown;
     mask_pixels: number;
     centerline_pixels: number;
     centerline_length: number;
@@ -163,7 +165,9 @@ export type StructuredResearchResult = {
   stages: Record<string, { status: string; reason: string }>;
   candidates: { candidate_id: string; category_id?: number; model_score?: number;
     bbox_prepared_xyxy?: number[]; bbox_source_xyxy?: number[] | null;
-    coordinate_warning?: string | null; association_status?: string }[];
+    coordinate_warning?: string | null; association_status?: string;
+    polygon_prepared_xy?: number[][]; coordinate_frame?: string; mask_pixels?: number;
+    width_profile_id?: string }[];
   severity: { status: string; narrowing_percent: number | null; category: string | null; reason: string };
   limitations: string[]; artifacts: Record<string, string>;
   explanation: { version: string; method: string; sections: { title: string; text: string; source_refs: string[] }[] };

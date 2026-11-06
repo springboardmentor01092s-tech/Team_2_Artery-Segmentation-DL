@@ -103,7 +103,8 @@ def predict_masks(path):
         artery_model, stenosis_model = _models(str(artifact_root()))
         with torch.inference_mode():
             artery_probability = artery_model(torch.from_numpy(gray.copy())[None, None]).sigmoid()[0, 0].numpy()
-        instances = predict_one(stenosis_model, torch.from_numpy(color.transpose(2, 0, 1).copy()), 'cpu', .1)
+        profile = next(item for item in RELEASE['models'] if item['task'] == 'stenosis')
+        instances = predict_one(stenosis_model, torch.from_numpy(color.transpose(2, 0, 1).copy()), 'cpu', profile['score_threshold'])
     artery = artery_probability >= .5
     stenosis = np.zeros_like(artery)
     probability = np.zeros_like(artery_probability)
@@ -141,7 +142,15 @@ def analyze(path, spacing_mm=None):
                   calibration='uncalibrated_raw_pixel_and_instance_scores', instance_detections=instances,
                   trained_release=RELEASE['version'], checkpoint_sha256={x['task']: x['sha256'] for x in RELEASE['models']},
                   preprocessing='Preserved512contract; no median/autocontrast/postprocessing added',
-                  absence_interpretation='No detections do not establish absence of disease')
+                  absence_interpretation='No detections do not establish absence of disease',
+                  operating_point={
+                      'profile': RELEASE['version'],
+                      'stenosis_score_threshold': next(item['score_threshold'] for item in RELEASE['models'] if item['task'] == 'stenosis'),
+                      'stenosis_mask_threshold': next(item['mask_threshold'] for item in RELEASE['models'] if item['task'] == 'stenosis'),
+                      'scope': 'Preserved application profile; separate from frozen research comparisons.'},
+                  explainability={
+                      'gradcam': {'status': 'unavailable', 'reason': 'No verified attribution target/layer for this preserved instance detector.', 'faithfulness_validated': False},
+                      'attention': {'status': 'unavailable', 'reason': 'No attention-gate map supplied by this detector.', 'faithfulness_validated': False}})
     # Private artifacts are consumed by the API, never serialized into ordinary JSON.
     payload = {}
     for name, mask in [('artery_mask', artery), ('stenosis_mask', stenosis)]:
