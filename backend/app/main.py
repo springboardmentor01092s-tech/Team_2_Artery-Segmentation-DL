@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -511,7 +511,16 @@ def login(data: LoginIn, db: Session = Depends(get_db)):
 
 
 @app.get("/api/auth/demo-accounts")
-def list_demo_accounts(db: Session = Depends(get_db)):
+def list_demo_accounts(request: Request, db: Session = Depends(get_db)):
+    loopback = {"127.0.0.1", "::1"}
+    if (
+        os.getenv("CV_LOCAL_DEMO_SESSIONS") != "1"
+        or os.getenv("COROVISION_ENV") == "production"
+        or not request.client
+        or request.client.host not in loopback
+        or request.url.hostname not in loopback | {"localhost"}
+    ):
+        return {"accounts": []}
     creds_path = BASE_DIR / "backend" / "demo-credentials.json"
     if not creds_path.is_file():
         creds_path = BASE_DIR / "demo-credentials.json"
@@ -1328,6 +1337,7 @@ def volume_run_out(row):
             'created_at':(row.created_at.replace(tzinfo=timezone.utc) if row.created_at.tzinfo is None else row.created_at).isoformat(), 'source_sha256':row.source_sha256,
             'error':row.error, 'result':result,
             'input_kind':'synthetic_fixture' if row.source_sha256 in SYNTHETIC_FIXTURE_HASHES else row.input_kind or 'unspecified',
+            'preview_url': base+'/artifacts/preview-3d.json' if row.status == 'completed' else None,
             'artifacts': {name:base+'/artifacts/'+name for name in
                           ['mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json']}
                          if row.status == 'completed' else {}}
@@ -1380,7 +1390,7 @@ def volume_models(user: User = Depends(require_case_role)):
 def create_volume_analysis(case_id: str, background: BackgroundTasks, file: UploadFile = File(...),
                            hu_confirmed: bool = Form(False), research_confirmed: bool = Form(False),
                            input_kind: Literal['medical_study','synthetic_fixture'] = Form('medical_study'),
-                           model_key: Literal['imagecas','imagecasx','aorta_aligned'] = Form('imagecas'),
+                           model_key: Literal['imagecas','imagecasx','aorta_aligned'] | None = Form(None),
                            user: User = Depends(require_roles('researcher', 'admin')),
                            db: Session = Depends(get_db)):
     from .volume_inference import JOB_SLOTS, MAX_UPLOAD_BYTES as VOLUME_UPLOAD_LIMIT, checkpoint_path, inspect_input
@@ -1390,6 +1400,8 @@ def create_volume_analysis(case_id: str, background: BackgroundTasks, file: Uplo
     if not allowed_action(user, 'analysis:run', db) or not allowed_action(user, 'case:upload', db):
         raise HTTPException(403, '3D inference requires upload and analysis permissions')
     from .task_models import SPECS,installed
+    if model_key is None:
+        model_key = 'aorta_aligned' if case.anatomy == 'aorta' else 'imagecas'
     spec=SPECS[model_key]
     eligible={'CT','CTA'} if model_key=='aorta_aligned' else {'CTA'}
     if not (eligible & set(case_modalities(case))) or case.anatomy != spec['anatomy']:
@@ -1453,23 +1465,35 @@ def volume_artifact(case_id: str, run_id: str, name: str,
                     user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     accessible_case(case_id, user, db)
     row = db.get(VolumeAnalysis, run_id)
-    allowed = {'mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json'}
+    allowed = {'mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json','preview-3d.json'}
     if row is None or row.case_id != case_id or row.status != 'completed' or name not in allowed:
         raise HTTPException(404, 'Volume artifact not found')
-    path = STORAGE/'volumes'/row.id/'outputs'/name
+    path = STORAGE/'volumes'/row.id/'outputs'/('mask_source.nii.gz' if name == 'preview-3d.json' else name)
     if not path.is_file():
         raise HTTPException(404, 'Volume artifact missing')
+    if name == 'preview-3d.json':
+        from fastapi.responses import JSONResponse
+        from nibabel.filebasedimages import ImageFileError
+        from .volume_preview import PREVIEW_SLOTS, mask_preview
+        if not PREVIEW_SLOTS.acquire(blocking=False):
+            raise HTTPException(429, 'The 3D viewer is busy. Try again shortly.')
+        try:
+            return JSONResponse(mask_preview(path))
+        except (ImageFileError, OSError, ValueError) as exc:
+            raise HTTPException(422, 'The saved mask could not be displayed in 3D.') from exc
+        finally:
+            PREVIEW_SLOTS.release()
     return FileResponse(path, media_type='image/png' if name.endswith('.png') else 'application/json' if name.endswith('.json') else 'application/gzip', filename=name)
 
 
 @app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/report/{format}')
-def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'csv'],
+def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'csv', 'pdf'],
                            user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     research_report_access(case_id, user, db)
     row = db.get(VolumeAnalysis, run_id)
     if not row or row.case_id != case_id:
         raise HTTPException(404, 'Volume analysis not found')
-    from .volume_reporting import snapshot, csv_text
+    from .volume_reporting import snapshot, csv_text, pdf_bytes
     try:
         document = snapshot(volume_run_out(row))
     except ValueError as exc:
@@ -1477,6 +1501,9 @@ def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'c
     if format == 'json':
         return document
     from fastapi.responses import Response
+    if format == 'pdf':
+        return Response(pdf_bytes(document), media_type='application/pdf',
+                        headers={'Content-Disposition': f'attachment; filename="volume-{row.id}.pdf"'})
     return Response(csv_text(document), media_type='text/csv',
                     headers={'Content-Disposition': f'attachment; filename="volume-{row.id}.csv"'})
 

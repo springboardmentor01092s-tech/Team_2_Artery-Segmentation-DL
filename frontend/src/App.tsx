@@ -22,6 +22,7 @@ import ReportsPage from "./ReportsPage";
 import VolumeIntake from "./VolumeIntake";
 import VolumeInference from './VolumeInference';
 import TaskInference from './TaskInference';
+import './case-analysis.css';
 import NotificationBell from "./NotificationBell";
 import Alert1 from "./components/watermelon/alert-1";
 import ViewerWorkspace from "./ViewerWorkspace";
@@ -925,19 +926,22 @@ function App() {
               </Card>}
               </>}
               {caseSection === 'history' && ((selected.anatomy==='coronary'&&(selected.modalities||[selected.modality]).includes('CTA'))||(selected.anatomy==='aorta'&&(selected.modalities||[selected.modality]).some(m=>m==='CT'||m==='CTA'))) && <VolumeInference caseId={selected.id} token={token} anatomy={selected.anatomy} readOnly />}
-              {caseSection === 'assets' && selected.anatomy==='coronary' && (selected.modalities||[selected.modality]).includes('XCA') && <TaskInference key={selected.id+':tasks'} caseId={selected.id} token={token} images={selected.images} canRun={selected.permissions?.can_run_analysis??false}/>}
+              {caseSection === 'assets' && selected.anatomy === 'coronary' && (selectedImage?.modality || selected.modality) === 'XCA' && <Card className="panel case-analysis-entry">
+                <div>
+                  <p className="eyebrow">NEXT STEP</p>
+                  <h3>Coronary analysis</h3>
+                  <p>See the artery outline, vessel measurements and areas of possible narrowing together. CoroVision selects the research pipeline for your image.</p>
+                  <p className="caption">{selectedImage ? selectedImage.original_name : 'Upload an angiogram to get started.'}</p>
+                </div>
+                <Button type="button" className="primary" disabled={!selectedImage} onClick={() => setActiveView("analysis")}>{selectedAnalysis ? 'View combined findings' : 'Open analysis'}</Button>
+              </Card>}
+              {caseSection === 'history' && selected.anatomy === 'coronary' && (selected.modalities || [selected.modality]).includes('XCA') && <TaskInference key={selected.id+':tasks'} caseId={selected.id} token={token} />}
               {caseSection === "history" && !selectedImage && selected.modality === 'XCA' && <Card className="panel"><h3>No 2D analysis history yet</h3><p>Prepare a supported 2D image first. 3D results, when available, are listed separately.</p></Card>}
               {caseSection === "history" && selectedImage && <Card className="panel analysis-panel">
                 <div className="viewer-heading"><h3>AI vessel analysis</h3><span>Research only</span></div>
                 <p className="caption">Selected source: {selectedImage.original_name}. Choose a different image under Assets & preparation to inspect its history.</p>
-                <p className="muted">Two trained neural models create artery and suspected stenosis masks. The colors show pixel predictions, not a diagnosis or severity grade.</p>
-                {(selected.permissions?.can_run_analysis ?? user.role !== "viewer") && (
-                  <Button className="primary" type="button" onClick={handleAnalysis} disabled={analysisBusy || !modelsReady || selected.modality !== "XCA"}>
-                    {analysisBusy ? "Analyzing…" : analysis ? "Run again" : "Run analysis"}
-                  </Button>
-                )}
-                {!modelsReady && <p className="caption">Models are unavailable. Train both ARCADE baselines to enable analysis.</p>}
-                {selected.modality !== "XCA" && <p className="caption">The current trained models accept X-ray coronary angiography only.</p>}
+                <p className="muted">This research analysis brings together the artery outline, vessel measurements and possible narrowing.</p>
+                <Button type="button" onClick={() => setActiveView("analysis")}>{selectedAnalysis ? 'View combined findings' : 'Open analysis'}</Button>
                 {overlay && <div className="analysis-overlay"><img src={overlay} alt="Research artery and stenosis mask overlay" /><p className="caption">Cyan: predicted artery · Coral: predicted stenosis</p></div>}
                 {analysis && <div className="analysis-details">
                   <p><strong>Model:</strong> {analysis.model_version}</p>

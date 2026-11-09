@@ -1,0 +1,96 @@
+{
+  "recorded_at": "2026-11-09T06:48:31.276922+00:00",
+  "schema_version": 1,
+  "scope": "Recorded teammate outputs reconciled from tables. Geometry-derived patch labels and research threshold bins. Clinical validation, patient independence and checkpoint binding unverified.",
+  "segmentation": [
+    {
+      "dice": 0.7572,
+      "evaluation_images": 21,
+      "iou": 0.6118,
+      "mean_centerline_length_px": 847.95,
+      "mean_width_px": 5.9,
+      "model": "Baseline_UNet",
+      "precision": 0.7308,
+      "recall": 0.8036,
+      "specificity": 0.985
+    },
+    {
+      "dice": 0.7595,
+      "evaluation_images": 21,
+      "iou": 0.615,
+      "mean_centerline_length_px": 827.43,
+      "mean_width_px": 5.51,
+      "model": "Attention_ResUNet",
+      "precision": 0.7638,
+      "recall": 0.7669,
+      "specificity": 0.9881
+    }
+  ],
+  "source": "https://drive.google.com/drive/folders/1hHm0tzm41R5p5gZicBUHYNwDUgd-kEF0",
+  "source_files": {
+    "README.md": {
+      "drive_file_id": "14yQs_7zmLZtP4DZaKGBZLGn0NBPOo0vh",
+      "sha256": "73b67e0659d465fce73176f4ca881519f8843a76bf6cc36a018bab77b887940b"
+    },
+    "case_stenosis_summary.csv": {
+      "drive_file_id": "1hh3rmAyUgQ_kvbehV0ZsV-Vhtgbjjrhh",
+      "sha256": "1af23befcc082d3a0f35dae9c2935f1d070d909f9e7183d10e47fa79a439bdda"
+    },
+    "metrics.json": {
+      "drive_file_id": "1OKp2oRqMhbv6xDj96VcgbzgfA3pNjJTV",
+      "sha256": "92b49afbf97b58bdb3059d836eadb6dc88a3c6434ccc19a2c4de5389ec59e6af"
+    },
+    "results.csv": {
+      "drive_file_id": "1ryap3trRBiqx3El6_46KsJcugSQYmA6N",
+      "sha256": "8eeb2b53e020f1aa00e1da6bc2fb46aa5fed129c06a541e2b4d21f31bdb59a31"
+    },
+    "splits.json": {
+      "drive_file_id": "1yVmkDQ_7B67QMlS2GGKwGUqSOF5IOO7U",
+      "sha256": "135f78fa629f31e50604a287fd7abab06732bd25c8a5429800d1d8e054b0eb58"
+    },
+    "stenosis_detection.py": {
+      "drive_file_id": "14Qt9jqTewGGE9dhXbaJNvQUQ28hRas9E",
+      "sha256": "b8d7a21c4b31bd03b231d0beb28bb9c5709b54cb34751b11c146af26425acb98"
+    },
+    "stenosis_detection_report.json": {
+      "drive_file_id": "1zWdsgdeAqnJx1FOXujuAIR-cXwpNAs8i",
+      "sha256": "93e4e9f1ca16a6a80f499a8fc5509aa99f72e9db96dc8f8b836ed1c2d824c03f"
+    },
+    "stenosis_model.py": {
+      "drive_file_id": "1eXSnEgpYAWG8v-zUR1A5sL7lfyN3VLyE",
+      "sha256": "0a62c228107071f62475a79eae91f67076b4381150f3108feeb92324c681041d"
+    },
+    "stenosis_severity_results.csv": {
+      "drive_file_id": "1NlTMQ62fC6HtfFFmb_yCrnLylKZpQfYN",
+      "sha256": "cb8ee5b4df34a36ff3b4edeb070b3acab06f50b23fb981ecc5abcb867c52ecdd"
+    },
+    "stenosis_severity_summary.json": {
+      "drive_file_id": "1kdYEuabf2I2xAN4YxUZGU4Vz22Mv82yG",
+      "sha256": "1624ff5a93d2996d87fb82653b94c568f0f74e2f331838a94f8fdb8b2df1f4f8"
+    },
+    "vessel_analysis.csv": {
+      "drive_file_id": "1D10-CKPs8S7lAKTljXA_iILZtEcEllf-",
+      "sha256": "96f395626cbd395992a335b2180c3fce7ff07fdb7d668cb8977ea09607766ccb"
+    },
+    "vessel_analysis.py": {
+      "drive_file_id": "1ReUJgSqc28ZMOyuzFYgZd6sWifxc3WVa",
+      "sha256": "a2bedd7c6e7a3a6720fde0acea159978a334ec63fd49fefc9488dc51c08e2eda"
+    }
+  },
+  "split_image_counts": {
+    "test": 21,
+    "train": 93,
+    "val": 20
+  },
+  "stenosis": {
+    "caliber_unit": "px",
+    "candidate_rows": 457,
+    "evaluation_images": 21,
+    "mean_candidate_narrowing_pct": 50.86,
+    "research_rule_bins": {
+      "Mild": 153,
+      "Moderate": 253,
+      "Severe": 51
+    }
+  }
+}

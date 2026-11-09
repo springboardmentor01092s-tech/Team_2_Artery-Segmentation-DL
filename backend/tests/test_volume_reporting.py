@@ -57,6 +57,12 @@ def test_report_api_identity_access_and_failed_run():
         assert response.json()['analysis_run_id']==run_id
         assert client.get(url.replace(case['id'],other['id']),headers=headers).status_code==404
         assert client.get(url[:-4]+'csv',headers=headers).status_code==200
+        pdf_url = url[:-4] + 'pdf'
+        assert client.get(pdf_url, headers=outsider).status_code == 404
+        pdf = client.get(pdf_url, headers=headers)
+        assert pdf.headers['content-type'] == 'application/pdf'
+        assert pdf.headers['content-disposition'] == f'attachment; filename="volume-{run_id}.pdf"'
+        assert pdf.content.startswith(b'%PDF-')
         with SessionLocal() as db:
             db.get(VolumeAnalysis,run_id).status='failed';db.commit()
         assert client.get(url,headers=headers).status_code==409

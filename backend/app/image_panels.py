@@ -42,13 +42,11 @@ def boundary_png(mask_path):
 
 
 def report_images(image, event, panels=None):
-    """PDF consumes the same saved inventory as the browser, including missing slots."""
+    """Select the source and overlay for the printable summary."""
     files = paths(image, event)
     rows = []
     for panel in panels or inventory(image, event):
         key = panel['key']
-        path = files.get(key)
-        if key == 'boundary' and files['artery_mask'].is_file():
-            path = BytesIO(boundary_png(files['artery_mask']))
-        rows.append((panel['title']+' — '+panel['description'], path))
+        if key in {'original', 'overlay'}:
+            rows.append((panel['title']+' — '+panel['description'], files.get(key)))
     return rows

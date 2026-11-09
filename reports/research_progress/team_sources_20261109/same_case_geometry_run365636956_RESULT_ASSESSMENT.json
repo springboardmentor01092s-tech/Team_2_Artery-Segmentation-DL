@@ -1,0 +1,119 @@
+{
+  "run_id": 365636956,
+  "version": 5,
+  "provider_seconds": 41.2,
+  "child_seconds": 22.338997758999994,
+  "source_bindings_passed": true,
+  "all_saved_artifact_hashes_passed": true,
+  "profile_lineage_passed": true,
+  "cases": [
+    {
+      "case": 18,
+      "source_sha256": "f7aa912397979e758059ab97d4e2f28727057a7ea742f61d41c256947508e16c",
+      "candidates": 5,
+      "profiles": [
+        {
+          "candidate_id": "C1",
+          "path_id": "P3",
+          "samples": 94,
+          "minimum_width_px": 5.656854249492381,
+          "maximum_width_px": 10.0,
+          "path_extent_px": 101.28427124746185,
+          "ambiguous": false
+        },
+        {
+          "candidate_id": "C2",
+          "path_id": "P1",
+          "samples": 62,
+          "minimum_width_px": 8.0,
+          "maximum_width_px": 16.1245154965971,
+          "path_extent_px": 65.14213562373094,
+          "ambiguous": false
+        },
+        {
+          "candidate_id": "C3",
+          "path_id": "P3",
+          "samples": 143,
+          "minimum_width_px": 5.656854249492381,
+          "maximum_width_px": 10.0,
+          "path_extent_px": 153.59797974644667,
+          "ambiguous": false
+        },
+        {
+          "candidate_id": "C4",
+          "path_id": "P1",
+          "samples": 132,
+          "minimum_width_px": 8.0,
+          "maximum_width_px": 16.1245154965971,
+          "path_extent_px": 138.45584412271572,
+          "ambiguous": false
+        }
+      ]
+    },
+    {
+      "case": 60,
+      "source_sha256": "0c5d25a509f1850c870fe78bb0e0d5f2cd29569db33aafd2e1ec1e589dfcf990",
+      "candidates": 6,
+      "profiles": [
+        {
+          "candidate_id": "C2",
+          "path_id": "P3",
+          "samples": 19,
+          "minimum_width_px": 10.0,
+          "maximum_width_px": 12.0,
+          "path_extent_px": 19.24264068711932,
+          "ambiguous": true
+        },
+        {
+          "candidate_id": "C2",
+          "path_id": "P5",
+          "samples": 4,
+          "minimum_width_px": 10.0,
+          "maximum_width_px": 12.806248474865697,
+          "path_extent_px": 3.0,
+          "ambiguous": true
+        },
+        {
+          "candidate_id": "C2",
+          "path_id": "P6",
+          "samples": 148,
+          "minimum_width_px": 7.211102550927978,
+          "maximum_width_px": 12.0,
+          "path_extent_px": 158.59797974644664,
+          "ambiguous": true
+        },
+        {
+          "candidate_id": "C4",
+          "path_id": "P3",
+          "samples": 88,
+          "minimum_width_px": 8.246211251235321,
+          "maximum_width_px": 16.97056274847714,
+          "path_extent_px": 99.01219330881968,
+          "ambiguous": false
+        },
+        {
+          "candidate_id": "C5",
+          "path_id": "P6",
+          "samples": 55,
+          "minimum_width_px": 8.0,
+          "maximum_width_px": 12.0,
+          "path_extent_px": 58.55634918610403,
+          "ambiguous": false
+        },
+        {
+          "candidate_id": "C6",
+          "path_id": "P2",
+          "samples": 21,
+          "minimum_width_px": 18.867962264113206,
+          "maximum_width_px": 24.0,
+          "path_extent_px": 22.899494936611646,
+          "ambiguous": false
+        }
+      ]
+    }
+  ],
+  "clinical_validation": false,
+  "new_detector_gain_claimed": false,
+  "dashboard_proof_pending": false,
+  "dashboard_receipt": "DASHBOARD_BROWSER_COMBINED_RECEIPT_20261105.json"
+}

@@ -78,9 +78,9 @@ def test_volume_selection_enforces_anatomy_and_persists_model(tmp_path,monkeypat
         _,owner=make_user(f'volume-select-{uuid4().hex}@example.org','researcher')
         coronary=client.post('/api/cases',headers=owner,json=dict(case_code='C-'+uuid4().hex[:8],modality='CTA',anatomy='coronary',intended_task='volume_preparation')).json()
         aorta=client.post('/api/cases',headers=owner,json=dict(case_code='A-'+uuid4().hex[:8],modality='CT',anatomy='aorta',intended_task='volume_preparation')).json()
-        confirms=dict(hu_confirmed='true',research_confirmed='true',model_key='aorta_aligned')
+        confirms=dict(hu_confirmed='true',research_confirmed='true')
         files={'file':('fixture.nii.gz',path.read_bytes(),'application/gzip')}
-        assert client.post(f"/api/cases/{coronary['id']}/volumes/analyses",headers=owner,data=confirms,files=files).status_code==422
+        assert client.post(f"/api/cases/{coronary['id']}/volumes/analyses",headers=owner,data=dict(confirms,model_key='aorta_aligned'),files=files).status_code==422
         url=f"/api/cases/{aorta['id']}/volumes/analyses"
         response=client.post(url,headers=owner,data=confirms,files=files)
         assert response.status_code==202,response.text

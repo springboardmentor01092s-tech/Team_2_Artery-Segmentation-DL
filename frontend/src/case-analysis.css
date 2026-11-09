@@ -1,0 +1,29 @@
+.case-analysis-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.case-analysis-entry > div { flex: 1 1 28rem; }
+.case-analysis-entry h3 { margin: 0 0 .5rem; font-size: 1.25rem; }
+.case-analysis-entry p { max-width: 62ch; margin: .35rem 0; line-height: 1.5; }
+.case-analysis-entry .primary { min-height: 44px; }
+
+.case-findings-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .75rem;
+  flex: 1 0 100%;
+  margin: 0;
+}
+
+.case-findings-summary > div {
+  padding: .75rem 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: .625rem;
+}
+
+.case-findings-summary dt { color: hsl(var(--muted-foreground)); font-size: .875rem; }
+.case-findings-summary dd { margin: .25rem 0 0; font-weight: 650; }

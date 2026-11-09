@@ -1,0 +1,223 @@
+{
+  "archives": [
+    {
+      "archive": "results (1).zip",
+      "sha256": "e45c7dd6f2ff3780218db45f3b63aa32a645bae29654b1b5e28159ab5d948af0",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/e45c7dd6f2ff3780/receipt.json"
+    },
+    {
+      "archive": "results (2).zip",
+      "sha256": "0f470109d4ee184a23ac8c0ec2045459aefd65192d2aad24f59514d4400c914e",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/0f470109d4ee184a/receipt.json"
+    },
+    {
+      "archive": "results (3).zip",
+      "sha256": "d499c1f9af194969b0cfa8e57213074837f461e8fc1174a8c556c9f17e9fba5e",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/d499c1f9af194969/receipt.json"
+    },
+    {
+      "archive": "results (4).zip",
+      "sha256": "bc729ed6c0c25b9657bd846cfe5e4c284f58a22b280f6270ae19b486eabedf7b",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/bc729ed6c0c25b96/receipt.json"
+    },
+    {
+      "archive": "results (5).zip",
+      "sha256": "47465bfea333581aeb8f7c404f1f4424b989cc0dbde826a0624630ba6096f105",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/47465bfea333581a/receipt.json"
+    },
+    {
+      "archive": "results (6).zip",
+      "status": "not_a_baseline_bundle_left_unchanged",
+      "checkpoint_count": 0
+    },
+    {
+      "archive": "results (7).zip",
+      "sha256": "a581a20e0d1c9552077116891b82646c081ad8e38c1b48167cfe51f539b71538",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/a581a20e0d1c9552/receipt.json"
+    },
+    {
+      "archive": "results (8).zip",
+      "sha256": "d8cef0ddc4dea5a6e34050d47664d1bfa413c926df195106bafbba284b5eddcd",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/d8cef0ddc4dea5a6/receipt.json"
+    },
+    {
+      "archive": "results (9).zip",
+      "sha256": "187b6516df6eb535460e7577a692f1929da60c795b093b2767c1bbdb2605a905",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/187b6516df6eb535/receipt.json"
+    },
+    {
+      "archive": "results.zip",
+      "sha256": "1f2d59e502dc6a2515bf47df7190d8402a927f83aa8746ff393f81c853140653",
+      "status": "staged_verified",
+      "receipt": "external_artifacts/kaggle_downloads_20261026/1f2d59e502dc6a25/receipt.json"
+    }
+  ],
+  "checkpoints": [
+    {
+      "archive": "results (1).zip",
+      "file": "imagecasx128/models/best.pt",
+      "sha256": "858ab22c82e36258589f3c4d9056f380dfe9a5623a823bd3876deab96051b142",
+      "registered_task": null,
+      "handoff_matches": [],
+      "verification": "unmatched_quarantined",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (2).zip",
+      "file": "corovision_stenosis/models/stenosis/stenosis/maskrcnn_resnet50_fpn/best.pt",
+      "sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+      "registered_task": "stenosis",
+      "handoff_matches": [
+        {
+          "package": "stenosis",
+          "task": "stenosis",
+          "selected": true
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (2).zip",
+      "file": "corovision_stenosis/models/stenosis/stenosis/maskrcnn_resnet50_fpn_v2/best.pt",
+      "sha256": "a1a54e5256a823bfad59831da26f9d4f6d89c97127f803cba5cc4d396efbe0d9",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "stenosis",
+          "task": "stenosis",
+          "selected": false
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (3).zip",
+      "file": "imagecas128/models/best.pt",
+      "sha256": "981c517acf6ac8a6875bd38770d61bf536c57b9f6d0819a51af8bc1672624dba",
+      "registered_task": null,
+      "handoff_matches": [],
+      "verification": "unmatched_quarantined",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (4).zip",
+      "file": "corovision_syntax/models/syntax/syntax/maskrcnn_resnet50_fpn/best.pt",
+      "sha256": "78c713b42f07ebe6a9c887850a4b2f28ff92d7eb22a05822d387cee940f4a18b",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "syntax",
+          "task": "syntax",
+          "selected": false
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (4).zip",
+      "file": "corovision_syntax/models/syntax/syntax/maskrcnn_resnet50_fpn_v2/best.pt",
+      "sha256": "59422bb0d02b7ea80e4279d34b48fae70aee96bfc8b35ee0f7d7237019688654",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "syntax",
+          "task": "syntax",
+          "selected": true
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (5).zip",
+      "file": "dca2d/data/experiments/dca/gpu512/best.pt",
+      "sha256": "86497f8edab3f6e750977f1823c9866ab7e654ca953fc36a3ad6bc9c1604a4ca",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "dca2d",
+          "task": "dca2d",
+          "selected": false
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (7).zip",
+      "file": "aorta128/models/best.pt",
+      "sha256": "3b0af653ed92bcc750f24ecf493f03d98e13dc5ed5036096c36172b163ed92ad",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "aorta128",
+          "task": "aorta128",
+          "selected": true
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (8).zip",
+      "file": "cadica_corrected/models/best.pt",
+      "sha256": "9c4c7d52e8fe420c88eaee88e6d49b694b9bdd7be77cd0d84dee4653ab0aff46",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "cadica_corrected",
+          "task": "cadica_corrected",
+          "selected": true
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results (9).zip",
+      "file": "stenosis_boxes/models/best.pt",
+      "sha256": "57a42245560455fcec67c2b5c27cd5949041be6a85e909c62ff578d418f7bfc9",
+      "registered_task": null,
+      "handoff_matches": [
+        {
+          "package": "stenosis_boxes",
+          "task": "stenosis_boxes",
+          "selected": true
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    },
+    {
+      "archive": "results.zip",
+      "file": "syntax_pretrained/models/best.pt",
+      "sha256": "ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c",
+      "registered_task": "syntax",
+      "handoff_matches": [
+        {
+          "package": "syntax_binary_resnet34_v1",
+          "task": "Binary coronary vessel segmentation, not anatomical instance identification or stenosis diagnosis",
+          "selected": false
+        }
+      ],
+      "verification": "exact_handoff_match",
+      "active_model_replaced": false
+    }
+  ],
+  "training_performed": false,
+  "active_models_changed": false,
+  "downloaded_code_executed": false,
+  "incomplete_downloads": 0,
+  "note": "File verification is not inference integration or new accuracy validation."
+}

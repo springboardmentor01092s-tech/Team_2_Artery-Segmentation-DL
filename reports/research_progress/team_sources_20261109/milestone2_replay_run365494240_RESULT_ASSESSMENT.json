@@ -1,0 +1,104 @@
+{
+  "recorded_at_utc": "2026-11-04T05:21:20.445917+00:00",
+  "run_id": 365494240,
+  "version": 2,
+  "url": "https://www.kaggle.com/code/mokshagnamannam/corovision-milestone2-verification-20261103?scriptVersionId=365494240",
+  "status": "completed_replay_and_geometry_output_passed",
+  "provider_seconds": 169.1,
+  "runtime": {
+    "elapsed_seconds": 132.62144272299997,
+    "inference_evaluation_seconds": 42.203039623999985,
+    "cap_seconds": 1800,
+    "gpu": "Tesla T4",
+    "torch": "2.11.0+cu130",
+    "training": false,
+    "optimizer_updates": 0
+  },
+  "archive_sha256": "5970f689e3a74fabe20b71c3cb59e1ac5df0b17828d620007c8adec9dbcde3a3",
+  "archive_bytes": 204067942,
+  "archive_files": 459,
+  "crc_and_member_sha256_passed": true,
+  "parity_cases": 200,
+  "all_masks_exact": true,
+  "pixel_counts_exact": true,
+  "probability_max_abs_difference": 0.0,
+  "metrics": {
+    "cases": 200,
+    "resolution": 512,
+    "threshold": 0.5,
+    "dice": 0.8272773138933874,
+    "iou": 0.7122207162851368,
+    "precision": 0.8443600533723558,
+    "recall": 0.821873792933815,
+    "specificity": 0.9942900086372701,
+    "accuracy": 0.9879294967651367,
+    "dice_std": 0.07651989080501526,
+    "counts": {
+      "tp": 1534098,
+      "fp": 288082,
+      "fn": 344760,
+      "tn": 50261860
+    },
+    "undefined_precision_cases": 0,
+    "undefined_recall_cases": 0
+  },
+  "case_geometry_profiles": [
+    {
+      "id": 1,
+      "run_id": "m2-remote-development-1",
+      "profiles": 5,
+      "rejected_paths": 0,
+      "geometry_status": "research_geometry_requires_review"
+    },
+    {
+      "id": 18,
+      "run_id": "m2-remote-development-18",
+      "profiles": 3,
+      "rejected_paths": 0,
+      "geometry_status": "research_geometry_requires_review"
+    },
+    {
+      "id": 24,
+      "run_id": "m2-remote-development-24",
+      "profiles": 3,
+      "rejected_paths": 0,
+      "geometry_status": "research_geometry_requires_review"
+    }
+  ],
+  "immutable_inputs": [
+    {
+      "sourceType": "datasetVersion",
+      "sourceId": 11770475
+    },
+    {
+      "sourceType": "kernelVersion",
+      "sourceId": 358786766
+    },
+    {
+      "sourceType": "kernelVersion",
+      "sourceId": 365143415
+    }
+  ],
+  "checkpoint_sha256": "ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c",
+  "evaluator_sha256": "1c660d9a55ef7c4e8a3929c8186c24348dae76693555e4f146b5cecb6b524042",
+  "loader_sha256": "2bedd94571b3147335c9d2721c9ac24d8692be885e4f18d612a0abda8f7e2457",
+  "cohort_sha256": "73aa1ae899322bc222dc77df6cae52ca1a4d008df3ae650e6fe784f8ac27f340",
+  "protocol_sha256": "570f7948d085ea5003b97267a813bf99dd845f1bca270ad643bbde2ca7d1869c",
+  "preprocessing": {
+    "batch": 2,
+    "precision": "FP32",
+    "threshold": 0.5,
+    "seed": 42,
+    "architecture": "retained application ResNet34 U-Net"
+  },
+  "quota_before": "04:43 /30hrs",
+  "quota_after": "04:46 /30hrs",
+  "displayed_debit_minutes": 3,
+  "active_events_after": 0,
+  "draft_session_after": "off",
+  "dashboard_replay_proof": "pending",
+  "clinical_lumen_validation": false,
+  "patient_independence": "unknown",
+  "overall_milestone2_complete": false,
+  "activation": false
+}

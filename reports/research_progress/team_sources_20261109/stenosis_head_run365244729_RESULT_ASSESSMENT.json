@@ -1,0 +1,152 @@
+{
+  "recorded_at_utc": "2026-11-03T12:27:36.947346+00:00",
+  "reservation_id": "stenosis-retained-head-refinement-20261103",
+  "run_id": 365244729,
+  "version": 2,
+  "state": "completed_rejected_baseline_retained",
+  "provider_seconds": 4242.0,
+  "parent_receipt": {
+    "child_returncode": 0,
+    "timed_out": false,
+    "elapsed_seconds": 4224.59022751,
+    "cap_seconds": 14400,
+    "state": "child_success_requires_gate_review",
+    "acceptance_or_activation": false
+  },
+  "training": {
+    "state": "max_epochs",
+    "successful_steps": 9980,
+    "completed_epochs": 20,
+    "best_instance_f1": 0.414070351758794,
+    "automatic_activation": false,
+    "elapsed_trial_seconds": 4178.603022163
+  },
+  "baseline_parity": {
+    "passed": true,
+    "tolerance": 1e-06,
+    "metric_differences": {
+      "instance_f1_iou50": 0.0,
+      "instance_precision_iou50": 0.0,
+      "instance_recall_iou50": 0.0,
+      "pixel_dice_union_mask": -6.075227005908346e-07,
+      "arcade_official_f1": -1.4619199822929474e-07
+    }
+  },
+  "baseline": {
+    "images": 200,
+    "arcade_official_f1": 0.439394301564994,
+    "pixel_accuracy_union_mask": 0.9923109626770019,
+    "pixel_precision_union_mask": 0.5395434956361782,
+    "pixel_recall_sensitivity_union_mask": 0.607151492963985,
+    "pixel_specificity_union_mask": 0.995589452611651,
+    "pixel_f1_union_mask": 0.5713544441219097,
+    "pixel_dice_union_mask": 0.5713544441219096,
+    "pixel_iou_union_mask": 0.39992735900874815,
+    "pixel_auc_roc_union_score": 0.8568180644883431,
+    "instance_precision_iou50": 0.34574468085106386,
+    "instance_recall_iou50": 0.4802955665024631,
+    "instance_f1_iou50": 0.4020618556701031,
+    "matched_instance_dice_iou50": 0.8019042051854577,
+    "matched_instance_iou_iou50": 0.6749738552236717,
+    "instance_counts": {
+      "tp": 195,
+      "fp": 369,
+      "fn": 211
+    },
+    "score_threshold": 0.25,
+    "pixel_threshold": 0.5,
+    "pixel_metric_note": "Supplementary binary-union pixel metrics; do not represent official ARCADE task scoring."
+  },
+  "candidate": {
+    "images": 200,
+    "arcade_official_f1": 0.4461094077749492,
+    "pixel_accuracy_union_mask": 0.9922589683532714,
+    "pixel_precision_union_mask": 0.535392351482663,
+    "pixel_recall_sensitivity_union_mask": 0.6265499684752175,
+    "pixel_specificity_union_mask": 0.9953718952560012,
+    "pixel_f1_union_mask": 0.5773953752807538,
+    "pixel_dice_union_mask": 0.5773953752807538,
+    "pixel_iou_union_mask": 0.40587199369937654,
+    "pixel_auc_roc_union_score": 0.8614932613784563,
+    "instance_precision_iou50": 0.34974533106960953,
+    "instance_recall_iou50": 0.5073891625615764,
+    "instance_f1_iou50": 0.414070351758794,
+    "matched_instance_dice_iou50": 0.7995057033672618,
+    "matched_instance_iou_iou50": 0.6717776150284713,
+    "instance_counts": {
+      "tp": 206,
+      "fp": 383,
+      "fn": 200
+    },
+    "score_threshold": 0.25,
+    "pixel_threshold": 0.5,
+    "pixel_metric_note": "Supplementary binary-union pixel metrics; do not represent official ARCADE task scoring."
+  },
+  "decision": {
+    "gates": {
+      "instance_f1": false,
+      "recall": true,
+      "precision": true,
+      "fp_per_frame": true,
+      "union_dice": true,
+      "task_f1": true
+    },
+    "deltas": {
+      "instance_f1": 0.012008496088690868,
+      "recall": 0.027093596059113323,
+      "precision": 0.004000650218545676,
+      "fp_per_frame": 0.07,
+      "union_dice": 0.006040931158844187,
+      "task_f1": 0.006715106209955191
+    },
+    "accepted": false,
+    "automatic_activation": false,
+    "training": true
+  },
+  "missed_lesions_change": -11,
+  "false_positives_change": 14,
+  "both_user_objectives_met": false,
+  "rejection_reason": "InstanceF1gain .0120084961 is below unchanged .02 minimum; missed lesions improve but FP worsen",
+  "metadata_checks": {
+    "baseline": {
+      "cases": 200,
+      "sum_counts_match": true,
+      "png": 200,
+      "npz": 200
+    },
+    "candidate": {
+      "cases": 200,
+      "sum_counts_match": true,
+      "png": 200,
+      "npz": 200
+    }
+  },
+  "history_best_matches_final": true,
+  "archive_sha256": "f7315e5454dfb33df8bc42e20c257d05a701ca7e7d3eb0bd921b65501861e269",
+  "archive_bytes": 562788768,
+  "archive_members": 843,
+  "quota_before_used": "03:32 /30hrs",
+  "quota_after_used": "04:43 /30hrs",
+  "provider_displayed_debit_minutes": 71,
+  "billing_scope": "displayed minute resolution, not wall-time inference",
+  "active_events_after": 0,
+  "draft_session_after": "Editor Loading, Start session disabled; agent never started session, explicit off confirmation not currently visible",
+  "independent_pixel_recount": false,
+  "actual_visual_review": {
+    "viewed": [
+      "baseline_case_60",
+      "candidate_case_60",
+      "baseline_case_18",
+      "candidate_case_18"
+    ],
+    "other_panels": "saved/not yet visually reviewed",
+    "findings": [
+      "Case60 gains a marginal IoU.500394 match and reduces unmatched predictions6to5",
+      "Case18 retains7misses and adds one unmatched prediction4to5",
+      "No clinical adjudication performed"
+    ]
+  },
+  "activation": false,
+  "automatic_retry": false,
+  "next": "Retain baseline; diagnose saved learning/case deltas before a new hypothesis. Three rolling reservations retained. Complete session confirmation; no new dispatch."
+}

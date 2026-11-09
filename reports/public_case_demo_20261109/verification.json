@@ -1,0 +1,113 @@
+{
+  "case_code": "DEMO-DCA1-003-20261109",
+  "case_id": "dac0b8f5-71cb-4b58-b640-f5e5c5b85f41",
+  "image_id": "37bbfa6b-7286-4248-bf9c-5a4cbe1b9fc8",
+  "run_id": "2ad252db-db42-43ff-a9c5-8b05309cfcc0",
+  "job_id": "087539f0-3680-4ec6-8fb3-3f869d3127ba",
+  "job_status": "completed",
+  "report_id": "22e3994d-28a2-4b27-afa7-3fca13abde1f",
+  "model": "corovision-preserved-2d-20261023",
+  "checkpoints": {
+    "syntax": "ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c",
+    "stenosis": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3"
+  },
+  "source": {
+    "dataset": "DCA1",
+    "member": "3.pgm",
+    "publisher_context": "https://doi.org/10.3390/app9245507",
+    "source_pgm_sha256": "a96486bad0b0b62728578ee67d55d0a084791a47cd6c436e693331d349d86aa2",
+    "uploaded_png_sha256": "a50a16f08653207d17e95c14d27ae3d939232ce126652d58f3eb2e829bbfcee5",
+    "checkpoint_patient_exposure": "unknown",
+    "transformation": "lossless PGM to PNG"
+  },
+  "artery_pixels": 8662,
+  "stenosis_pixels": 2405,
+  "candidate_count": 3,
+  "severity": {
+    "status": "insufficient_evidence",
+    "reference_diameter": null,
+    "minimum_diameter": null,
+    "diameter_unit": null,
+    "narrowing_percent": null,
+    "category": null,
+    "reference_selection": null,
+    "reason": "No validated candidate-local/reference-vessel measurement protocol or category standard."
+  },
+  "stages": {
+    "preprocessing": {
+      "status": "completed",
+      "reason": "Saved upload processing record used."
+    },
+    "artery_segmentation": {
+      "status": "review_required",
+      "reason": "Model-generated mask; anatomical correctness requires review."
+    },
+    "vessel_analysis": {
+      "status": "review_required",
+      "reason": "Mask-derived 2D estimates."
+    },
+    "stenosis_detection": {
+      "status": "review_required",
+      "reason": "Compatible image model; candidates are not diagnoses. Vessel association not assessed."
+    },
+    "severity_assessment": {
+      "status": "blocked",
+      "reason": "Validated local/reference diameter protocol unavailable."
+    }
+  },
+  "artifacts": {
+    "overlay": {
+      "bytes": 92138,
+      "sha256": "4d395524e0a3b73a7c775cf457b140e5460883835fe2a6a5ffeda5b2c3444a7a"
+    },
+    "artery_mask": {
+      "bytes": 1936,
+      "sha256": "8e2b09d381739a83aa1fac55b4e4ece2876afca504f60798ee024cffaf45420b"
+    },
+    "stenosis_mask": {
+      "bytes": 1011,
+      "sha256": "ce3c63a369432c7e989d932490b2f0613b689b3778b0bb18bc817cf58f3bad73"
+    },
+    "raw_scores": {
+      "bytes": 977038,
+      "sha256": "104e1368af7baf608939cb1f8566642dc6445ed8bf280007b79220ff22e51bc8"
+    },
+    "original": {
+      "bytes": 32540,
+      "sha256": "a50a16f08653207d17e95c14d27ae3d939232ce126652d58f3eb2e829bbfcee5"
+    },
+    "centerline": {
+      "bytes": 85616,
+      "sha256": "a5753808ea1477d1791bb083d94f04618d0e0b531c6d851e33caaab26da19347"
+    },
+    "boundary": {
+      "bytes": 2348,
+      "sha256": "e1a9f69586b580dd90f484cf24100f28c3930b93fe4c8c96d2963e35b9f45f6c"
+    },
+    "processed": {
+      "bytes": 58763,
+      "sha256": "8bc13b7b10610b2b5bcabc12ca47cf75dd770d35df22e202f7623d885eb15589"
+    },
+    "cta_360_preview": {
+      "bytes": 367956,
+      "sha256": "f212e4aea7e37636fecc15267542ad95bb63fb237d25e8b987e0714495cc509e"
+    },
+    "cta_source_mask": {
+      "bytes": 372190,
+      "sha256": "3cd24dd0aa06fdfad27b796d6dc70d42f8798b3419cf401fcef610c9d6fcd7a3"
+    }
+  },
+  "shared_demo_viewer_overlay_status": 200,
+  "unauthenticated_overlay_status": 401,
+  "saved_cta": {
+    "case_code": "FRESH-3D-fdbe28",
+    "run_id": "d0fbbf42-e090-4fb5-a586-65eaab605321",
+    "shape": [
+      512,
+      512,
+      321
+    ],
+    "preview_points": 13728,
+    "source_foreground_voxels": 13728
+  }
+}

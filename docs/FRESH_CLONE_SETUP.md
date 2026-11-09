@@ -72,7 +72,7 @@ For an administrator without demos, set private `ADMIN_EMAIL` and `ADMIN_PASSWOR
 | --- | --- |
 | Missing Python/npm | Install prerequisites and reopen the terminal so PATH updates. |
 | Dependency installation fails | Check internet access, supported Python version, available disk space, and library wheel availability. |
-| Port 8000 in use | Stop the other process before launching. The built app expects this local port. |
+| Port 8000 in use | Run `python scripts/run_local.py --port 8001` and open the printed URL. The built app uses the API on the same origin. |
 | Models unavailable | Expected without separately installed trusted checkpoints. No training is launched. |
 | PDF rejected | Verify Poppler installation with `pdftoppm -v`. |
 | No old cases/accounts | Expected on a fresh database. Private data is not copied through Git. |

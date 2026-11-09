@@ -1,0 +1,52 @@
+{
+  "verified_at_utc": "2026-11-04T05:10:11.361739+00:00",
+  "event_id": "9568e91f-8f0d-4661-8f2c-41d2b30f0031",
+  "image_id": "7b62cf5c-7deb-4a38-bfa7-e8bcfafa5ac6",
+  "model_version": "corovision-preserved-2d-20261023",
+  "checks": {
+    "artery_mask": {
+      "http": 200,
+      "sha256": "10049a8829b2c7fd0cf3147494289201512d399080a4b87e2de34d7814d03510",
+      "matches_saved": true
+    },
+    "boundary": {
+      "http": 200,
+      "sha256": "2a846ffbec634d600e80ab5637be2db2e9b3835a23e17580b994c627e7e7bf0f",
+      "matches_saved": true
+    },
+    "centerline": {
+      "http": 200,
+      "sha256": "8391f87523836640bdaa260538d52ee348f1c898e6bcb3f6c9d4dd6a2435a716",
+      "matches_saved": true
+    },
+    "original": {
+      "http": 200,
+      "sha256": "748a2d4fcd2df8a11e5c1b836abbdf5201d21f75be808e0e71865ef8cda7bf55",
+      "matches_saved": true
+    },
+    "overlay": {
+      "http": 200,
+      "sha256": "241b598cdb6555952dec0d81fd36a11348244d1288b65e733f4fb7977ff314dd",
+      "matches_saved": true
+    },
+    "processed": {
+      "http": 200,
+      "sha256": "31ebb4d16b4966a56f35007d089eedc1d4467458e2b5a029f855b39e450f7542",
+      "matches_saved": true
+    },
+    "map/artery_probability": {
+      "http": 200,
+      "sha256": "8a894f3be10eb0e038b420cfd7d4f6d13125080b39f24f599f2aaad58b462540"
+    },
+    "artifacts/artery_mask": {
+      "http": 200,
+      "sha256": "10049a8829b2c7fd0cf3147494289201512d399080a4b87e2de34d7814d03510"
+    },
+    "artifacts/raw_scores": {
+      "http": 200,
+      "sha256": "c37fe788ff0de549d21e85ddace4205f41e5540b90e4a282163f94287ca8b55c"
+    }
+  },
+  "anonymous_panel_http": 401,
+  "history_reads_matched": 2
+}

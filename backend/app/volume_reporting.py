@@ -4,6 +4,8 @@ import hashlib
 import json
 from io import StringIO
 
+from .report_pdf import ResearchPDF
+
 
 def snapshot(run):
     result = run.get('result')
@@ -46,3 +48,29 @@ def csv_text(document):
         writer.writerow([safe(x) for x in [document['case_id'],document['analysis_run_id'],document['model_id'],
             document['checkpoint_sha256'],stage,item['status'],item['reason']]])
     return stream.getvalue()
+
+
+def pdf_bytes(document):
+    report = ResearchPDF('3D vessel analysis report')
+    report.field('Case', document['case_id'])
+    report.field('Saved run', document['analysis_run_id'])
+    report.field('Model', document['model_id'])
+    report.field('Study type', (document.get('input_kind') or 'Unavailable').replace('_', ' ').capitalize())
+
+    report.section('Findings')
+    report.field('Predicted vessel voxels (coarse grid)', document.get('predicted_coarse_foreground_voxels'))
+    if document.get('source_shape'):
+        report.field('Source volume dimensions', ' × '.join(map(str, document['source_shape'])) + ' voxels')
+    for title, key in [('Vessel mask', 'segmentation'), ('Centerline', 'vessel_graph'),
+                       ('Diameter', 'diameter_measurement'), ('Stenosis', 'stenosis_detection'),
+                       ('Severity', 'severity')]:
+        stage = document['stages'][key]
+        report.field(title, stage['status'].replace('_', ' ').capitalize())
+
+    report.section('Interpretation')
+    report.paragraph('The saved vessel mask is a research prediction. Voxel count describes the predicted mask size. '
+                     'Anatomical accuracy and clinical severity require separate validation.')
+    for limitation in document['limitations']:
+        report.paragraph(limitation)
+    report.paragraph('See the JSON export for source geometry, checkpoint hashes and detailed stage notes.')
+    return report.build()

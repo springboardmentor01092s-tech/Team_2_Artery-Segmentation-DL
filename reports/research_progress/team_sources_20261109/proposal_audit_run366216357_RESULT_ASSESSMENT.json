@@ -1,0 +1,92 @@
+{
+  "recorded_at_utc": "2026-11-06T08:43:55.845083+00:00",
+  "run_id": 366216357,
+  "version": 6,
+  "state": "completed_frozen_diagnostic_rpn_coverage_gate_not_met",
+  "provider_seconds": 107.2,
+  "child_seconds": 84.35719524599995,
+  "supervisor_seconds": 89.65062095799999,
+  "parent_cap_seconds": 1784,
+  "cases": 200,
+  "references": 406,
+  "all10execution_payload_bytes_exact": true,
+  "exact_inputs": [
+    11770475,
+    358429823
+  ],
+  "baseline_parity": {
+    "passed": true,
+    "tolerance": 1e-06,
+    "metric_differences": {
+      "instance_f1_iou50": 0.0,
+      "instance_precision_iou50": 0.0,
+      "instance_recall_iou50": 0.0,
+      "pixel_dice_union_mask": -6.075227005908346e-07,
+      "arcade_official_f1": -1.4619199822929474e-07
+    }
+  },
+  "coverage": {
+    "top10_iou0.5": {
+      "covered_references": 233,
+      "reference_count": 406,
+      "recall": 0.5738916256157636
+    },
+    "top10_iou0.75": {
+      "covered_references": 72,
+      "reference_count": 406,
+      "recall": 0.17733990147783252
+    },
+    "top100_iou0.5": {
+      "covered_references": 350,
+      "reference_count": 406,
+      "recall": 0.8620689655172413
+    },
+    "top100_iou0.75": {
+      "covered_references": 153,
+      "reference_count": 406,
+      "recall": 0.3768472906403941
+    },
+    "top1000_iou0.5": {
+      "covered_references": 394,
+      "reference_count": 406,
+      "recall": 0.9704433497536946
+    },
+    "top1000_iou0.75": {
+      "covered_references": 203,
+      "reference_count": 406,
+      "recall": 0.5
+    }
+  },
+  "baseline_counts": {
+    "tp": 195,
+    "fp": 369,
+    "fn": 211
+  },
+  "mask_misses_without_qualifying_proposal": 12,
+  "mask_misses_with_qualifying_proposal": 199,
+  "fraction_without_proposal": 0.05687203791469194,
+  "predeclared_triage_fraction_minimum": 0.25,
+  "mechanism_gate_passed": false,
+  "decision": "Do not proceed with RPN-only training on the proposed missing-coverage rationale; reassess without selecting another scientific hypothesis automatically",
+  "limitations": [
+    "Box coverage is not final mask matching or causal stage proof",
+    "Only 50percent references have boxIoU.75 top1000 coverage, but this was not a replacement gate",
+    "RPN rank/quality may still matter; high broad coverage does not prove RPN optimal",
+    "Original200development reused; not independent patient or clinical reference validation",
+    "Mask union metrics differ within original1e-6 tolerance; not exact tensor output identity"
+  ],
+  "all_state_before_after_equal": true,
+  "checkpoint_bytes_unchanged": true,
+  "training": false,
+  "optimizer_updates": 0,
+  "accepted_model_gain": false,
+  "baseline_retained": true,
+  "new_masks": 200,
+  "new_probability_npz": 200,
+  "archive_sha256": "63bc6ae3e653083179bce7728bd29132ceaea8198809f1ad411350f65e46d1b7",
+  "archive_member_count": 434,
+  "archive_bytes": 31526912,
+  "archive_uncompressed_bytes": 50449695,
+  "crc_and_member_sha_passed": true,
+  "local_research_compute": false
+}

@@ -1,0 +1,327 @@
+{
+  "recorded_at_utc": "2026-11-05T08:37:13.985641+00:00",
+  "run_id": 365885468,
+  "version": 4,
+  "provider_seconds": 2090.8,
+  "parent_receipt": {
+    "child_returncode": 0,
+    "timed_out": false,
+    "elapsed_seconds": 2075.336088071,
+    "cap_seconds": 14400,
+    "state": "child_success_requires_gate_review",
+    "acceptance_or_activation": false
+  },
+  "training": {
+    "state": "early_stopping",
+    "successful_steps": 5489,
+    "completed_epochs": 11,
+    "best_instance_f1": 0.40122824974411464,
+    "automatic_activation": false,
+    "elapsed_trial_seconds": 2033.097716234
+  },
+  "baseline_parity": {
+    "passed": true,
+    "tolerance": 1e-06,
+    "metric_differences": {
+      "instance_f1_iou50": 0.0,
+      "instance_precision_iou50": 0.0,
+      "instance_recall_iou50": 0.0,
+      "pixel_dice_union_mask": -6.075227005908346e-07,
+      "arcade_official_f1": -1.4619199822929474e-07
+    }
+  },
+  "source_files_exact": {
+    "classifier_policy.py": true,
+    "cohort.json": true,
+    "execution_clearance.json": true,
+    "frozen_config.json": true,
+    "historical_evaluator.py": true,
+    "refine_heads.py": true,
+    "remote_alignment_preflight.py": true,
+    "remote_trial.py": true,
+    "supervisor.py": true,
+    "training_cohort.json": true
+  },
+  "baseline": {
+    "images": 200,
+    "arcade_official_f1": 0.439394301564994,
+    "pixel_accuracy_union_mask": 0.9923109626770019,
+    "pixel_precision_union_mask": 0.5395434956361782,
+    "pixel_recall_sensitivity_union_mask": 0.607151492963985,
+    "pixel_specificity_union_mask": 0.995589452611651,
+    "pixel_f1_union_mask": 0.5713544441219097,
+    "pixel_dice_union_mask": 0.5713544441219096,
+    "pixel_iou_union_mask": 0.39992735900874815,
+    "pixel_auc_roc_union_score": 0.8568180644883431,
+    "instance_precision_iou50": 0.34574468085106386,
+    "instance_recall_iou50": 0.4802955665024631,
+    "instance_f1_iou50": 0.4020618556701031,
+    "matched_instance_dice_iou50": 0.8019042051854577,
+    "matched_instance_iou_iou50": 0.6749738552236717,
+    "instance_counts": {
+      "tp": 195,
+      "fp": 369,
+      "fn": 211
+    },
+    "score_threshold": 0.25,
+    "pixel_threshold": 0.5,
+    "pixel_metric_note": "Supplementary binary-union pixel metrics; do not represent official ARCADE task scoring."
+  },
+  "candidate": {
+    "images": 200,
+    "arcade_official_f1": 0.4384830069149446,
+    "pixel_accuracy_union_mask": 0.9922855949401855,
+    "pixel_precision_union_mask": 0.5380609823918445,
+    "pixel_recall_sensitivity_union_mask": 0.6078226657536909,
+    "pixel_specificity_union_mask": 0.9955581558992158,
+    "pixel_f1_union_mask": 0.5708182696990952,
+    "pixel_dice_union_mask": 0.5708182696990952,
+    "pixel_iou_union_mask": 0.3994021597091877,
+    "pixel_auc_roc_union_score": 0.8564845557938469,
+    "instance_precision_iou50": 0.3432574430823117,
+    "instance_recall_iou50": 0.4827586206896552,
+    "instance_f1_iou50": 0.40122824974411464,
+    "matched_instance_dice_iou50": 0.8012435311371047,
+    "matched_instance_iou_iou50": 0.6741298639738265,
+    "instance_counts": {
+      "tp": 196,
+      "fp": 375,
+      "fn": 210
+    },
+    "score_threshold": 0.25,
+    "pixel_threshold": 0.5,
+    "pixel_metric_note": "Supplementary binary-union pixel metrics; do not represent official ARCADE task scoring."
+  },
+  "decision": {
+    "gates": {
+      "instance_f1": false,
+      "recall": true,
+      "precision": true,
+      "fp_per_frame": true,
+      "union_dice": false,
+      "task_f1": false
+    },
+    "deltas": {
+      "instance_f1": -0.0008336059259884676,
+      "recall": 0.0024630541871921152,
+      "precision": -0.0024872377687521485,
+      "fp_per_frame": 0.03,
+      "union_dice": -0.000536174422814395,
+      "task_f1": -0.0009112946500494101
+    },
+    "accepted": false,
+    "automatic_activation": false,
+    "training": true
+  },
+  "both_user_objectives_met": false,
+  "metadata_checks": {
+    "baseline": {
+      "rows": 200,
+      "png": 200,
+      "npz": 200,
+      "count_sums_match": true
+    },
+    "candidate": {
+      "rows": 200,
+      "png": 200,
+      "npz": 200,
+      "count_sums_match": true
+    }
+  },
+  "best_epoch": 6,
+  "best_history_matches_candidate": true,
+  "paired_cases": {
+    "1": {
+      "baseline": {
+        "image_id": 1,
+        "arm": "baseline",
+        "tp": 1,
+        "fp": 1,
+        "fn": 0,
+        "matches": [
+          {
+            "prediction": 0,
+            "reference": 0,
+            "mask_iou": 0.6098111079785734
+          }
+        ]
+      },
+      "candidate": {
+        "image_id": 1,
+        "arm": "candidate",
+        "tp": 1,
+        "fp": 1,
+        "fn": 0,
+        "matches": [
+          {
+            "prediction": 0,
+            "reference": 0,
+            "mask_iou": 0.6227272727272727
+          }
+        ]
+      }
+    },
+    "18": {
+      "baseline": {
+        "image_id": 18,
+        "arm": "baseline",
+        "tp": 1,
+        "fp": 4,
+        "fn": 7,
+        "matches": [
+          {
+            "prediction": 1,
+            "reference": 2,
+            "mask_iou": 0.7375886524822695
+          }
+        ]
+      },
+      "candidate": {
+        "image_id": 18,
+        "arm": "candidate",
+        "tp": 1,
+        "fp": 4,
+        "fn": 7,
+        "matches": [
+          {
+            "prediction": 1,
+            "reference": 2,
+            "mask_iou": 0.7375886524822695
+          }
+        ]
+      }
+    },
+    "24": {
+      "baseline": {
+        "image_id": 24,
+        "arm": "baseline",
+        "tp": 0,
+        "fp": 2,
+        "fn": 1,
+        "matches": []
+      },
+      "candidate": {
+        "image_id": 24,
+        "arm": "candidate",
+        "tp": 0,
+        "fp": 2,
+        "fn": 1,
+        "matches": []
+      }
+    },
+    "39": {
+      "baseline": {
+        "image_id": 39,
+        "arm": "baseline",
+        "tp": 1,
+        "fp": 3,
+        "fn": 1,
+        "matches": [
+          {
+            "prediction": 0,
+            "reference": 1,
+            "mask_iou": 0.7166666666666667
+          }
+        ]
+      },
+      "candidate": {
+        "image_id": 39,
+        "arm": "candidate",
+        "tp": 1,
+        "fp": 3,
+        "fn": 1,
+        "matches": [
+          {
+            "prediction": 0,
+            "reference": 1,
+            "mask_iou": 0.7137580794090489
+          }
+        ]
+      }
+    },
+    "60": {
+      "baseline": {
+        "image_id": 60,
+        "arm": "baseline",
+        "tp": 0,
+        "fp": 6,
+        "fn": 1,
+        "matches": []
+      },
+      "candidate": {
+        "image_id": 60,
+        "arm": "candidate",
+        "tp": 1,
+        "fp": 6,
+        "fn": 0,
+        "matches": [
+          {
+            "prediction": 6,
+            "reference": 0,
+            "mask_iou": 0.5205254515599343
+          }
+        ]
+      }
+    },
+    "81": {
+      "baseline": {
+        "image_id": 81,
+        "arm": "baseline",
+        "tp": 2,
+        "fp": 1,
+        "fn": 6,
+        "matches": [
+          {
+            "prediction": 2,
+            "reference": 1,
+            "mask_iou": 0.7344862665310274
+          },
+          {
+            "prediction": 0,
+            "reference": 2,
+            "mask_iou": 0.7169811320754716
+          }
+        ]
+      },
+      "candidate": {
+        "image_id": 81,
+        "arm": "candidate",
+        "tp": 2,
+        "fp": 1,
+        "fn": 6,
+        "matches": [
+          {
+            "prediction": 2,
+            "reference": 1,
+            "mask_iou": 0.7344862665310274
+          },
+          {
+            "prediction": 0,
+            "reference": 2,
+            "mask_iou": 0.7169811320754716
+          }
+        ]
+      }
+    }
+  },
+  "checkpoint_byte_sha256": {
+    "best.pt": "61228a2e53617dbe52152a743698b93e85d4bfd0291f10e4ba368ab6145d0464",
+    "last.pt": "d913f77f5a952750eb63c6cfc3ae10ae02bee114a9a15a3121dc7e69d8bb8483"
+  },
+  "checkpoint_deserialized_locally": false,
+  "independent_pixel_recount": false,
+  "clinical_validation": false,
+  "unseen_patient_claim": false,
+  "automatic_activation": false,
+  "automatic_retry": false,
+  "visual_review_pending": false,
+  "quota_reconciliation_pending": false,
+  "actual_visual_review": "ACTUAL_PAIRED_VISUAL_REVIEW.json",
+  "quota_before_used": "04:57 /30hrs",
+  "quota_after_used": "05:32 /30hrs",
+  "provider_displayed_debit_minutes": 35,
+  "active_events_after": 0,
+  "draft_session_after": "explicitOFF verified",
+  "session_confirmation_pending": false,
+  "archive_sha256": "5e27b9b6cf01faf6714dcbd87636db7007916dd39094b430e1348153416ac2ab"
+}

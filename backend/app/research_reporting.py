@@ -1,10 +1,11 @@
 """Immutable research snapshot rendering. No clinical approval or inferred grading."""
 import csv
-from io import BytesIO, StringIO
+from io import StringIO
 import json
 from pathlib import Path
 from xml.sax.saxutils import escape
 from .evidence_status import stenosis_mask_status
+from .report_pdf import ResearchPDF
 
 SECTIONS = {'images', 'measurements', 'candidates', 'review', 'appendix'}
 NOTICE = ('Research output, not a standalone diagnosis. Model scores are uncalibrated. '
@@ -58,100 +59,97 @@ def tabular(snapshot):
 
 
 def pdf_bytes(snapshot, image_paths):
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.units import inch
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, KeepTogether
     from reportlab.lib.utils import ImageReader
-    output = BytesIO()
-    styles = getSampleStyleSheet()
-    document = SimpleDocTemplate(output, title='CoroVision AI Research Analysis Report',
-                                 rightMargin=42, leftMargin=42, topMargin=42, bottomMargin=42)
-    story = []
-    def paragraph(text, style='BodyText'):
-        story.append(Paragraph(escape(str(text)).replace('\n', '<br/>'), styles[style]))
-        if style not in {'Heading2', 'Heading3', 'Title'}:
-            story.append(Spacer(1, 8))
-    paragraph('CoroVision AI — Research Analysis Report', 'Title')
-    paragraph(f"{snapshot['case']['case_code']} · research snapshot v{snapshot['version']}", 'Heading2')
-    paragraph(NOTICE)
-    for key in ['report_id', 'generated_at']:
-        paragraph(f'{key}: {snapshot[key]}')
-    paragraph(f"Case: {snapshot['case']['id']} | Image: {snapshot['image']['id']} | Analysis run: {snapshot['analysis']['id']}")
-    paragraph(f"Modality: {snapshot['case'].get('modality', 'Unavailable')} | Anatomy: {snapshot['case'].get('anatomy', 'Unavailable')} | Source dimensions: {snapshot['image'].get('width', 'Unavailable')} x {snapshot['image'].get('height', 'Unavailable')}")
-    paragraph(f"Model: {snapshot['analysis']['model_version']} | Analysis timestamp: {snapshot['analysis']['created_at']}")
-    paragraph('Model and preprocessing provenance', 'Heading2')
-    provenance = snapshot['provenance']
-    models = provenance.get('models') or {}
-    paragraph('Model/checkpoint references: ' + json.dumps(models, ensure_ascii=False))
-    processing = provenance.get('preprocessing') or {}
-    paragraph('Preprocessing: ' + json.dumps({key: processing.get(key, 'Unavailable') for key in
-        ['pipeline_version', 'profile', 'standard_pipeline', 'model_input_resize', 'source_format', 'options', 'steps']}, ensure_ascii=False))
-    paragraph('Full exact preprocessing configuration and hashes are preserved in the JSON export.')
-    if 'images' in snapshot['sections']:
-        for label, path in image_paths:
-            try:
-                if path is None:
-                    raise ValueError('No saved artifact')
-                source = str(path) if isinstance(path, Path) else path
-                width, height = ImageReader(source).getSize()
-                scale = min(6.5 * inch / width, 3.7 * inch / height)
-                if hasattr(source, 'seek'):
-                    source.seek(0)
-                story.append(KeepTogether([Paragraph(escape(label), styles['Heading3']), Spacer(1, 8),
-                                          Image(source, width=width*scale, height=height*scale)]))
-            except Exception:
-                paragraph(label, 'Heading3')
-                paragraph('Artifact unavailable or source format not renderable. No substitute prediction is shown.')
-    paragraph('Saved model outputs', 'Heading2')
-    paragraph(f"Artery mask: {snapshot['analysis']['artery_pixels']} px; stenosis mask: {stenosis_count_text(snapshot['analysis'])}.")
-    vessel = snapshot['analysis'].get('vessel_analysis') or {}
-    measurements = {key: vessel.get(key, 'Unavailable') for key in ['centerline_length', 'mean_diameter',
-        'minimum_diameter', 'maximum_diameter', 'diameter_unit', 'branching_points', 'endpoints',
-        'connected_components', 'continuity_ratio', 'tortuosity', 'calibration']}
-    for section, title, value in [
-        ('measurements', 'Derived vessel measurements', measurements),
-        ('candidates', 'Model candidates (not confirmed disease)', [
-            {key: candidate.get(key, 'Unavailable') for key in ['candidate_id', 'model_score',
-             'bbox_prepared_xyxy', 'bbox_source_xyxy', 'association_status', 'coordinate_warning']}
-            for candidate in (snapshot['analysis'].get('structured_result') or {}).get('candidates', [])]),
-        ('review', 'Run-linked human assessment', snapshot.get('human_review') or 'No human assessment linked to this run'),
-    ]:
-        if section in snapshot['sections']:
-            paragraph(title, 'Heading2')
-            if isinstance(value, dict):
-                for key, item in value.items():
-                    paragraph(f"{key.replace('_', ' ').capitalize()}: {'Unavailable' if item is None else item}")
-            elif isinstance(value, list):
-                if not value:
-                    paragraph('No localized candidates recorded. This does not establish absence of disease.')
-                for item in value:
-                    paragraph(json.dumps(item, ensure_ascii=False))
-            else:
-                paragraph(value)
-    paragraph('Warnings, missing stages and limitations', 'Heading2')
-    if 'measurements' in snapshot['sections']:
-        paragraph('Separate reviewed stenosis measurements', 'Heading2')
-        records = snapshot.get('reviewed_stenosis_measurements', [])
+    from reportlab.platypus import Image, Paragraph, Table, TableStyle
+
+    report = ResearchPDF('Coronary analysis report')
+    case, image, result = (snapshot[key] for key in ('case', 'image', 'analysis'))
+    sections = snapshot['sections']
+    structured = result.get('structured_result') or {}
+    vessel = result.get('vessel_analysis') or {}
+    report.field('Case', case['case_code'])
+    report.field('Study', image.get('original_name'))
+    if case.get('modality'):
+        report.field('Modality', case['modality'])
+    report.field('Saved run', result['id'])
+    report.field('Report version', snapshot['version'])
+    report.field('Snapshot date (UTC)', snapshot['generated_at'].replace('T', ' ').split('.')[0].removesuffix('+00:00'))
+
+    report.section('Findings')
+    report.field('Artery mask', f"{result['artery_pixels']:,} px")
+    report.field('Stenosis mask', stenosis_count_text(result))
+    if 'measurements' in sections:
+        for label, key in [('Centerline length', 'centerline_length'), ('Mean sampled width', 'mean_diameter')]:
+            value = vessel.get(key)
+            unit = vessel.get('diameter_unit')
+            report.field(label, f'{value} {unit}' if value is not None and unit else None)
+    if 'candidates' in sections:
+        candidates = structured.get('candidates') or []
+        report.field('Saved candidate locations', len(candidates) if 'candidates' in structured else None)
+        for candidate in candidates:
+            box = candidate.get('bbox_source_xyxy')
+            if box:
+                report.field(str(candidate.get('candidate_id') or 'Candidate'), f'Source-image bounds (px) {box}')
+
+    if 'measurements' in sections:
+        records = snapshot.get('reviewed_stenosis_measurements') or []
+        report.section('Reviewed narrowing measurements')
         if not records:
-            paragraph('No calibrated local/reference measurement record saved for this run. Estimated narrowing unavailable.')
+            report.paragraph('No calibrated lesion and reference measurements are saved for this run.')
         for record in records:
-            result = record['result']
-            paragraph(f"Record {record['id']} | Candidate {result['candidate_id']} | Reviewer {record['created_by']}")
-            paragraph(result['explanation']['text'])
-            paragraph(f"Severity: {result['severity'].get('category') or 'Not assessable'} | Calibration: {result['calibration_evidence']} | Measurement evidence: {result['measurement_evidence']}")
-    for warning in snapshot['limitations']:
-        paragraph(warning)
+            measurement = record['result']
+            report.field(f"Candidate {measurement['candidate_id']}",
+                         f"{measurement['narrowing_percent']:.2f}% reduction from reviewed measurements")
+            report.field('Research grade', measurement['severity'].get('category') or 'Not assessable')
+
+    if 'review' in sections:
+        report.section('Human review')
+        review = snapshot.get('human_review')
+        if review:
+            for label, key in [('Reviewer', 'reviewer_name'), ('Decision', 'decision'),
+                               ('Assessed severity', 'stenosis_severity'), ('Notes', 'notes')]:
+                if review.get(key):
+                    value = review[key].replace('_', ' ').capitalize() if key in {'decision', 'stenosis_severity'} else review[key]
+                    report.field(label, value)
+        else:
+            report.paragraph('No human review is linked to this run.')
+
+    report.section('Interpretation')
+    report.paragraph('Model predictions are for research review. Automated clinical severity is unavailable. '
+                     'Pixel measurements require calibration to support physical diameter estimates. '
+                     'An empty result does not establish absence of disease.')
     for flag in vessel.get('quality_flags', []):
-        paragraph(flag.get('message', str(flag)))
-    structured = snapshot['analysis'].get('structured_result') or {}
-    for section in structured.get('explanation', {}).get('sections', []):
-        paragraph(section['title'], 'Heading3')
-        paragraph(section['text'])
-    if 'appendix' in snapshot['sections']:
-        paragraph('Technical appendix: recorded evaluation references', 'Heading2')
-        paragraph(json.dumps(snapshot['analysis'].get('validation', {}), ensure_ascii=False, indent=2))
-    def footer(canvas, doc):
-        canvas.setFont('Helvetica', 8)
-        canvas.drawString(42, 23, f"Research only · {snapshot['report_id']} · Page {doc.page}")
-    document.build(story, onFirstPage=footer, onLaterPages=footer)
-    return output.getvalue()
+        if flag.get('message'):
+            report.paragraph(flag['message'])
+
+    if 'images' in sections:
+        figures = []
+        column_width = report.document.width / 2 - 6
+        for label, path in image_paths:
+            if path is None or (isinstance(path, Path) and not path.is_file()):
+                continue
+            source = str(path) if isinstance(path, Path) else path
+            try:
+                width, height = ImageReader(source).getSize()
+            except (OSError, ValueError, TypeError):
+                continue
+            scale = min((column_width - 12) / width, 144 / height)
+            if hasattr(source, 'seek'):
+                source.seek(0)
+            figures.append([Image(source, width=width * scale, height=height * scale),
+                            Paragraph(escape(label), report.body)])
+        report.section('Saved images')
+        if figures:
+            report.story.append(Table([figures], colWidths=[column_width] * len(figures),
+                hAlign='LEFT', style=TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')])))
+        else:
+            report.paragraph('No selected saved images could be rendered.')
+
+    if 'appendix' in sections:
+        report.section('Technical reference')
+        report.field('Report ID', snapshot['report_id'])
+        report.field('Model version', result['model_version'])
+        report.field('Analysis date', result.get('created_at'))
+        report.paragraph('See the JSON export for checkpoint hashes, preprocessing and evaluation references.')
+
+    return report.build()

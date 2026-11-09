@@ -3,3 +3,6 @@
 *.jpg binary
 *.avif binary
 *.ico binary
+
+# Preserve the exact bytes of the archived evidence fixture for SHA-256 checks.
+/backend/tests/fixtures/stenosis_threshold_run364196526.json -text -diff

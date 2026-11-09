@@ -1,0 +1,17 @@
+{
+  "snapshot_files": 164,
+  "restored_files": 164,
+  "manifest_sha256": "a9061e55b2115b2d99475f97f90c008a05eef33a7ccc7d7d8f8b0c446e61412b",
+  "scope": "Application SQLite and storage. Demo browser profile excluded.",
+  "clone_port": 8001,
+  "clone_inference_worker_enabled": false,
+  "clone_only_paths_rebased": [
+    "images.original_path",
+    "images.preview_path",
+    "analysis_events.overlay_path"
+  ],
+  "sqlite_quick_check": "ok",
+  "restored_width_receipt_matches_live": true,
+  "restored_volume_pdf_download_passed": true,
+  "restored_volume_run_id": "d0fbbf42-e090-4fb5-a586-65eaab605321"
+}

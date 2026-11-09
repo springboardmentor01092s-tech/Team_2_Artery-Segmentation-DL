@@ -1,0 +1,34 @@
+{
+  "baseline_unet": {
+    "model": "Baseline_UNet",
+    "test_cases_count": 21,
+    "mean_dice": 0.7572,
+    "std_dice": 0.051,
+    "mean_iou": 0.6118,
+    "std_iou": 0.065,
+    "mean_precision": 0.7308,
+    "std_precision": 0.0776,
+    "mean_recall": 0.8036,
+    "std_recall": 0.1072,
+    "mean_specificity": 0.985,
+    "std_specificity": 0.0082,
+    "mean_vessel_diameter_px": 5.9,
+    "mean_centerline_length_px": 848.0
+  },
+  "attention_resunet": {
+    "model": "Attention_ResUNet",
+    "test_cases_count": 21,
+    "mean_dice": 0.7595,
+    "std_dice": 0.0528,
+    "mean_iou": 0.615,
+    "std_iou": 0.0667,
+    "mean_precision": 0.7638,
+    "std_precision": 0.067,
+    "mean_recall": 0.7669,
+    "std_recall": 0.0971,
+    "mean_specificity": 0.9881,
+    "std_specificity": 0.0062,
+    "mean_vessel_diameter_px": 5.51,
+    "mean_centerline_length_px": 827.4
+  }
+}

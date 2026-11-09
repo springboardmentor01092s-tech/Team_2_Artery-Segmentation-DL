@@ -1,0 +1,11 @@
+{
+  "case_id": "dac0b8f5-71cb-4b58-b640-f5e5c5b85f41",
+  "image_id": "37bbfa6b-7286-4248-bf9c-5a4cbe1b9fc8",
+  "run_id": "2ad252db-db42-43ff-a9c5-8b05309cfcc0",
+  "profiles": 4,
+  "samples": 687,
+  "unit": "source pixels",
+  "download_sha256": "53065101d3089150b909bfa7e61fb789079055ba1a8e1a28b1e8d4e13ccbee7a",
+  "before_after_graph_and_download_match": true,
+  "downloaded_bundle_matches_saved_api_record": true
+}

@@ -1,4 +1,5 @@
 """Fixture measurements never constitute patient measurements or accuracy."""
+import hashlib
 from io import BytesIO
 import json
 from uuid import uuid4
@@ -32,7 +33,7 @@ def test_protocol_boundaries_and_fail_closed():
         with pytest.raises(ValueError): severity_from_protocol(20, malformed)
 
 
-def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch):
+def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch, tmp_path):
     monkeypatch.delenv('STENOSIS_SEVERITY_PROTOCOL', raising=False)
     monkeypatch.setattr(main, 'models_ready', lambda: True)
     raw = BytesIO(); Image.new('L', (512,512),128).save(raw,'PNG')
@@ -83,5 +84,13 @@ def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch):
         pdf=client.get(report_url+'/export/pdf',headers=owner)
         assert pdf.status_code==200 and pdf.content.startswith(b'%PDF-')
         before=report.json()
-        client.post(path,headers=owner,json=data)
+        protocol_path = tmp_path / 'synthetic-severity.json'
+        protocol_path.write_text(json.dumps(protocol()))
+        monkeypatch.setenv('STENOSIS_SEVERITY_PROTOCOL', str(protocol_path))
+        classified = client.post(path, headers=owner, json=data)
+        assert classified.status_code == 201, classified.text
+        result = classified.json()['result']
+        assert result['severity']['category'] == 'B'
+        assert result['severity']['clinical_validated'] is False
+        assert result['severity_protocol_sha256'] == hashlib.sha256(protocol_path.read_bytes()).hexdigest()
         assert client.get(report_url,headers=owner).json()==before

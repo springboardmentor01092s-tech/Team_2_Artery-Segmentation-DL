@@ -4,9 +4,9 @@
 .analysis-record-strip span { color:#a6b1c1; font-size:10px; letter-spacing:.13em; font-weight:700; }
 .analysis-record-strip strong { color:#f2f5fb; font-size:13px; overflow-wrap:anywhere; }
 .analysis-record-strip small { color:#b8c1cf; font-size:11px; }
-.analysis-console .workbench-grid { grid-template-columns:minmax(0,1.65fr) minmax(340px,1fr); gap:0; background:var(--console-bg); border:1px solid var(--console-line); border-top:0; border-radius:0 0 12px 12px; overflow:hidden; align-items:stretch; }
+.analysis-console .workbench-grid { grid-template-columns:minmax(0,2fr) minmax(290px,1fr); gap:0; background:var(--console-bg); border:1px solid var(--console-line); border-top:0; border-radius:0 0 12px 12px; overflow:hidden; align-items:stretch; }
 .analysis-console .workbench-grid > .panel { background:var(--console-panel); color:var(--console-text); border:0; border-radius:0; box-shadow:none; padding:18px; margin:0; }
-.analysis-console .workbench-grid .workbench-viewer-panel { background:#101419; display:grid; grid-template-columns:84px minmax(0,1fr); gap:12px; align-content:start; position:sticky; top:12px; align-self:start; }
+.analysis-console .workbench-grid .workbench-viewer-panel { background:#101419; display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-content:start; position:sticky; top:12px; align-self:start; }
 .analysis-console .viewer-heading { grid-column:1/-1; margin:0; color:var(--console-text); }
 .analysis-console .viewer-heading h3 { font-size:15px; color:inherit; margin:0; }
 .analysis-console .viewer-heading span { color:var(--console-muted); font-size:11px; }
@@ -45,18 +45,18 @@
 .profile-sample-summary small { font-size:10px; font-weight:400; }
 .analysis-console .width-profile-review > button { background:#254965; border:1px solid #5686aa; color:#eaf6ff; border-radius:6px; padding:10px 12px; font-size:12px; }
 .analysis-console button:focus-visible, .analysis-console select:focus-visible { outline:3px solid #81c8ff; outline-offset:3px; }
-@media(max-width:1150px) { .analysis-console .workbench-grid { grid-template-columns:minmax(0,1fr); } .analysis-console .workbench-grid .workbench-viewer-panel { position:static; } .analysis-console .workbench-findings { border-left:0!important; border-top:1px solid var(--console-line)!important; } }
+@media(max-width:980px) { .analysis-console .workbench-grid { grid-template-columns:minmax(0,1fr); } .analysis-console .workbench-grid .workbench-viewer-panel { position:static; } .analysis-console .workbench-findings { border-left:0!important; border-top:1px solid var(--console-line)!important; } }
 @media(max-width:650px) { .analysis-console .analysis-record-strip { grid-template-columns:1fr; } .analysis-console .workbench-grid .workbench-viewer-panel { grid-template-columns:1fr; padding:10px; } .analysis-console .workbench-layer-tabs { grid-column:1; flex-direction:row; flex-wrap:wrap; } .analysis-console .workbench-layer-tabs button { width:auto; flex:1 0 70px; } .analysis-console .workbench-canvas { grid-column:1; min-height:320px; height:60vh; } }
 
 .analysis-console .workbench-grid .workbench-findings { max-height:850px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#52647a #1d222a; }
-.analysis-console .workbench-canvas { height:min(68vh,650px); min-height:420px; }
+.analysis-console .workbench-canvas { height:clamp(340px,72vh,760px); min-height:0; }
 .analysis-console .workbench-findings .eyebrow { color:#a6b9ce; }
 .analysis-console .workbench-findings .metadata { display:grid; grid-template-columns:minmax(0,1fr)!important; }
 .analysis-console .workbench-findings .metadata > div { display:flex; justify-content:space-between; gap:12px; padding:9px 0; min-width:0; }
 .analysis-console .workbench-findings .metadata > div > * { min-width:0; }
 .analysis-console .workbench-findings .metadata strong { max-width:58%; text-align:right; }
 .analysis-console .workbench-findings .evidence-details { padding:12px!important; }
-@media(max-width:1150px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; overflow:visible; } }
+@media(max-width:980px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; overflow:visible; } }
 
 .analysis-console .caption input[type="checkbox"] { width:16px; height:16px; min-height:0; display:inline-block; vertical-align:middle; margin-right:6px; }
 .analysis-console .selected-lesion-inspector { padding:12px; border:1px solid #637e99; border-radius:8px; margin-bottom:16px; background:#172533; }
@@ -65,4 +65,6 @@
 /* Keep selected-region measurements and graph visible beside the source image. */
 .analysis-console .selected-lesion-inspector .metadata > div { padding:4px 0; }
 .analysis-console .workbench-grid .workbench-findings { max-height:1200px; }
-@media(max-width:1150px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; } }
+@media(max-width:980px) { .analysis-console .workbench-grid .workbench-findings { max-height:none; } }
+
+@media(max-width:650px) { .analysis-console .workbench-canvas { height:clamp(250px,55vh,480px); } }

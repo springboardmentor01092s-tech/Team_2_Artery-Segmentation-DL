@@ -4,7 +4,7 @@ export function apiUrl(path: string): string {
     return path;
   }
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  if (typeof window !== "undefined") {
+  if (import.meta.env.DEV && typeof window !== "undefined") {
     const port = window.location.port;
     if (port && port !== "8000") {
       return `${window.location.protocol}//${window.location.hostname}:8000${cleanPath}`;

@@ -7,6 +7,19 @@ from app.models import User
 from app.security import hash_password
 
 
+def test_demo_roster_requires_explicit_local_opt_in(monkeypatch):
+    with TestClient(app, base_url="http://127.0.0.1:8000", client=("127.0.0.1", 51000)) as client:
+        monkeypatch.setenv("CV_LOCAL_DEMO_SESSIONS", "0")
+        assert client.get("/api/auth/demo-accounts").json() == {"accounts": []}
+        monkeypatch.setenv("CV_LOCAL_DEMO_SESSIONS", "1")
+        monkeypatch.setenv("COROVISION_ENV", "production")
+        assert client.get("/api/auth/demo-accounts").json() == {"accounts": []}
+        monkeypatch.setenv("COROVISION_ENV", "development")
+        assert client.get("/api/auth/demo-accounts", headers={"Host": "example.org"}).json() == {"accounts": []}
+    with TestClient(app, base_url="http://127.0.0.1:8000", client=("192.0.2.1", 51000)) as client:
+        assert client.get("/api/auth/demo-accounts").json() == {"accounts": []}
+
+
 def register_and_login(client: TestClient, email: str, password: str = "long-password-123"):
     registered = client.post(
         "/api/auth/register",

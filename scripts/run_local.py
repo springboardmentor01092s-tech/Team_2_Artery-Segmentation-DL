@@ -23,10 +23,7 @@ def main() -> None:
     with socket.socket() as probe:
         if probe.connect_ex(("127.0.0.1", args.port)) == 0:
             raise SystemExit(f"Port {args.port} is in use. Stop the other server or use --port.")
-    # Serving the built frontend from FastAPI avoids two-server configuration.
-    # api.ts uses a separate API port only for the Vite development server.
-    if args.port != 8000:
-        raise SystemExit("The built application currently expects port 8000; use the default port.")
+    # The built frontend uses the API on the same origin.
     print(f"Application: http://127.0.0.1:{args.port}", flush=True)
     print(f"API docs: http://127.0.0.1:{args.port}/docs", flush=True)
     command = [str(python), "-m", "uvicorn", "app.main:app", "--app-dir", str(ROOT / "backend"), "--host", "127.0.0.1", "--port", str(args.port)]

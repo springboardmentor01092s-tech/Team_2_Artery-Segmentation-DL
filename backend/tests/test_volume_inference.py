@@ -97,6 +97,12 @@ def test_volume_job_case_permissions_history_and_artifact_isolation(tmp_path, mo
     def fake_inference(path, output):
         output.mkdir(parents=True)
         (output/'overlay_0.png').write_bytes(b'fake-test-preview')
+        mask = np.zeros((4, 4, 4), dtype=np.uint8)
+        mask[1, 1, 1:3] = 1
+        mask[2, 1, 1] = 1
+        saved = nib.Nifti1Image(mask, np.diag([1, 1, 2, 1]))
+        saved.header.set_xyzt_units('mm')
+        nib.save(saved, output/'mask_source.nii.gz')
         return {'model_id':'synthetic-test-stub', 'clinical_validated':False, 'severity':None}
     monkeypatch.setattr(volume,'run_inference',fake_inference)
     with TestClient(main.app) as client:
@@ -124,6 +130,16 @@ def test_volume_job_case_permissions_history_and_artifact_isolation(tmp_path, mo
         assert client.get(url,headers=owner).content == b'fake-test-preview'
         assert client.get(url,headers=outsider).status_code == 404
         assert client.get(url.replace('overlay_0.png','source.nii.gz'),headers=owner).status_code == 404
+        preview = rows[0]['preview_url']
+        assert client.get(preview).status_code == 401
+        assert client.get(preview, headers=outsider).status_code == 404
+        response = client.get(preview, headers=owner)
+        assert response.status_code == 200
+        assert response.headers['cache-control'] == 'no-store'
+        geometry = response.json()
+        assert geometry['foreground_voxels'] == len(geometry['points']) == 3
+        points = np.asarray(geometry['points'])
+        assert np.ptp(points[:, 2]) == pytest.approx(2 * np.ptp(points[:, 0]), abs=1e-4)
         wrong = client.post('/api/cases',headers=owner,json={'case_code':'WRONG-'+suffix,'modality':'MRA','anatomy':'coronary','intended_task':'volume_preparation'}).json()
         assert client.post(f"/api/cases/{wrong['id']}/volumes/analyses",headers=owner,files=files,data=confirms).status_code == 422
         monkeypatch.setattr(volume,'MAX_UPLOAD_BYTES',1)

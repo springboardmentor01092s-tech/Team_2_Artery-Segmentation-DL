@@ -42,10 +42,17 @@ def test_task_proof_requires_allowlisted_available_evidence(monkeypatch,tmp_path
     rows=[dict(id='one',title='Masks',status='software_verified',evidence_id='task-verification'),
           dict(id='two',title='Severity',status='blocked'),
           dict(id='three',title='Fake completion',status='complete'),
+          dict(id='comparison',title='Matched comparison',status='comparison_recorded',
+               evidence_id='one-touch-advanced-artery'),
           dict(id='one',title='Duplicate',status='blocked')]
     path.write_text(json.dumps(dict(schema_version=1,tasks=rows)))
     result=progress.snapshot()['task_proof']
-    assert len(result)==2 and result[0]['status']=='verification_required'
+    assert len(result)==3 and result[0]['status']=='verification_required'
+    assert result[2]['status']=='verification_required'
+    receipt=paths['one-touch-advanced-artery'][1]
+    receipt.parent.mkdir(parents=True)
+    receipt.write_text('{"state":"completed_rejected_baseline_retained"}')
+    assert progress.snapshot()['task_proof'][2]['status']=='comparison_recorded'
     paths['task-verification'][1].write_text('Dated software verification only')
     assert progress.snapshot()['task_proof'][0]['status']=='software_verified'
     rows[0]['evidence_id']=['invalid']

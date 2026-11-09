@@ -59,6 +59,17 @@ def evidence_paths():
         'unseen-protocol':('Independent holdout protocol and metadata-readiness checks',root/'experiments/advanced_preparation_20261026/UNSEEN_DATA_PROTOCOL_20261027.md',root),
         'stenosis-threshold-result':('Verified stenosis comparison · run 364196526 v3',root/'reports/execution_readiness_20261030/stenosis_run364196526/RESULT_ASSESSMENT.json',root),
         'stenosis-threshold-report':('Stenosis threshold comparison evidence and limits',APP_ROOT/'reports/research_progress/STENOSIS_COMPARISON_RESULT_20261031.md',APP_ROOT),
+        'team-source-review':('Team Drive, GitHub and One Touch review',APP_ROOT/'reports/research_progress/team_sources_20261109/REVIEW.md',APP_ROOT),
+        'team-dca-metrics':('Teammate DCA evaluation metrics',APP_ROOT/'reports/research_progress/team_sources_20261109/DCA_METRICS.json',APP_ROOT),
+        'kedar-dca1-drive-review':('Kedar DCA1 vessel profiles and rule-assisted stenosis candidates',APP_ROOT/'reports/research_progress/kedar_drive_intake/REVIEW.md',APP_ROOT),
+        'kedar-dca1-drive-receipt':('Kedar DCA1 aggregate results and source hashes',APP_ROOT/'reports/research_progress/kedar_drive_intake/RECEIPT.json',APP_ROOT),
+        'one-touch-artery-replay':('One Touch artery replay · run 365494240 v2',APP_ROOT/'reports/research_progress/team_sources_20261109/milestone2_replay_run365494240_RESULT_ASSESSMENT.json',APP_ROOT),
+        'one-touch-advanced-artery':('One Touch U-Net++ training and comparison · run 364600841 v7',APP_ROOT/'reports/research_progress/team_sources_20261109/advanced_run364600841_RESULT_ASSESSMENT.json',APP_ROOT),
+        'prototype-handoff':('Application verification and handoff',APP_ROOT/'docs/FINAL_PROTOTYPE_HANDOFF.md',APP_ROOT),
+        'milestone-2-3-status':('Stenosis and vessel analysis evidence',APP_ROOT/'docs/MILESTONE2_3_STATUS_20261106.md',APP_ROOT),
+        'teammate-handoff-review':('Teammate handoff review and evidence limits',APP_ROOT/'reports/research_progress/teammate_20261109/REVIEW.md',APP_ROOT),
+        'teammate-segmentation-results':('Teammate-reported ARCADE segmentation results',APP_ROOT/'reports/research_progress/teammate_20261109/results_summary.json',APP_ROOT),
+        'teammate-crop-classifier-results':('Teammate-reported stenosis crop classifier results',APP_ROOT/'reports/research_progress/teammate_20261109/classifier_metrics.json',APP_ROOT),
         'advanced-artery-protocol':('Frozen U-Net++ development comparison protocol',root/'reports/execution_readiness_20261030/advanced_2d_protocol_v1.json',root),
     }
 
@@ -303,10 +314,10 @@ def snapshot():
         for row in checklist.get('tasks',[])[:100]:
             if not isinstance(row,dict) or not isinstance(row.get('id'),str) or row['id'] in seen:continue
             status=row.get('status')
-            if status not in {'verification_required','software_verified','research_validated','blocked'}:continue
+            if status not in {'verification_required','software_verified','research_validated','comparison_recorded','blocked'}:continue
             proof=row.get('evidence_id')
             if not isinstance(proof,str):proof=None
-            if status in {'software_verified','research_validated'} and not available.get(proof):
+            if status in {'software_verified','research_validated','comparison_recorded'} and not available.get(proof):
                 status='verification_required'
             seen.add(row['id'])
             task_proof.append(dict(id=row['id'][:80],title=str(row.get('title','Task'))[:180],

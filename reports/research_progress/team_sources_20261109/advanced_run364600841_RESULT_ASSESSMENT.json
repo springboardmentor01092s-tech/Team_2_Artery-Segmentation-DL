@@ -1,0 +1,53 @@
+{
+  "recorded_at_utc": "2026-11-01T19:05:48.078040+00:00",
+  "reservation_id": "advanced-artery-fp32-reconstruction-20261101",
+  "run_id": 364600841,
+  "version": 7,
+  "state": "completed_rejected_baseline_retained",
+  "provider_seconds": 9337.4,
+  "child_seconds": 9315.613387943,
+  "training_completed_epochs": 40,
+  "optimizer_updates": 20000,
+  "alignment_passed": true,
+  "baseline_parity_passed": true,
+  "baseline_dice": 0.8272773138933874,
+  "candidate_dice": 0.7860896678531395,
+  "dice_delta": -0.04118764604024811,
+  "failed_gates": [
+    "primary_gain",
+    "precision_regression",
+    "recall_regression",
+    "fp_growth",
+    "fn_growth"
+  ],
+  "metadata_recount": {
+    "baseline": {
+      "per_case_rows": 200,
+      "png": 200,
+      "npz": 200,
+      "count_sums_match": true
+    },
+    "candidate": {
+      "per_case_rows": 200,
+      "png": 200,
+      "npz": 200,
+      "count_sums_match": true
+    }
+  },
+  "history_best_endpoint_matches": true,
+  "trained_candidate_checkpoint_preserved": true,
+  "protected_test_used": false,
+  "unseen_patient_claim": false,
+  "independent_pixel_recount": false,
+  "visual_review": "pending; research compute only Kaggle",
+  "archive_sha256": "0588a869fe8650ca833424186027c5f96d78f6883dbe0f61951d8b8f0e91134d",
+  "archive_files_verified": 838,
+  "archive_bytes": 455461271,
+  "quota_before_used": "00:11 /30hrs",
+  "quota_after_used": "02:46 /30hrs",
+  "provider_displayed_debit_minutes": 155,
+  "quota_resolution": "minute display, not second-level billing",
+  "active_events_after": 0,
+  "activation": false,
+  "next_action": "Diagnose train/development learning curves and case failures before new hypothesis; no unchanged retry, pooling or protected-test tuning"
+}
