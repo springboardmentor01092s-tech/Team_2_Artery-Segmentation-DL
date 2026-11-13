@@ -24,6 +24,22 @@ def test_known_rectangle_width_and_ordered_arclength():
     assert profile['unit'] == 'pixels' and profile['lumen_diameter_validated'] is False
 
 
+def test_synthetic_narrowing_has_expected_wide_and_narrow_plateaus():
+    mask = np.zeros((80, 120), dtype=np.uint8)
+    mask[28:52, 4:116] = 1
+    mask[:34, 48:84] = 0
+    mask[46:, 48:84] = 0
+    path = dict(path_id='P1', path_type='centerline', coordinates_xy=[[x, 39] for x in range(5, 115)])
+    geometry = dict(padding_left_top_xy=[0, 0], content_size_xy=[120, 80],
+                    source_pixels_per_content_pixel_xy=[1, 1], source_roi_origin_xy=[0, 0])
+    profile, = source_width_profiles(mask, [path], resize_geometry=geometry, source_size_xy=[120, 80],
+                                     analysis_run_id='synthetic-taper', mask_sha256='b'*64)['profiles']
+    by_x = {sample['x']: sample['width'] for sample in profile['samples']}
+    assert by_x[25] == 24 and by_x[66] == 12
+    assert 100 * (1 - by_x[66] / by_x[25]) == 50
+    assert not profile['lumen_diameter_validated']
+
+
 def test_anisotropic_source_scale_and_roi_origin():
     mask, paths, args = setup()
     args['resize_geometry'].update(source_pixels_per_content_pixel_xy=[2, 3], source_roi_origin_xy=[10, 20])

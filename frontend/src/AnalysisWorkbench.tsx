@@ -116,10 +116,12 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
     setOffset({ x: drag.current.left + event.clientX - drag.current.x, y: drag.current.top + event.clientY - drag.current.y });
   }
   const canAnalyze = !!selectedImage && (selectedImage.modality || selectedCase?.modality) === "XCA" && modelsReady;
-  const renderedImage = mode === "source" ? (source || processedPreview)
-    : mode === "overlay" ? (overlay || processedPreview)
+  const verifiedFallback = processedPreview || overlay || source || xaiLayers.mask || xaiLayers.centerline || xaiLayers.artery_probability || xaiLayers.probability;
+  const renderedImage = mode === "source" ? (source || verifiedFallback)
+    : mode === "processed" || mode === "localization" ? (processedPreview || overlay || verifiedFallback)
+    : mode === "overlay" ? (overlay || processedPreview || verifiedFallback)
       : mode === "contours" || mode === "mask" || mode === "attention" || mode === "artery_probability" || mode === "probability" || mode === "gradcam" || mode === "centerline"
-        ? (xaiLayers[mode] || processedPreview) : processedPreview;
+        ? (xaiLayers[mode] || verifiedFallback) : verifiedFallback;
 
   function focusCandidate(candidate: NonNullable<AnalysisResult['structured_result']>['candidates'][number]) {
     setFocusedCandidate(candidate.candidate_id); setShowCandidates(true);
@@ -155,9 +157,15 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
           {!modelsReady && <p className="caption">New analysis is unavailable on this installation.</p>}
           {(selectedImage.modality || selectedCase?.modality) !== 'XCA' && <p className="caption">Select an X-ray coronary angiogram for this analysis.</p>}
         </div>
-        {canRunAnalysis ? <Button type="button" className="primary" disabled={!canAnalyze || analysisBusy} onClick={onRun}>
-          <Play size={16} aria-hidden="true" /> {analysisBusy ? 'Analyzing…' : analysis ? 'Run new analysis' : 'Run coronary analysis'}
-        </Button> : <p className="caption">You can view saved results with this account.</p>}
+        <div className="case-analysis-actions">
+          {analysis && <Button type="button" className="primary" onClick={!reviewMode && onReview ? onReview : onReports}>
+            {!reviewMode && onReview ? 'Next: Review severity' : 'Next: Open reports'} →
+          </Button>}
+          {canRunAnalysis ? <Button type="button" variant={analysis ? 'outline' : 'default'}
+            className={analysis ? undefined : 'primary'} disabled={!canAnalyze || analysisBusy} onClick={onRun}>
+            <Play size={16} aria-hidden="true" /> {analysisBusy ? 'Analyzing…' : analysis ? 'Run new analysis' : 'Run coronary analysis'}
+          </Button> : <p className="caption">You can view saved results with this account.</p>}
+        </div>
         {analysis && <dl className="case-findings-summary">
           <div><dt>Artery outline</dt><dd>{stages?.artery_segmentation?.status === 'skipped' ? 'Not assessed' : analysis.artery_pixels > 0 ? 'Available' : 'No vessel pixels found'}</dd></div>
           <div><dt>Vessel measurements</dt><dd>{stages?.vessel_analysis?.status === 'skipped' || !analysis.vessel_analysis ? 'Unavailable' : 'Available for review'}</dd></div>
@@ -173,11 +181,11 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
         <Card className="panel workbench-viewer-panel">
           <div className="viewer-heading"><h3>Stenosis analysis</h3><span>{selectedImage.width} × {selectedImage.height} source pixels</span></div>
           <div className="workbench-layer-tabs" role="group" aria-label="Image layer">
-            {(["localization", "source", "processed", "mask", "overlay", "centerline", "contours", "artery_probability", "probability", "attention", "gradcam"] as const).map((item) => { const available = item === 'source' ? !!source : item === 'processed' || item === 'localization' ? !!processedPreview : item === 'overlay' ? !!overlay : !!xaiLayers[item]; return <button key={item} type="button" disabled={!available} title={available ? undefined : 'No valid saved artifact is available for this layer'} aria-pressed={mode === item} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item === "localization" ? "Localization" : item === "source" ? "Original" : item === "processed" ? "Processed" : item === 'mask' ? 'Artery mask' : item === "overlay" ? "AI overlay" : item === "contours" ? "Vessel contours" : item === "centerline" ? "Centerline graph" : item === "artery_probability" ? "Artery probability" : item === "attention" ? "Attention" : item === "probability" ? "Stenosis probability" : "Grad-CAM"}</button>; })}
+            {(["localization", "source", "processed", "mask", "overlay", "centerline", "contours", "artery_probability", "probability", "attention", "gradcam"] as const).map((item) => { const available = item === 'source' ? !!source : item === 'processed' || item === 'localization' ? !!(processedPreview || overlay) : item === 'overlay' ? !!overlay : !!xaiLayers[item]; return <button key={item} type="button" disabled={!available} title={available ? undefined : 'No valid saved artifact is available for this layer'} aria-pressed={mode === item} className={mode === item ? "active" : ""} onClick={() => setMode(item)}>{item === "localization" ? "Localization" : item === "source" ? "Original" : item === "processed" ? "Processed" : item === 'mask' ? 'Artery mask' : item === "overlay" ? "AI overlay" : item === "contours" ? "Vessel contours" : item === "centerline" ? "Centerline graph" : item === "artery_probability" ? "Artery probability" : item === "attention" ? "Attention" : item === "probability" ? "Stenosis probability" : "Grad-CAM"}</button>; })}
           </div>
           <div ref={canvas} className="workbench-canvas" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
-            {processedPreview ? <div className="workbench-image-stack" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
-              {mode === "overlay" ? <><img src={processedPreview} alt="Preprocessed angiography image" draggable={false} />{overlay && <img className="workbench-overlay" src={overlay} alt="AI artery and suspected stenosis overlay" style={{ opacity: opacity / 100 }} draggable={false} />}</> : <img src={renderedImage} alt={mode === "source" ? "Original uploaded study" : (mode === "processed" || mode === "localization") ? "Preprocessed angiography image" : mode === "contours" ? "Saved vessel contours in prepared image coordinates" : mode === "mask" ? "Saved artery mask" : mode === "centerline" ? "Algorithmic centerline paths, branch nodes, and endpoints" : mode === "attention" ? "Attention gate visualization" : mode === "artery_probability" ? "Uncalibrated artery pixel probability heatmap" : mode === "probability" ? "Uncalibrated stenosis pixel probability heatmap" : "Grad-CAM saliency map for stenosis segmentation output"} draggable={false} />}
+            {verifiedFallback ? <div className="workbench-image-stack" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}>
+              {mode === "overlay" && processedPreview && overlay ? <><img src={processedPreview} alt="Preprocessed angiography image" draggable={false} /><img className="workbench-overlay" src={overlay} alt="AI artery and suspected stenosis overlay" style={{ opacity: opacity / 100 }} draggable={false} /></> : <img src={renderedImage} alt={mode === "source" ? "Original uploaded study" : (mode === "processed" || mode === "localization") ? "Prepared angiography with saved candidate localization" : mode === "overlay" ? "Saved AI artery and suspected stenosis overlay" : mode === "contours" ? "Saved vessel contours in prepared image coordinates" : mode === "mask" ? "Saved artery mask" : mode === "centerline" ? "Algorithmic centerline paths, branch nodes, and endpoints" : mode === "attention" ? "Attention gate visualization" : mode === "artery_probability" ? "Uncalibrated artery pixel probability heatmap" : mode === "probability" ? "Uncalibrated stenosis pixel probability heatmap" : "Grad-CAM saliency map for stenosis segmentation output"} draggable={false} />}
               {["localization", "processed", "overlay", "centerline", "contours", "mask"].includes(mode) && showCandidates && !!analysis?.structured_result?.candidates.length &&
                 <svg viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Saved stenosis candidate bounds and uncalibrated scores"
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
@@ -204,7 +212,7 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
                     </g>;
                   })}
                 </svg>}
-            </div> : <p>Loading image…</p>}
+            </div> : <p role="status">{sourceError || "No verified image artifact is available for this saved run."}</p>}
           </div>
           <div className="workbench-toolbar" role="group" aria-label="Viewer controls">
             <button type="button" aria-label="Zoom out" onClick={() => updateZoom(zoom - .25)} disabled={zoom <= 1}><ZoomOut size={18} /></button>

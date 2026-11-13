@@ -1,9 +1,11 @@
 """Deterministic integration tests, not model accuracy measurements."""
 from io import BytesIO
 import csv
+from hashlib import sha256
 import json
 from pathlib import Path
 from uuid import uuid4
+from zipfile import ZipFile
 
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -61,6 +63,21 @@ def test_review_run_binding_reports_exports_and_immutable_history(monkeypatch, t
         path = base+'/research-reports/'+snapshot['report_id']
         assert client.get(path, headers=outsider).status_code == 404
         assert client.get(path).status_code == 401
+        assert client.get(path+'/export/zip', headers=outsider).status_code == 404
+        assert client.get(path+'/export/zip').status_code == 401
+        bundle = client.get(path+'/export/zip', headers=owner)
+        assert bundle.status_code == 200
+        with ZipFile(BytesIO(bundle.content)) as archive:
+            manifest = json.loads(archive.read('manifest.json'))
+            assert manifest['analysis_run_id'] == event_id
+            assert manifest['report_id'] == snapshot['report_id']
+            assert set(archive.namelist()) == {'manifest.json', 'report.json', 'report.csv', 'report.pdf'}
+            assert json.loads(archive.read('report.json')) == snapshot
+            assert archive.read('report.pdf').startswith(b'%PDF-')
+            for item in manifest['artifacts']:
+                content = archive.read(item['path'])
+                assert item['bytes'] == len(content)
+                assert item['sha256'] == sha256(content).hexdigest()
         for format in ['json', 'csv', 'pdf']:
             export = client.get(path+'/export/'+format, headers=owner)
             assert export.status_code == 200, export.text[:300] if format != 'pdf' else export.status_code

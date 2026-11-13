@@ -4,11 +4,13 @@ The training arrays were canonical RAS XYZ, despite Torch's conventional DHW
 names. Preserve that axis order and the float16 storage round-trip exactly.
 """
 import hashlib
+import gzip
 import math
 import os
 from pathlib import Path
 import threading
 import time
+import zlib
 
 import nibabel as nib
 import numpy as np
@@ -19,10 +21,68 @@ MODEL_ID = 'imagecas-coronary-unet3d-128-v1'
 CHECKPOINT_SHA = 'b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d'
 MAX_VOXELS = 96_000_000
 MAX_UPLOAD_BYTES = 384 * 1024 * 1024
+MAX_EXPANDED_BYTES = MAX_VOXELS * 8 + 1024 * 1024
 # The original acceptance fixture is explicitly synthetic, not a medical study.
 SYNTHETIC_FIXTURE_HASHES = {'9ec48d8a037fc283b4d905834d9676eca6c6ac90296405c1200ce119e9a93b1c'}
 RUN_LOCK = threading.Lock()
 JOB_SLOTS = threading.BoundedSemaphore(2)
+
+
+def inspect_container(path):
+    """Bound the full single-file NIfTI payload before nibabel decodes it.
+
+    The gzip CRC, declared voxel payload, datatype and bit depth are checked.
+    Adapted from Team 1's MIT-licensed bounded NIfTI ingestion review.
+    """
+    path = Path(path)
+    header = bytearray()
+    expanded = 0
+    try:
+        stream = gzip.open(path, 'rb') if path.name.lower().endswith('.gz') else path.open('rb')
+        with stream:
+            while block := stream.read(64 * 1024):
+                expanded += len(block)
+                if expanded > MAX_EXPANDED_BYTES:
+                    raise ValueError('Expanded NIfTI payload exceeds the supported memory limit')
+                if len(header) < 540:
+                    header.extend(block[:540-len(header)])
+    except ValueError:
+        raise
+    except (OSError, EOFError, zlib.error) as exc:
+        raise ValueError('Unreadable or corrupt NIfTI container') from exc
+    raw = bytes(header)
+    if len(raw) < 348:
+        raise ValueError('Truncated NIfTI header')
+    try:
+        if raw[344:348] == b'n+1\0':
+            header_type, header_size = nib.Nifti1Header, 348
+        elif len(raw) >= 540 and raw[4:12] == b'n+2\0\r\n\x1a\n':
+            header_type, header_size = nib.Nifti2Header, 540
+        elif raw[344:348] == b'ni1\0' or raw[4:12] == b'ni2\0\r\n\x1a\n':
+            raise ValueError('NIfTI header/image pairs are unsupported; use .nii or .nii.gz')
+        else:
+            raise ValueError('Invalid single-file NIfTI header')
+        parsed = header_type(raw[:header_size], check=False)
+        dimensions = int(parsed['dim'][0])
+        shape = tuple(int(value) for value in parsed['dim'][1:dimensions+1])
+        if dimensions != 3 or len(shape) != 3 or min(shape) < 2 or math.prod(shape) > MAX_VOXELS:
+            raise ValueError('Require scalar 3D NIfTI with 2+ voxels per axis, at most 96 million voxels; 4D/time-series are unsupported')
+        dtype = np.dtype(parsed.get_data_dtype())
+        if dtype.kind not in 'iuf' or int(parsed['bitpix']) != dtype.itemsize * 8:
+            raise ValueError('NIfTI datatype and bit depth are unsupported or inconsistent')
+        offset = float(parsed['vox_offset'])
+        if not math.isfinite(offset) or not offset.is_integer() or offset < header_type.single_vox_offset:
+            raise ValueError('Invalid NIfTI voxel payload offset')
+        expected = int(offset) + math.prod(shape) * dtype.itemsize
+        if expected > MAX_EXPANDED_BYTES:
+            raise ValueError('Declared NIfTI payload exceeds the supported memory limit')
+        if expanded < expected:
+            raise ValueError('Truncated NIfTI voxel payload')
+    except ValueError:
+        raise
+    except (KeyError, OverflowError, TypeError, nib.spatialimages.HeaderDataError) as exc:
+        raise ValueError('NIfTI header could not be interpreted safely') from exc
+    return {'shape': shape, 'dtype': dtype.name, 'expanded_bytes': expanded}
 
 
 def checkpoint_path():
@@ -76,6 +136,7 @@ def build_model():
 
 def inspect_input(path):
     """Bound memory from the NIfTI header before decoding any native voxel array."""
+    inspect_container(path)
     try:
         image = nib.load(str(path))
     except (OSError, ValueError, nib.filebasedimages.ImageFileError) as exc:

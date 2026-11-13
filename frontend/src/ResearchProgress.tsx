@@ -13,10 +13,11 @@ type Progress = {
   activity:Array<{id:string; title:string; detail:string; status:string; recorded_at:string; evidence_id:string}>;
   evidence:Evidence[]; warnings:string[];
 };
+const milestoneTasks = ['milestone-1-demo', 'milestone-2-demo', 'milestone-3-demo', 'milestone-4-demo'];
 const featuredTasks = ['baseline-implementation', 'segmentation-comparison', 'stenosis', 'dashboard', 'reports'];
 const openTasks = ['measurements', 'severity', 'unseen', 'explainability'];
 const statusLabels: Record<string, string> = {
-  software_verified: 'Workflow verified',
+  software_verified: 'Software verified',
   research_validated: 'Research replay verified',
   comparison_recorded: 'Comparison completed',
   blocked: 'Evidence needed',
@@ -60,6 +61,11 @@ export default function ResearchProgress({token}:{token:string}) {
     {!data&&!error&&<p role="status">Loading evidence…</p>}
     {data&&<>
       <section className="rp-panel">
+        <h3>Milestone demonstrations</h3>
+        <p className="rp-caption">Recorded application demonstrations and their supporting evidence.</p>
+        {selectTasks(milestoneTasks).length ? renderTasks(selectTasks(milestoneTasks)) : <p>No milestone demonstration records are available in this installation.</p>}
+      </section>
+      <section className="rp-panel">
         <h3>Key application results</h3>
         {tasks.length ? renderTasks(selectTasks(featuredTasks)) : <p>No task evidence is available in this installation.</p>}
       </section>
@@ -68,9 +74,12 @@ export default function ResearchProgress({token}:{token:string}) {
         <p className="rp-caption">These checks support independent performance, clinical measurements or model explanations.</p>
         {renderTasks(selectTasks(openTasks))}
       </section>
+      <section className="rp-panel">
+        <h3>Additional milestone and research tasks</h3>
+        {renderTasks(tasks.filter(task => !milestoneTasks.includes(task.id) && !featuredTasks.includes(task.id) && !openTasks.includes(task.id)))}
+      </section>
       <details className="rp-panel rp-archive">
         <summary>Full research history and source files</summary>
-        <section><h3>Additional task records</h3>{renderTasks(tasks.filter(task => !featuredTasks.includes(task.id) && !openTasks.includes(task.id)))}</section>
       {data.telemetry.title&&<section className="rp-panel rp-job"><span className="rp-label">MONITORED LOCAL WORKER · {data.telemetry.kind?.replaceAll("_"," ")}</span><h3>{data.telemetry.title}</h3><p>{data.telemetry.step}</p><div className="rp-job-facts"><p>Heartbeat: {time(data.telemetry.heartbeat_at??null)}</p><p>Elapsed: {data.telemetry.elapsed_seconds?.toFixed(1)??"—"} seconds</p><p>Completed units: {data.telemetry.completed_units??"—"} / {data.telemetry.total_units??"—"}</p></div>{data.telemetry.completed_units!=null&&data.telemetry.total_units!=null&&<progress aria-label="Actual completed work units" value={data.telemetry.completed_units} max={data.telemetry.total_units}/>}<p className="rp-caption">A completed quality audit is not a completed model experiment or an accuracy improvement.</p></section>}
       <div className="rp-stats">{[["Recorded experiments",data.summary.recorded_experiments,"Completed comparisons in this evidence set"],["Measured improvements",data.summary.measured_gains,"Gains require matched validation and review"],["Framework checks",data.summary.framework_tests,"Software checks, not model accuracy"],["Quarantined checkpoints",data.summary.quarantined_checkpoints,"Downloaded weights awaiting validation"]].map(([label,value,hint])=><section key={String(label)}><p>{label}</p><strong>{value??"—"}</strong><small>{hint}</small></section>)}</div>
       <p className="rp-caption">{data.caveat}</p>

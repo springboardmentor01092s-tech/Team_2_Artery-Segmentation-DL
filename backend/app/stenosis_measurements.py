@@ -7,13 +7,17 @@ from pathlib import Path
 from .narrowing import diameter_reduction, severity_from_protocol
 
 
-def calculate(data):
+def calculate(data, *, modality=None, anatomy=None):
     result = diameter_reduction(minimum=data.minimum_diameter_mm,
         reference=data.reference_diameter_mm, unit='mm',
         measurement_frame=data.measurement_frame, candidate_id=data.candidate_id,
         reference_segment_id=data.reference_segment_id, protocol_id=data.protocol_id,
         calibration_verified=data.calibration_verified,
-        reference_selection_reviewed=data.reference_selection_reviewed)
+        reference_selection_reviewed=data.reference_selection_reviewed,
+        lumen_boundaries_reviewed=data.lumen_boundaries_reviewed,
+        reference_segment_suitable=data.reference_segment_suitable,
+        anatomy_ambiguous=data.anatomy_ambiguous,
+        image_quality_acceptable=data.image_quality_acceptable)
     protocol = None
     path = os.getenv('STENOSIS_SEVERITY_PROTOCOL')
     protocol_hash = None
@@ -24,6 +28,12 @@ def calculate(data):
         protocol = json.loads(raw)
         protocol_hash = hashlib.sha256(raw).hexdigest()
     result['severity'] = severity_from_protocol(result['narrowing_percent'], protocol)
+    if protocol is not None:
+        applicability = protocol['applicability']
+        if modality not in applicability['modalities'] or anatomy not in applicability['anatomies']:
+            result['severity'] = dict(status='not_assessable', category=None,
+                reason='Configured protocol does not apply to this image modality and anatomy.',
+                clinical_validated=False)
     result['severity_protocol_sha256'] = protocol_hash
     result['calibration_evidence'] = data.calibration_evidence
     result['measurement_evidence'] = data.measurement_evidence

@@ -31,9 +31,11 @@
 .analysis-console .workbench-findings .evidence-details { border:1px solid var(--console-line); background:#181e26; border-radius:8px; margin:16px 0; padding:12px; }
 .analysis-console .workbench-findings summary { font-size:13px; font-weight:650; }
 .analysis-console .workbench-findings .privacy-note { color:#b7c4d5; background:#252f3b; border-color:#52708e; font-size:11px; }
-.analysis-console .candidate-focus { display:grid; gap:6px; width:100%; background:#252d39; color:#e6edf8; border:1px solid #46556c; border-radius:6px; padding:12px; margin-top:9px; text-align:left; }
-.analysis-console .candidate-focus[aria-pressed=true] { background:#17496b; border-color:#78c6ff; }
-.analysis-console .candidate-focus small { color:#b7c4d5; }
+.analysis-console .workbench-findings .candidate-focus { display:grid; gap:8px; width:100%; background:#252d39; color:#e6edf8; border:1px solid #46556c; border-radius:8px; padding:14px; margin-top:9px; text-align:left; }
+.analysis-console .workbench-findings .candidate-focus[aria-pressed=true] { background:#17496b; border-color:#78c6ff; }
+.analysis-console .workbench-findings .candidate-focus strong { color:inherit; }
+.analysis-console .workbench-findings .candidate-focus small { color:#b7c4d5; }
+.analysis-console .workbench-findings .candidate-focus:focus-visible { outline:2px solid #a2d7ff; outline-offset:3px; }
 .analysis-console .width-profile-review label { display:flex; align-items:center; gap:12px; font-size:12px; }
 .analysis-console .width-profile-review select { background:#28313e; color:#eff5fc; border:1px solid #4c5c71; padding:8px; border-radius:5px; }
 .analysis-console .width-profile-review svg { background:#090d12; color:#9caec4; margin:14px 0; border:1px solid #323d4b; border-radius:5px; }

@@ -1370,6 +1370,12 @@ def _execute_volume_analysis(run_id):
             row.result_json = json.dumps(result, allow_nan=False)
             (folder/'outputs'/'result.json').write_text(row.result_json)
             row.status = 'completed'
+            case = db.get(Case, row.case_id)
+            if case is not None:
+                case.status = 'analyzed'
+                case.workflow_status = 'pending_review'
+                case.processing_status = 'completed'
+                case.report_status = 'draft'
             audit(db, row.created_by, 'research_3d_inference_completed', row.case_id)
         except Exception:
             # Do not expose file paths, image metadata or model internals to clients.
@@ -2345,12 +2351,24 @@ class StenosisMeasurementIn(BaseModel):
     measurement_evidence: str = Field(min_length=8, max_length=1000)
     calibration_verified: Literal[True]
     reference_selection_reviewed: Literal[True]
+    lumen_boundaries_reviewed: Literal[True] = True
+    reference_segment_suitable: Literal[True] = True
+    anatomy_ambiguous: Literal[False] = False
+    image_quality_acceptable: Literal[True] = True
 
-    @field_validator('calibration_verified', 'reference_selection_reviewed', mode='before')
+    @field_validator('calibration_verified', 'reference_selection_reviewed', 'lumen_boundaries_reviewed',
+                     'reference_segment_suitable', 'image_quality_acceptable', mode='before')
     @classmethod
     def explicit_attestation(cls, value):
         if value is not True:
             raise ValueError('Explicit true attestation required')
+        return value
+
+    @field_validator('anatomy_ambiguous', mode='before')
+    @classmethod
+    def explicit_unambiguous_attestation(cls, value):
+        if value is not False:
+            raise ValueError('Ambiguous anatomy cannot receive a measured severity grade')
         return value
 
     @field_validator('minimum_diameter_mm', 'reference_diameter_mm', mode='before')
@@ -2376,7 +2394,8 @@ def record_stenosis_measurement(case_id: str, data: StenosisMeasurementIn,
         raise HTTPException(422, 'Candidate is absent from the selected saved run')
     from .stenosis_measurements import calculate
     try:
-        result = calculate(data)
+        image_config = json.loads(image.preprocessing_config_json or '{}')
+        result = calculate(data, modality=image_config.get('modality', case.modality), anatomy=case.anatomy)
     except (ValueError, OSError, TypeError, KeyError):
         raise HTTPException(422, 'Inconsistent measurements or unavailable/invalid severity protocol')
     identity = str(uuid4())
@@ -2412,6 +2431,127 @@ def research_report_access(case_id, user, db):
     return case
 
 
+class ResearchProtocolAuthorizationIn(BaseModel):
+    model_config = {'extra':'forbid'}
+    protocol_id: Literal['COROVISION_XCA_RESEARCH_5CLASS', 'COROVISION_CADRADS_INFORMED_XCA']
+    protocol_version: Literal['1.0.0']
+    research_mode_only: Literal[True]
+    decision: Literal['authorize', 'deactivate']
+
+
+@app.get('/api/research/severity-protocol')
+def research_protocol_state(user: User = Depends(require_case_role)):
+    path = STORAGE / 'research_protocol_authorization.json'
+    return json.loads(path.read_text()) if path.is_file() else dict(status='inactive',
+        protocol_id='COROVISION_XCA_RESEARCH_5CLASS', protocol_version='1.0.0',
+        validation_status='experimental_unvalidated',clinical_validated=False)
+
+
+@app.post('/api/research/severity-protocol')
+def authorize_research_protocol(data: ResearchProtocolAuthorizationIn,
+        user: User = Depends(require_roles('admin','researcher')), db: Session = Depends(get_db)):
+    state=dict(protocol_id=data.protocol_id,protocol_version=data.protocol_version,
+        status='researcher_authorized' if data.decision=='authorize' else 'inactive',
+        authorized_by=user.id,authorized_at=now().isoformat(),research_mode_only=True,
+        modalities=['XCA'],anatomies=['coronary'],validation_status='experimental_unvalidated',
+        clinical_validated=False,boundaries=(dict(No_measured_narrowing='exactly 0',Minimal='(0,25)',Mild='[25,50)',
+            Moderate='[50,70)',Severe='[70,100)',occlusion='100: separate assessment')
+            if data.protocol_id=='COROVISION_CADRADS_INFORMED_XCA' else
+            dict(Normal='exactly 0',Mild='(0,50)',Moderate='[50,70)',
+            Severe='[70,90)',Critical='[90,100)',occlusion='100: separate assessment')),
+        reference='https://www.jacc.org/doi/10.1016/j.jcmg.2022.07.002' if data.protocol_id=='COROVISION_CADRADS_INFORMED_XCA' else 'Researcher-defined experimental intervals',
+        adaptation='Per-lesion XCA research use; not official CCTA CAD-RADS reporting')
+    history = STORAGE / 'research_protocol_history'
+    history.mkdir(parents=True,exist_ok=True)
+    (history / f'{uuid4()}.json').write_text(json.dumps(state))
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w',dir=STORAGE,delete=False) as stream:
+        json.dump(state,stream);temporary=Path(stream.name)
+    temporary.replace(STORAGE / 'research_protocol_authorization.json')
+    audit(db,user.id,f'research_protocol:{data.decision}:1.0.0',None);db.commit()
+    return state
+
+
+@app.post('/api/cases/{case_id}/automatic-measurements/{event_id}', status_code=201)
+def save_automatic_measurements(case_id: str, event_id: str,
+        user: User = Depends(require_roles(*ROLE_CLINICAL_REVIEWERS)), db: Session = Depends(get_db)):
+    case = accessible_case(case_id, user, db, required_action='read')
+    if not case_out(case, db, user)['permissions']['can_review']:
+        raise HTTPException(403, 'Case review permission required')
+    event = db.get(AnalysisEvent, event_id)
+    image = db.get(Image, event.image_id) if event else None
+    if image is None or image.case_id != case.id:
+        raise HTTPException(404, 'Saved analysis not found in this case')
+    result = event_out(event)
+    from .image_panels import paths
+    artifacts = paths(image, event)
+    hashes = {key: hashlib.sha256(path.read_bytes()).hexdigest()
+              for key, path in artifacts.items() if path.is_file()}
+    from .saved_measurement import source_mask, measure_candidate
+    mask = gray = None
+    source_error = None
+    if 'original' in hashes and 'artery_mask' in hashes:
+        try:
+            mask, gray = source_mask(image, artifacts['artery_mask'])
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            source_error = str(error)
+    records = []
+    authorization = research_protocol_state(user)
+    image_modality = json.loads(image.preprocessing_config_json or '{}').get('modality',case.modality)
+    applicable = image_modality=='XCA' and case.anatomy=='coronary'
+    for candidate in (result.get('structured_result') or {}).get('candidates', []):
+        reasons = []
+        if 'original' not in hashes or 'artery_mask' not in hashes:
+            reasons.append('required_run_bound_image_or_mask_unavailable')
+        if not candidate.get('bbox_source_xyxy'):
+            reasons.append('original_coordinate_mapping_unavailable')
+        if source_error:
+            reasons.append('source_geometry_invalid: '+source_error)
+        if mask is not None and not reasons:
+            measured = measure_candidate(mask, gray, candidate, event.id,
+                authorization=authorization if applicable else None)
+            if not applicable:
+                measured['severity']=dict(status='indeterminate',category=None,reason='Protocol modality/anatomy does not apply')
+            records.append(measured)
+            continue
+        reasons.append('candidate_vessel_association_unverified')
+        records.append(dict(candidate_id=candidate['candidate_id'], candidate=candidate,
+            status='abstained', minimum_diameter=None, reference_diameter=None,
+            narrowing_percent=None, unit='source_px', reasons=reasons,
+            severity=dict(status='indeterminate', category=None, reason='Measurement quality requirements are not satisfied.')))
+    from .local_diameters import METHOD_ID, METHOD_SOURCE
+    snapshot = dict(schema_version='corovision.automatic-measurement.v1',
+        case_id=case.id, image_id=image.id, analysis_event_id=event.id,
+        model_version=event.model_version, model_provenance=(result.get('structured_result') or {}).get('models'),
+        artifact_sha256=hashes, algorithm_version='saved-run-source-cross-section-v3',
+        measurement_method=dict(id=METHOD_ID, source=METHOD_SOURCE,
+            role='primary experimental severity-measurement method'),
+        records=records, protocol_authorization=authorization, clinical_validated=False)
+    identity = hashlib.sha256(json.dumps(snapshot, sort_keys=True, default=str).encode()).hexdigest()
+    folder = STORAGE / 'automatic_measurements'
+    folder.mkdir(parents=True, exist_ok=True)
+    target = folder / f'{event.id}-{identity}.json'
+    if not target.exists():
+        snapshot.update(id=identity, created_at=now().isoformat(), created_by=user.id)
+        with target.open('x') as stream:
+            json.dump(snapshot, stream, allow_nan=False)
+        audit(db, user.id, f'automatic_measurement_saved:{identity}', case.id)
+        db.commit()
+    return json.loads(target.read_text())
+
+
+@app.get('/api/cases/{case_id}/automatic-measurements/{event_id}')
+def get_automatic_measurements(case_id: str, event_id: str,
+        user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    case = accessible_case(case_id, user, db, required_action='read')
+    event = db.get(AnalysisEvent, event_id)
+    image = db.get(Image, event.image_id) if event else None
+    if image is None or image.case_id != case.id:
+        raise HTTPException(404, 'Saved analysis not found in this case')
+    folder = STORAGE / 'automatic_measurements'
+    return [json.loads(path.read_text()) for path in sorted(folder.glob(f'{event.id}-*.json'))] if folder.exists() else []
+
+
 @app.post('/api/cases/{case_id}/research-reports', status_code=201)
 def create_research_report(case_id: str, data: ResearchReportIn,
                            user: User = Depends(require_case_role), db: Session = Depends(get_db)):
@@ -2442,6 +2582,7 @@ def create_research_report(case_id: str, data: ResearchReportIn,
     snapshot['reviewed_stenosis_measurements'] = [json.loads(row.snapshot_json) for row in db.scalars(
         select(StenosisMeasurement).where(StenosisMeasurement.case_id == case.id,
         StenosisMeasurement.analysis_event_id == event.id).order_by(StenosisMeasurement.created_at.desc()))]
+    snapshot['automatic_measurements'] = get_automatic_measurements(case.id, event.id, user, db)
     report.snapshot_json = json.dumps(snapshot, default=str)
     db.add(report)
     audit(db, user.id, f'research_report_generated:v{version}:{event.id}', case.id)
@@ -2471,10 +2612,10 @@ def get_research_report(case_id: str, report_id: str, user: User = Depends(requi
 
 
 @app.get('/api/cases/{case_id}/research-reports/{report_id}/export/{format}')
-def export_research_report(case_id: str, report_id: str, format: Literal['json', 'csv', 'pdf'],
+def export_research_report(case_id: str, report_id: str, format: Literal['json', 'csv', 'pdf', 'zip'],
                            user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     from fastapi.responses import Response
-    from .research_reporting import tabular, pdf_bytes
+    from .research_reporting import evidence_zip, tabular, pdf_bytes
     snapshot = get_research_report(case_id, report_id, user, db)
     if format == 'json':
         content, media = json.dumps(snapshot, indent=2), 'application/json'
@@ -2485,6 +2626,8 @@ def export_research_report(case_id: str, report_id: str, format: Literal['json',
         event = db.get(AnalysisEvent, snapshot['analysis']['id'])
         from .image_panels import report_images
         content, media = pdf_bytes(snapshot, report_images(image, event, snapshot.get('image_panels'))), 'application/pdf'
+        if format == 'zip':
+            content, media = evidence_zip(snapshot, content), 'application/zip'
     audit(db, user.id, f'research_report_exported:{report_id}:{format}', case_id)
     db.commit()
     return Response(content, media_type=media, headers={'Content-Disposition': f'attachment; filename="research-report-v{snapshot["version"]}.{format}"'})
@@ -2546,7 +2689,8 @@ if frontend_dist.is_dir():
     def serve_frontend_index():
         index_file = frontend_dist / "index.html"
         if index_file.is_file():
-            return FileResponse(index_file)
+            # Revalidate the entry page so it picks up the current hashed assets after a rebuild.
+            return FileResponse(index_file, headers={"Cache-Control": "no-cache"})
         return {"status": "ok", "app": "CoroVision AI"}
 
 

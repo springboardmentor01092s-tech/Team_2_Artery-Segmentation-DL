@@ -1,9 +1,11 @@
 """Immutable research snapshot rendering. No clinical approval or inferred grading."""
 import csv
-from io import StringIO
+from hashlib import sha256
+from io import BytesIO, StringIO
 import json
 from pathlib import Path
 from xml.sax.saxutils import escape
+from zipfile import ZIP_DEFLATED, ZipFile
 from .evidence_status import stenosis_mask_status
 from .report_pdf import ResearchPDF
 
@@ -11,6 +13,33 @@ SECTIONS = {'images', 'measurements', 'candidates', 'review', 'appendix'}
 NOTICE = ('Research output, not a standalone diagnosis. Model scores are uncalibrated. '
           'Mask pixels do not establish narrowing or clinical severity. Missing measurements are unavailable, not zero. '
           'This research snapshot is not a clinically approved report.')
+
+
+def evidence_zip(snapshot, pdf):
+    """Package the authorized snapshot and its rendered exports."""
+    files = {
+        'report.json': json.dumps(snapshot, indent=2).encode('utf-8'),
+        'report.csv': tabular(snapshot).encode('utf-8'),
+        'report.pdf': pdf,
+    }
+    manifest = {
+        'schema_version': 1,
+        'report_id': snapshot['report_id'],
+        'report_version': snapshot['version'],
+        'case_id': snapshot['case']['id'],
+        'image_id': snapshot['image']['id'],
+        'analysis_run_id': snapshot['analysis']['id'],
+        'artifacts': [
+            {'path': name, 'bytes': len(content), 'sha256': sha256(content).hexdigest()}
+            for name, content in files.items()
+        ],
+    }
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w', compression=ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+        archive.writestr('manifest.json', json.dumps(manifest, indent=2))
+    return buffer.getvalue()
 
 
 def stenosis_count_text(result):
@@ -43,6 +72,7 @@ def tabular(snapshot):
             fields.pop(key)
     else:
         fields['reviewed_stenosis_measurements'] = json.dumps(snapshot.get('reviewed_stenosis_measurements', []), ensure_ascii=False)
+        fields['automatic_measurements'] = json.dumps(snapshot.get('automatic_measurements', []), ensure_ascii=False)
     if 'review' not in snapshot['sections']:
         for key in ['human_review_id', 'human_assessed_severity']:
             fields.pop(key)
@@ -101,6 +131,12 @@ def pdf_bytes(snapshot, image_paths):
             report.field(f"Candidate {measurement['candidate_id']}",
                          f"{measurement['narrowing_percent']:.2f}% reduction from reviewed measurements")
             report.field('Research grade', measurement['severity'].get('category') or 'Not assessable')
+            severity = measurement.get('severity') or {}
+            if severity.get('protocol_id'):
+                report.field('Grading protocol', f"{severity['protocol_id']} v{severity.get('protocol_version', 'Unavailable')}")
+            report.field('Minimum / reference diameter',
+                         f"{measurement['minimum_diameter']} / {measurement['reference_diameter']} {measurement['diameter_unit']}")
+            report.field('Measurement quality gate', (measurement.get('quality_gate') or {}).get('status'))
 
     if 'review' in sections:
         report.section('Human review')
@@ -115,6 +151,20 @@ def pdf_bytes(snapshot, image_paths):
             report.paragraph('No human review is linked to this run.')
 
     report.section('Interpretation')
+    if 'measurements' in sections:
+        report.section('Automatic candidate measurements - experimental')
+        for assessment in snapshot.get('automatic_measurements', []):
+            report.field('Saved assessment', assessment.get('id'))
+            for record in assessment.get('records', []):
+                report.field('Candidate / status', f"{record['candidate_id']} / {record['status']}")
+                report.field('Minimum / reference width (source px)',
+                    f"{record.get('minimum_diameter')} / {record.get('reference_diameter')}")
+                report.field('Narrowing (%)', record.get('narrowing_percent'))
+                report.field('Sensitivity range (percentage points)',
+                    (record.get('sensitivity') or {}).get('narrowing_range_percentage_points'))
+                report.field('Severity', (record.get('severity') or {}).get('category') or 'Indeterminate')
+                report.paragraph('; '.join(record.get('reasons') or []) or 'Experimental predicted-mask measurement; independent reference accuracy unavailable.')
+        report.paragraph('Source-pixel measurements and morphological sensitivity do not establish physical diameter accuracy or clinical severity. Full coordinates, artifact hashes and protocol state are preserved in JSON and CSV.')
     report.paragraph('Model predictions are for research review. Automated clinical severity is unavailable. '
                      'Pixel measurements require calibration to support physical diameter estimates. '
                      'An empty result does not establish absence of disease.')

@@ -26,3 +26,12 @@ def test_research_arithmetic_without_invented_category(minimum, expected):
 def test_missing_or_invalid_evidence_fails_closed(key,value):
     args=inputs();args[key]=value
     with pytest.raises(ValueError):diameter_reduction(**args)
+
+
+@pytest.mark.parametrize('key,value', [('lumen_boundaries_reviewed',False),
+    ('reference_segment_suitable',False), ('anatomy_ambiguous',True),
+    ('image_quality_acceptable',False)])
+def test_quality_gates_withhold_narrowing(key, value):
+    args = inputs(); args[key] = value
+    with pytest.raises(ValueError):
+        diameter_reduction(**args)

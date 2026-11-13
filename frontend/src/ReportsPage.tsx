@@ -14,6 +14,7 @@ type Snapshot = {
   image: { id: string; original_name: string; width: number; height: number };
   analysis: AnalysisResult; human_review: ClinicalReviewRecord | null; review_history: ClinicalReviewRecord[];
   provenance: object; limitations: string[]; image_panels?: ImagePanel[];
+  automatic_measurements?: {id:string;records:{candidate_id:string;status:string;minimum_diameter?:number|null;reference_diameter?:number|null;narrowing_percent?:number|null;reasons:string[];severity?:{category?:string|null;reason?:string}}[]}[];
 };
 type ReportIndex = { id: string; version: number; image_id: string; analysis_event_id: string; created_at: string };
 const choices = [['images', 'Original image & overlay'], ['measurements', 'Vessel measurements & units'], ['candidates', 'Stenosis candidate evidence'], ['review', 'Run-linked human assessment'], ['appendix', 'Technical evaluation references']];
@@ -61,12 +62,21 @@ export default function ReportsPage({ token, role, cases, selectedCase, selected
     catch (cause) { setError((cause as Error).message); }
     finally { setBusy(false); }
   }
-  async function exportReport(format: 'json' | 'csv' | 'pdf') {
+  async function exportReport(format: 'json' | 'csv' | 'pdf' | 'zip') {
     if (!snapshot) return;
     setBusy(true); setError('');
     try {
       const response = await fetch(apiUrl(`/api/cases/${snapshot.case.id}/research-reports/${snapshot.report_id}/export/${format}`), { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).detail || 'Export failed');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const detail = payload?.detail;
+        const message = typeof detail === 'string'
+          ? detail
+          : Array.isArray(detail)
+            ? detail.map(item => item?.msg || 'Invalid export request').join('; ')
+            : `Export failed (${response.status})`;
+        throw new Error(message);
+      }
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a'); link.href = url;
       link.download = `${snapshot.case.case_code.replace(/[^a-z0-9_-]/gi, '_')}-research-v${snapshot.version}.${format}`;
@@ -96,13 +106,14 @@ export default function ReportsPage({ token, role, cases, selectedCase, selected
         {!snapshot ? <><h3>Choose your report source</h3><p>Select an analyzed image, then save a report version or open an earlier snapshot. No empty draft is presented as a completed report.</p></> : <>
           <div className="report-heading"><div><p className="eyebrow">COROVISION AI · RESEARCH ANALYSIS REPORT</p><h3>{snapshot.case.case_code} · v{snapshot.version}</h3></div></div>
           {snapshot.analysis.id !== analysis?.id && <p className="privacy-note">Viewing an earlier saved snapshot from run {snapshot.analysis.id}. Exports below use this snapshot, not the new-report source selected above.</p>}
-          <div className="report-export-buttons">{(['json', 'csv', 'pdf'] as const).map(format => <Button key={format} variant="outline" disabled={busy} onClick={() => exportReport(format)}><Download size={16} aria-hidden="true" />{format.toUpperCase()}</Button>)}<Button variant="outline" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print</Button></div>
+          <div className="report-export-buttons">{(['json', 'csv', 'pdf', 'zip'] as const).map(format => <Button key={format} variant="outline" disabled={busy} onClick={() => exportReport(format)}><Download size={16} aria-hidden="true" />{format === 'zip' ? 'Evidence ZIP' : format.toUpperCase()}</Button>)}<Button variant="outline" onClick={() => window.print()}><Printer size={16} aria-hidden="true" />Print</Button></div>
           <p className="caption">Saved {new Date(snapshot.generated_at).toLocaleString()} · Report {snapshot.report_id}</p>
           <div className="report-facts">{[['Case ID', snapshot.case.id], ['Image', `${snapshot.image.original_name} · ${snapshot.image.width} × ${snapshot.image.height}`], ['Analysis run', result?.id], ['Model version', result?.model_version], ['Modality / anatomy', `${snapshot.case.modality} · ${snapshot.case.anatomy}`], ['Analysis timestamp', result?.created_at]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
           {snapshot.sections.includes('images') && <ImagePanelGallery token={token} imageId={snapshot.image.id} runId={snapshot.analysis.id} modelVersion={snapshot.analysis.model_version} panels={snapshot.image_panels} />}
           <div className="report-facts"><div><span>Artery mask</span><strong>{result?.artery_pixels != null ? `${result.artery_pixels} px` : 'Unavailable'}</strong></div><div><span>Stenosis mask</span><strong>{result?.structured_result?.stages.stenosis_detection?.status === 'skipped' ? 'Not assessed' : result?.model_scores?.pixel_counts_unavailable ? 'Not saved' : result?.stenosis_pixels != null ? `${result.stenosis_pixels} px` : 'Unavailable'}</strong></div><div><span>Automated severity</span><strong>Not assessed · insufficient validated evidence</strong></div></div>
           {snapshot.sections.includes('measurements') && <section><h4>Derived vessel measurements</h4><div className="report-facts">{[['Centerline length', result?.vessel_analysis?.centerline_length], ['Mean diameter', result?.vessel_analysis?.mean_diameter], ['Branch candidates', result?.vessel_analysis?.branching_points]].map(([label, value]) => <div key={String(label)}><span>{label}</span><strong>{value ?? 'Unavailable'} {value != null && label !== 'Branch candidates' ? result?.vessel_analysis?.diameter_unit : ''}</strong></div>)}</div></section>}
           {snapshot.sections.includes('candidates') && <details><summary>Candidate evidence · {result?.structured_result?.candidates.length ?? 'Unavailable'}</summary>{result?.structured_result?.candidates.map(c => <p key={c.candidate_id}>{c.candidate_id} · raw score {c.model_score ?? 'Unavailable'} · prepared bounds {c.bbox_prepared_xyxy?.join(', ') || 'Unavailable'}</p>)}</details>}
+          {snapshot.sections.includes('measurements') && <section><h4>Saved automatic candidate measurements</h4>{snapshot.automatic_measurements?.length?snapshot.automatic_measurements.map(assessment=><article key={assessment.id}><small>Assessment {assessment.id}</small>{assessment.records.map(record=><p key={record.candidate_id}><strong>{record.candidate_id} · {record.status.replaceAll('_',' ')}</strong><br/>MLD / RVD: {record.minimum_diameter??'Unavailable'} / {record.reference_diameter??'Unavailable'} source px · Narrowing: {record.narrowing_percent==null?'Unavailable':`${record.narrowing_percent}%`}<br/>{record.reasons.join('; ').replaceAll('_',' ')} · Severity: {record.severity?.category??'Indeterminate'}</p>)}</article>):<p>No automatic measurement assessment was saved in this report version.</p>}</section>}
           {snapshot.sections.includes('review') && <section className="report-review"><h4>Run-linked human assessment</h4>{snapshot.human_review ? <><p>{snapshot.human_review.reviewer_role} · {snapshot.human_review.reviewer_name || snapshot.human_review.reviewer_id}</p><p>Decision: {snapshot.human_review.decision} · assessed severity: {snapshot.human_review.stenosis_severity || 'Unspecified'}</p><p>{snapshot.human_review.notes || 'No notes'}</p><small>{snapshot.human_review.created_at} · Review {snapshot.human_review.id}</small></> : <p>No assessment linked to this exact run. Case-only reviews are not silently substituted.</p>}</section>}
           <details><summary>Model & preprocessing provenance</summary><pre className="provenance-json">{JSON.stringify(snapshot.provenance, null, 2)}</pre></details>
           <details><summary>Evidence-based explanation & skipped stages</summary><ResultEvidence result={result?.structured_result} /></details>

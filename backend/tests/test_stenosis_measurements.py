@@ -14,7 +14,8 @@ from test_rbac_system import make_user
 
 def protocol():
     return dict(id='synthetic-only', version='1', reference='fixture reference, not clinical',
-        approved_by='fixture', status='approved_for_research',
+        approved_by='fixture', status='approved_for_research', measurement_method='reviewed diameter ratio',
+        applicability={'modalities':['CTA'], 'anatomies':['coronary']}, exclusions=['patient use'],
         bands=[dict(lower=0, upper=40, label='A'), dict(lower=40, upper=100, label='B')])
 
 
@@ -25,7 +26,8 @@ def test_protocol_boundaries_and_fail_closed():
     assert severity_from_protocol(100, protocol())['category'] == 'B'
     for value in (-1, 101, float('nan'), True):
         with pytest.raises(ValueError): severity_from_protocol(value, protocol())
-    for change in ({'status':'proposed'}, {'reference':''}, {'bands':[]}):
+    for change in ({'status':'proposed'}, {'reference':''}, {'bands':[]}, {'measurement_method':''},
+                   {'applicability':{}}, {'exclusions':'none'}):
         with pytest.raises(ValueError): severity_from_protocol(20, {**protocol(), **change})
     bad = protocol(); bad['bands'][1]['lower'] = 41
     with pytest.raises(ValueError): severity_from_protocol(20, bad)
@@ -50,6 +52,15 @@ def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch, tmp
         image=client.post(base+'/images',headers=owner,files={'file':('test.png',raw.getvalue(),'image/png')}).json()
         event=client.post(f"/api/images/{image['id']}/analyze",headers=owner).json()
         assert 'id' in event,event
+        automatic_path=base+'/automatic-measurements/'+event['id']
+        assert client.post(automatic_path).status_code==401
+        assert client.post(automatic_path,headers=outsider).status_code==404
+        auto=client.post(automatic_path,headers=owner)
+        assert auto.status_code==201
+        assert auto.json()['records'][0]['status']=='abstained'
+        assert auto.json()['records'][0]['narrowing_percent'] is None
+        assert client.post(automatic_path,headers=owner).json()==auto.json()
+        assert auto.json() in client.get(automatic_path,headers=owner).json()
         path=base+'/stenosis-measurements'
         data=dict(image_id=image['id'],analysis_event_id=event['id'],candidate_id='C1',
             minimum_diameter_mm=1,reference_diameter_mm=4,measurement_frame='fixture frame',
@@ -63,6 +74,10 @@ def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch, tmp
         assert client.post(path,headers=owner,json={**data,'calibration_verified':False}).status_code==422
         assert client.post(path,headers=owner,json={**data,'calibration_verified':1}).status_code==422
         assert client.post(path,headers=owner,json={**data,'minimum_diameter_mm':True}).status_code==422
+        assert client.post(path,headers=owner,json={**data,'lumen_boundaries_reviewed':False}).status_code==422
+        assert client.post(path,headers=owner,json={**data,'reference_segment_suitable':False}).status_code==422
+        assert client.post(path,headers=owner,json={**data,'anatomy_ambiguous':True}).status_code==422
+        assert client.post(path,headers=owner,json={**data,'image_quality_acceptable':False}).status_code==422
         saved=client.post(path,headers=owner,json=data)
         assert saved.status_code==201,saved.text
         first=saved.json();assert first['result']['narrowing_percent']==75
@@ -85,12 +100,23 @@ def test_reviewed_measurement_identity_rbac_history_and_reports(monkeypatch, tmp
         assert pdf.status_code==200 and pdf.content.startswith(b'%PDF-')
         before=report.json()
         protocol_path = tmp_path / 'synthetic-severity.json'
-        protocol_path.write_text(json.dumps(protocol()))
+        compatible = protocol()
+        compatible['applicability'] = {'modalities':[case['modality']], 'anatomies':[case['anatomy']]}
+        protocol_path.write_text(json.dumps(compatible))
         monkeypatch.setenv('STENOSIS_SEVERITY_PROTOCOL', str(protocol_path))
         classified = client.post(path, headers=owner, json=data)
         assert classified.status_code == 201, classified.text
         result = classified.json()['result']
         assert result['severity']['category'] == 'B'
+        assert result['severity']['measurement_method'] == 'reviewed diameter ratio'
+        assert result['quality_gate']['status'] == 'passed'
         assert result['severity']['clinical_validated'] is False
         assert result['severity_protocol_sha256'] == hashlib.sha256(protocol_path.read_bytes()).hexdigest()
+        incompatible = protocol()
+        incompatible['applicability']['modalities'] = ['UNSUPPORTED']
+        protocol_path.write_text(json.dumps(incompatible))
+        withheld = client.post(path, headers=owner, json=data)
+        assert withheld.status_code == 201
+        assert withheld.json()['result']['severity']['category'] is None
+        assert 'does not apply' in withheld.json()['result']['severity']['reason']
         assert client.get(report_url,headers=owner).json()==before

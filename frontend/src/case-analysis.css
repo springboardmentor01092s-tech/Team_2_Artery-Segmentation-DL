@@ -27,3 +27,12 @@
 
 .case-findings-summary dt { color: hsl(var(--muted-foreground)); font-size: .875rem; }
 .case-findings-summary dd { margin: .25rem 0 0; font-weight: 650; }
+
+.case-analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .625rem;
+}
+
+.case-analysis-actions > button { min-height: 44px; }

@@ -64,7 +64,11 @@ def test_real_case_upload_analysis_and_access_control(monkeypatch):
         status=client.get('/api/analysis/status',headers=owner)
         assert status.status_code==200 and status.json()['trained_release']['ready']
         evidence=status.json()['trained_release']['research_evidence']
-        assert len(evidence['tasks'])==12 and sum(x['inference_connected'] for x in evidence['tasks'])==2
+        # The current registry exposes ten hash-verified inference routes plus
+        # two excluded hepatic tasks and two deliberately unconnected ensemble
+        # proposals. Keep this opt-in smoke test aligned with that registry.
+        assert len(evidence['tasks'])==14
+        assert sum(x['inference_connected'] for x in evidence['tasks'])==10
         assert len(evidence['calibration_studies'])==2
         case=client.post('/api/cases',headers=owner,json={'case_code':'SYNTHETIC-'+suffix})
         assert case.status_code==201

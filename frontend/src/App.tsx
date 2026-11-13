@@ -126,6 +126,11 @@ function App() {
   const restorationImage = useRef<string | null>(null);
   activeTokenRef.current = token;
   const selected = cases.find((item) => item.id === selectedId);
+  const volumeOnly = !!selected && !(selected.modalities || [selected.modality]).includes('XCA');
+  const volumeSupported = !!selected && (selected.modalities || [selected.modality]).some(
+    modality => (selected.anatomy === 'coronary' && modality === 'CTA') ||
+      (selected.anatomy === 'aorta' && (modality === 'CT' || modality === 'CTA')),
+  );
   const selectedImage = selected?.images.find((item) => item.id === selectedImageId) || selected?.images.at(-1);
   const selectedAnalysis = runForImage(selectedImage?.id, analysis);
   const selectedImageRef = useRef(selectedImage?.id);
@@ -805,7 +810,7 @@ function App() {
             {error && <Alert1 tone="error" title="Action could not be completed" onDismiss={() => setError("")}>{error}</Alert1>}
             {notice && <Alert1 tone="success" title="Update completed" onDismiss={() => setNotice("")}>{notice}</Alert1>}
             {activeView === 'reviews' && <Button variant="outline" onClick={() => setReviewWorkspace(false)}>Back to review queue</Button>}
-            <AnalysisWorkbench onImageReview={() => setActiveView('analysis')} reviewMode={activeView === 'reviews'}
+            {!volumeOnly && <AnalysisWorkbench onImageReview={() => setActiveView('analysis')} reviewMode={activeView === 'reviews'}
               assessment={activeView === 'reviews' && selected ? <ReviewAssessment key={`${selected.id}:${analysis?.id}`} token={token} role={user.role} caseRecord={selected} analysis={analysis?.image_id === selectedImage?.id ? analysis : null} onSaved={updated => setCases(items => items.map(c => c.id === updated.id ? updated : c))} /> : undefined}
               onReview={selected?.permissions?.can_review ? () => { setReviewWorkspace(true); setActiveView('reviews'); } : undefined}
               token={token} cases={cases} selectedCase={selected} selectedImage={selectedImage} processedPreview={previewOwner === selectedImage?.id ? preview : ''}
@@ -813,9 +818,18 @@ function App() {
               history={history.filter(r => r.image_id === selectedImage?.id)} modelsReady={modelsReady} analysisBusy={analysisBusy}
               jobStatus={analysisJob?.status} canRunAnalysis={selected?.permissions?.can_run_analysis ?? canCreateCases(user.role)}
               onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId}
-              onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} />
+              onRun={handleAnalysis} onSelectAnalysis={showAnalysis} onUpload={() => setActiveView("cases")} onReports={() => setActiveView("reports")} />}
           </>}
-          {activeView === "reports" && canReadCases(user.role) && <ReportsPage token={token} role={user.role} cases={cases} selectedCase={selected} selectedImage={selectedImage} analysis={analysis?.image_id === selectedImage?.id ? analysis : null} history={history.filter(r => r.image_id === selectedImage?.id)} onSelectAnalysis={showAnalysis} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onAnalysis={() => setActiveView("analysis")} />}
+          {activeView === "reports" && !volumeOnly && canReadCases(user.role) && <ReportsPage token={token} role={user.role} cases={cases} selectedCase={selected} selectedImage={selectedImage} analysis={analysis?.image_id === selectedImage?.id ? analysis : null} history={history.filter(r => r.image_id === selectedImage?.id)} onSelectAnalysis={showAnalysis} onCaseChange={(id) => { setSelectedId(id); setSelectedImageId(""); }} onImageChange={setSelectedImageId} onAnalysis={() => setActiveView("analysis")} />}
+          {volumeOnly && selected && canReadCases(user.role) && (activeView === 'analysis' || activeView === 'reports' || activeView === 'reviews' && reviewWorkspace) && <section>
+            <h2>{selected.case_code} · Volume workspace</h2>
+            <label>Case <select value={selected.id} onChange={event => { setSelectedId(event.target.value); setSelectedImageId(''); }}>
+              {cases.map(item => <option key={item.id} value={item.id}>{item.case_code} · {item.modality}</option>)}
+            </select></label>
+            <Button variant="outline" onClick={() => { setCaseSection('assets'); setActiveView('cases'); }}>Assets &amp; preparation</Button>
+            {volumeSupported ? <VolumeInference caseId={selected.id} token={token} anatomy={selected.anatomy} readOnly />
+              : <p>Volume preparation is available. This case has no supported segmentation model.</p>}
+          </section>}
           {activeView === "account" && <AccountPanel token={token} user={user} onUser={setUser} onLogout={clearSession} />}
           {(["admin", "permissions", "access", "audit"] as string[]).includes(activeView) && user?.role === "admin" && <AdminPanel key={activeView} section={activeView === "admin" ? "users" : activeView as "permissions" | "access" | "audit"} token={token} currentUser={user} />}
           {activeView === "reviews" && !reviewWorkspace && (user.role === "doctor" || user.role === "clinician" || user.role === "admin") && <ReviewQueue cases={cases} onOpen={id => { setSelectedId(id); setSelectedImageId(''); setReviewWorkspace(true); }} />}

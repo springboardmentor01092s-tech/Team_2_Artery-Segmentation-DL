@@ -1,6 +1,7 @@
 """3D geometry/contract/API checks. Synthetic inputs are not accuracy evidence."""
 import json
 import os
+import gzip
 from uuid import uuid4
 
 import nibabel as nib
@@ -84,6 +85,27 @@ def test_oversized_and_vector_headers_rejected_before_decode(tmp_path):
         volume.inspect_input(path)
 
 
+@pytest.mark.parametrize('compressed', [False, True])
+def test_container_preflight_rejects_truncated_payload(tmp_path, compressed):
+    source = nifti(tmp_path)
+    raw = gzip.decompress(source.read_bytes())
+    truncated = raw[:-4]
+    path = tmp_path / ('truncated.nii.gz' if compressed else 'truncated.nii')
+    path.write_bytes(gzip.compress(truncated) if compressed else truncated)
+    with pytest.raises(ValueError, match='Truncated NIfTI voxel payload'):
+        volume.inspect_container(path)
+
+
+def test_container_preflight_checks_complete_gzip_crc(tmp_path):
+    source = nifti(tmp_path)
+    damaged = bytearray(source.read_bytes())
+    damaged[-1] ^= 0xFF
+    path = tmp_path / 'damaged.nii.gz'
+    path.write_bytes(damaged)
+    with pytest.raises(ValueError, match='corrupt NIfTI container'):
+        volume.inspect_container(path)
+
+
 def test_known_legacy_fixture_is_not_presented_as_medical_study():
     from app.models import VolumeAnalysis, now
     row = VolumeAnalysis(id='test',case_id='case',source_sha256=next(iter(volume.SYNTHETIC_FIXTURE_HASHES)),
@@ -122,6 +144,10 @@ def test_volume_job_case_permissions_history_and_artifact_isolation(tmp_path, mo
         assert response.json()['status'] == 'queued'
         rows = client.get(base,headers=owner).json()
         assert rows[0]['status'] == 'completed'
+        refreshed_case = next(row for row in client.get('/api/cases', headers=owner).json() if row['id'] == case['id'])
+        assert refreshed_case['status'] == 'analyzed'
+        assert refreshed_case['workflow_status'] == 'pending_review'
+        assert refreshed_case['processing_status'] == 'completed'
         assert rows[0]['created_at'].endswith('+00:00')
         assert rows[0]['result']['source_sha256'] == rows[0]['source_sha256']
         assert rows[0]['input_kind'] == 'medical_study'
