@@ -1,8 +1,6 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { apiUrl, request } from "./api";
-import AccountPanel, { type User } from "./AccountPanel";
-import AdminPanel from "./AdminPanel";
-import OverviewPanel from "./OverviewPanel";
+import type { User } from "./AccountPanel";
 import { Button } from "./components/prismui/button";
 import { Card } from "./components/prismui/card";
 import { Input } from "./components/prismui/input";
@@ -10,25 +8,12 @@ import { Label } from "./components/prismui/label";
 import { GoogleLogo } from "./SocialLogos";
 import { Building2 } from "lucide-react";
 import Auth7 from "./components/ui/auth-07";
-import CaseDetails from "./CaseDetails";
-import CaseWorkflow from "./CaseWorkflow";
-import AnalysisHistory from "./AnalysisHistory";
 import DocumentUploader from "./components/ui/file-upload-5";
 import { SwitchMode } from "./components/watermelon/switch-mode";
 import { MacOSSidebar, type SidebarView } from "./components/watermelon/macos-sidebar";
-import ModelWorkspace from "./ModelWorkspace";
-import AnalysisWorkbench from "./AnalysisWorkbench";
-import ReportsPage from "./ReportsPage";
-import VolumeIntake from "./VolumeIntake";
-import VolumeInference from './VolumeInference';
-import TaskInference from './TaskInference';
 import './case-analysis.css';
 import NotificationBell from "./NotificationBell";
 import Alert1 from "./components/watermelon/alert-1";
-import ViewerWorkspace from "./ViewerWorkspace";
-import RoleWorkspace from "./RoleWorkspace";
-import ReviewQueue from "./ReviewQueue";
-import ReviewAssessment from "./ReviewAssessment";
 import { runForImage } from './reviewEvidence';
 import { analysisLocation, clearAnalysisLocation, pinnedRunForImage, savedImageForRequest, type SavedRunPin } from './savedRunNavigation';
 import ScreenShareSelect from "./ScreenShareSelect";
@@ -39,6 +24,23 @@ import { restoreUserDesign } from "./designPreview";
 import type { AnalysisJob, AnalysisResult, CaseRecord } from "./caseTypes";
 import { canCreateCases, canReadCases, canViewModels, canOpenSection } from "./permissions";
 import { forgetAccount, localDemo, saveAccount, saveDemoAccounts, savedAccounts, type SavedAccount } from "./demoSessions";
+
+const AccountPanel = lazy(() => import('./AccountPanel'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
+const OverviewPanel = lazy(() => import('./OverviewPanel'));
+const CaseDetails = lazy(() => import('./CaseDetails'));
+const CaseWorkflow = lazy(() => import('./CaseWorkflow'));
+const AnalysisHistory = lazy(() => import('./AnalysisHistory'));
+const ModelWorkspace = lazy(() => import('./ModelWorkspace'));
+const AnalysisWorkbench = lazy(() => import('./AnalysisWorkbench'));
+const ReportsPage = lazy(() => import('./ReportsPage'));
+const VolumeIntake = lazy(() => import('./VolumeIntake'));
+const VolumeInference = lazy(() => import('./VolumeInference'));
+const TaskInference = lazy(() => import('./TaskInference'));
+const ViewerWorkspace = lazy(() => import('./ViewerWorkspace'));
+const RoleWorkspace = lazy(() => import('./RoleWorkspace'));
+const ReviewQueue = lazy(() => import('./ReviewQueue'));
+const ReviewAssessment = lazy(() => import('./ReviewAssessment'));
 
 const TOKEN_KEY = "artery-analysis-token";
 
@@ -761,6 +763,7 @@ function App() {
   </section>;
 
   return (
+    <Suspense fallback={<div className="auth-loading" role="status">Loading workspace section…</div>}>
     <div className="app-shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark" aria-hidden="true"><img src="/corovision-heart-mark.png" alt="" /></span><span>CoroVision AI <small>VASCULAR IMAGING RESEARCH</small></span></div>
@@ -980,6 +983,7 @@ function App() {
         </section>
       </main>
     </div>
+    </Suspense>
   );
 }
 
