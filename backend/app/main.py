@@ -1499,6 +1499,29 @@ def volume_artifact(case_id: str, run_id: str, name: str,
     return FileResponse(path, media_type='image/png' if name.endswith('.png') else 'application/json' if name.endswith('.json') else 'application/gzip', filename=name)
 
 
+@app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/mpr.png')
+def volume_mpr(case_id: str, run_id: str, axis: int = 2, index: int = 0,
+               window: float = 800, level: float = 300, opacity: float = .55,
+               user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+    accessible_case(case_id, user, db)
+    row = db.get(VolumeAnalysis, run_id)
+    if row is None or row.case_id != case_id or row.status != 'completed':
+        raise HTTPException(404, 'Completed volume analysis unavailable')
+    folder = STORAGE/'volumes'/row.id
+    source = next(folder.glob('source.nii*'), None)
+    mask = folder/'outputs'/'mask_source.nii.gz'
+    if source is None or not mask.is_file():
+        raise HTTPException(404, 'Saved source and mask pair unavailable')
+    try:
+        from .volume_mpr import render_mpr
+        payload = render_mpr(source, mask, axis=axis, index=index, window=window,
+                             level=level, opacity=opacity)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return Response(payload, media_type='image/png', headers={'Cache-Control':'no-store'})
+
+
 @app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/evidence.zip')
 def volume_evidence(case_id: str, run_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     research_report_access(case_id, user, db)

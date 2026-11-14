@@ -33,6 +33,12 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
   const [grid, setGrid] = useState(true);
   const [sliceIndex, setSliceIndex] = useState(0);
   const selectedSlice = slices[sliceIndex];
+  const mprAxis = Math.max(0, ['RAS X', 'RAS Y', 'RAS Z'].indexOf(selectedSlice?.axis));
+  const [mprIndex, setMprIndex] = useState(() => Math.floor((shape[0] || 1) / 2));
+  const [windowWidth, setWindowWidth] = useState(800);
+  const [windowLevel, setWindowLevel] = useState(300);
+  const [overlayOpacity, setOverlayOpacity] = useState(.55);
+  const [mprImage, setMprImage] = useState('');
   const canvas = useRef<HTMLCanvasElement>(null);
   const pointer = useRef<{ id: number; x: number; y: number } | null>(null);
 
@@ -59,6 +65,24 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
       .catch(cause => { if (!controller.signal.aborted) setError(cause.message); });
     return () => controller.abort();
   }, [url, token, attempt]);
+
+  useEffect(() => {
+    setMprIndex(Math.floor((shape[mprAxis] || 1) / 2));
+  }, [mprAxis, shape]);
+
+  useEffect(() => {
+    if (!selectedSlice) return;
+    const controller = new AbortController();
+    let objectUrl = '';
+    const endpoint = url.replace(/\/artifacts\/preview-3d\.json$/, '/mpr.png');
+    const query = new URLSearchParams({ axis: String(mprAxis), index: String(mprIndex),
+      window: String(windowWidth), level: String(windowLevel), opacity: String(overlayOpacity) });
+    fetch(apiUrl(`${endpoint}?${query}`), { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
+      .then(response => response.ok ? response.blob() : Promise.reject(new Error('MPR unavailable')))
+      .then(blob => { objectUrl = URL.createObjectURL(blob); setMprImage(objectUrl); })
+      .catch(() => { if (!controller.signal.aborted) setMprImage(''); });
+    return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [url, token, selectedSlice, mprAxis, mprIndex, windowWidth, windowLevel, overlayOpacity]);
 
   useEffect(() => {
     if (!components.length) return;
@@ -206,8 +230,13 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
       <label>Plane<select value={sliceIndex} onChange={event => setSliceIndex(Number(event.target.value))}>
         {slices.map((slice, index) => <option key={slice.artifact} value={index}>{planeLabels[slice.axis] ?? slice.axis}</option>)}
       </select></label>
-      {previews[selectedSlice.artifact] ? <img className="volume-orbit-slice" src={previews[selectedSlice.artifact]}
-        alt={`Saved ${planeLabels[selectedSlice.axis] ?? selectedSlice.axis} overlay at slice ${selectedSlice.coarse_index}`} />
+      <label>Source slice <input type="range" min="0" max={Math.max(0, (shape[mprAxis] || 1)-1)} value={mprIndex}
+        onChange={event => setMprIndex(Number(event.target.value))} /><span>{mprIndex + 1} / {shape[mprAxis]}</span></label>
+      <label>Window width <input type="number" min="1" max="5000" value={windowWidth} onChange={event => setWindowWidth(Number(event.target.value))} /></label>
+      <label>Window level <input type="number" min="-1500" max="2500" value={windowLevel} onChange={event => setWindowLevel(Number(event.target.value))} /></label>
+      <label>Overlay opacity <input type="range" min="0" max="1" step="0.05" value={overlayOpacity} onChange={event => setOverlayOpacity(Number(event.target.value))} /></label>
+      {mprImage || previews[selectedSlice.artifact] ? <img className="volume-orbit-slice" src={mprImage || previews[selectedSlice.artifact]}
+        alt={`${planeLabels[selectedSlice.axis] ?? selectedSlice.axis} source-volume MPR with predicted-mask overlay at slice ${mprIndex + 1}`} />
         : <p className="caption">Saved slice preview unavailable.</p>}
     </section>}
     <section aria-label="Saved run details">
