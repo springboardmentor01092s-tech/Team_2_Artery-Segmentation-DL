@@ -71,7 +71,12 @@ def analyze_volume_mask(mask, affine=None, *, spatial_unit=None, max_voxels=128*
         if len(neighbors[point]) >= 3:
             junction_mask[point] = True
     _, branches = ndimage.label(junction_mask, np.ones((3, 3, 3)))
-    _, components = ndimage.label(binary, np.ones((3, 3, 3)))
+    component_labels, components = ndimage.label(binary, np.ones((3, 3, 3)))
+    component_sizes = np.bincount(component_labels.ravel())[1:].astype(int)
+    ordered_component_sizes = sorted(component_sizes.tolist(), reverse=True)
+    largest_component_voxels = ordered_component_sizes[0] if ordered_component_sizes else 0
+    largest_component_fraction = (largest_component_voxels / int(binary.sum())
+                                  if binary.any() else None)
     widths = []
     sample_points = points[::max(1, (len(points) + 1499)//1500)]
     if points and (~binary).any():
@@ -90,7 +95,23 @@ def analyze_volume_mask(mask, affine=None, *, spatial_unit=None, max_voxels=128*
     point_index = {point: index for index, point in enumerate(points)}
     edges = [[point_index[point], point_index[other]]
              for point in points for other in neighbors[point] if point < other]
+    if not binary.any():
+        abstention_status, abstention_reasons = "abstained", ["empty_prediction"]
+    elif components > 1:
+        abstention_status, abstention_reasons = "abstained", ["disconnected_prediction"]
+    elif "mask_touches_boundary_measurements_may_be_clipped" in flags:
+        abstention_status, abstention_reasons = "abstained", ["prediction_touches_volume_boundary"]
+    else:
+        abstention_status, abstention_reasons = "eligible_for_research_geometry_only", []
     return dict(mask_voxels=int(binary.sum()), connected_components=int(components),
+                component_sizes_voxels=ordered_component_sizes,
+                largest_component_voxels=largest_component_voxels,
+                largest_component_fraction=largest_component_fraction,
+                isolated_fragment_voxels=int(binary.sum())-largest_component_voxels,
+                isolated_fragment_volume=float((int(binary.sum())-largest_component_voxels)
+                                               * abs(np.linalg.det(axes))),
+                reference_centerline_coverage=None, reference_branch_length_coverage=None,
+                reference_coverage_status="unavailable_without_qualified_reference_centerlines",
                 centerline_voxels=len(points), centerline_indices_ijk=[list(map(int, p)) for p in points],
                 centerline_coordinates_xyz=world, array_axis_convention="ijk_to_world_xyz",
                 centerline_edges=edges,
@@ -106,4 +127,6 @@ def analyze_volume_mask(mask, affine=None, *, spatial_unit=None, max_voxels=128*
                 width_method="twice_sampled_centerline_distance_to_background_voxel_center",
                 cross_section_area=None, narrowing_percent=None, severity_category=None,
                 measurement_scope="discrete_mask_geometry_not_validated_lumen_or_stenosis_measurement",
-                quality_flags=flags, review_required=True)
+                quality_flags=flags, review_required=True,
+                measurement_eligibility=abstention_status,
+                abstention_reasons=abstention_reasons)

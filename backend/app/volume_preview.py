@@ -21,7 +21,12 @@ def mask_preview(path):
     source_mask = np.asarray(image.dataobj) > 0
     count = int(np.count_nonzero(source_mask))
     if not count:
-        return {'foreground_voxels': 0, 'component_count': 0, 'components': [], 'points': []}
+        return {'foreground_voxels': 0, 'component_count': 0, 'component_sizes_voxels': [],
+                'largest_component_voxels': 0, 'largest_component_fraction': None,
+                'isolated_fragment_voxels': 0, 'isolated_fragment_volume_mm3': 0,
+                'voxel_spacing_mm': nib.affines.voxel_sizes(image.affine).round(6).tolist(),
+                'quality_status': 'abstained_empty_prediction', 'measurement_eligible': False,
+                'components': [], 'points': []}
 
     from scipy.ndimage import label
     labels, component_count = label(source_mask, structure=np.ones((3, 3, 3), dtype=np.uint8))
@@ -58,8 +63,18 @@ def mask_preview(path):
         remaining -= slots
         remaining_voxels -= size
 
+    largest = components[0]['foreground_voxels']
+    voxel_volume = float(abs(np.linalg.det(image.affine[:3, :3])))
     return {'foreground_voxels': count, 'component_count': int(component_count),
-            'largest_component_voxels': components[0]['foreground_voxels'],
+            'component_sizes_voxels': [component['foreground_voxels'] for component in components],
+            'largest_component_voxels': largest,
+            'largest_component_fraction': largest / count,
+            'isolated_fragment_voxels': count - largest,
+            'isolated_fragment_volume_mm3': (count - largest) * voxel_volume,
+            'voxel_spacing_mm': nib.affines.voxel_sizes(image.affine).round(6).tolist(),
+            'quality_status': 'abstained_disconnected_prediction' if component_count > 1
+                              else 'research_geometry_only',
+            'measurement_eligible': component_count == 1,
             'components': components,
             # Preserve the legacy field for older clients.
             'points': [point for component in components for point in component['points']]}

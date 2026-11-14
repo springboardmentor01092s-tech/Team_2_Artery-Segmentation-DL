@@ -5,6 +5,7 @@ import { Button } from './components/prismui/button';
 type Point = [number, number, number];
 type Slice = { axis: string; coarse_index: number; artifact: string };
 type MaskComponent = { id: number; foreground_voxels: number; points: Point[] };
+type MaskQuality = { largestFraction: number; fragmentVoxels: number; fragmentVolumeMm3: number };
 const initialView = { yaw: .5, pitch: -.25, zoom: 1 };
 const turn = Math.PI / 12;
 const presets = [
@@ -23,6 +24,7 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
   const [components, setComponents] = useState<MaskComponent[]>([]);
   const [showAllComponents, setShowAllComponents] = useState(false);
   const [foregroundVoxels, setForegroundVoxels] = useState(0);
+  const [maskQuality, setMaskQuality] = useState<MaskQuality | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState(initialView);
@@ -43,6 +45,11 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
         const listed = (data.components || []) as MaskComponent[];
         setComponents(listed);
         setForegroundVoxels(Number(data.foreground_voxels || 0));
+        setMaskQuality({
+          largestFraction: Number(data.largest_component_fraction || 0),
+          fragmentVoxels: Number(data.isolated_fragment_voxels || 0),
+          fragmentVolumeMm3: Number(data.isolated_fragment_volume_mm3 || 0),
+        });
         return (listed.length ? listed[0].points : data.points) as Point[];
       })
       .then(result => { if (!controller.signal.aborted) setPoints(result); })
@@ -169,7 +176,9 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
     {components.length > 1 && <section className="volume-component-quality" aria-label="Predicted mask component quality">
       <h4>Mask connectivity</h4>
       <p><strong>{components.length} disconnected components</strong> · {foregroundVoxels.toLocaleString()} source-grid foreground voxels.</p>
-      <p className="caption">Largest component: {components[0].foreground_voxels.toLocaleString()} voxels. Disconnected fragments come from the saved prediction and are not joined by the viewer.</p>
+      <p className="caption">Largest component: {components[0].foreground_voxels.toLocaleString()} voxels
+        {maskQuality ? ` (${(maskQuality.largestFraction * 100).toFixed(1)}%). Fragments: ${maskQuality.fragmentVoxels.toLocaleString()} voxels / ${maskQuality.fragmentVolumeMm3.toFixed(1)} mm³.` : '.'}</p>
+      <p role="alert"><strong>Measurement withheld:</strong> disconnected predictions are not eligible for a research stenosis grade.</p>
       <label className="volume-confirm"><input type="checkbox" checked={showAllComponents}
         onChange={event => setShowAllComponents(event.target.checked)} />Show all disconnected components</label>
     </section>}

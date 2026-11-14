@@ -50,6 +50,12 @@ def test_disconnected_lines_are_not_joined():
     assert result["connected_components"] == 2
     assert result["endpoint_count"] == 4
     assert result["centerline_length"] == pytest.approx(8.)
+    assert result["component_sizes_voxels"] == [5, 5]
+    assert result["largest_component_fraction"] == pytest.approx(.5)
+    assert result["isolated_fragment_voxels"] == 5
+    assert result["measurement_eligibility"] == "abstained"
+    assert result["abstention_reasons"] == ["disconnected_prediction"]
+    assert result["reference_centerline_coverage"] is None
 
 
 def test_exported_graph_edges_reconstruct_world_length_without_duplicates():
