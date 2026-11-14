@@ -18,29 +18,48 @@ def mask_preview(path):
     if not np.isfinite(image.affine).all() or image.header.get_xyzt_units()[0] != 'mm':
         raise ValueError('Saved mask has no usable spatial geometry')
 
-    mask = np.asarray(image.dataobj).ravel(order='F')
-    count = int(np.count_nonzero(mask))
+    source_mask = np.asarray(image.dataobj) > 0
+    count = int(np.count_nonzero(source_mask))
     if not count:
-        return {'foreground_voxels': 0, 'points': []}
+        return {'foreground_voxels': 0, 'component_count': 0, 'components': [], 'points': []}
 
-    # Sample evenly through the occupied voxels without materializing a coordinate
-    # array for the entire mask. Preserve the source affine for spatial proportions.
-    ranks = np.linspace(0, count - 1, min(count, MAX_PREVIEW_POINTS), dtype=np.int64)
-    coords = []
-    start = 0
-    block_size = 256 * 1024
-    for offset in range(0, mask.size, block_size):
-        indices = np.flatnonzero(mask[offset:offset + block_size])
-        end = start + indices.size
-        left, right = ranks.searchsorted([start, end])
-        if right > left:
-            coords.append(indices[ranks[left:right] - start] + offset)
-        start = end
+    from scipy.ndimage import label
+    labels, component_count = label(source_mask, structure=np.ones((3, 3, 3), dtype=np.uint8))
+    sizes = np.bincount(labels.ravel())[1:]
+    ordered = np.argsort(sizes)[::-1]
 
-    voxels = np.column_stack(np.unravel_index(np.concatenate(coords), image.shape, order='F'))
-    points = nib.affines.apply_affine(image.affine, voxels)
-    points -= (points.min(axis=0) + points.max(axis=0)) / 2
-    radius = np.linalg.norm(points, axis=1).max()
-    if radius > 0:
-        points /= radius
-    return {'foreground_voxels': count, 'points': points.round(5).tolist()}
+    # Use one common physical-space normalization for every component so that
+    # filtering in the browser never changes their relative placement.
+    occupied = np.argwhere(source_mask)
+    occupied_world = nib.affines.apply_affine(image.affine, occupied)
+    centre = (occupied_world.min(axis=0) + occupied_world.max(axis=0)) / 2
+    radius = np.linalg.norm(occupied_world - centre, axis=1).max()
+    radius = float(radius or 1)
+
+    components = []
+    remaining = MAX_PREVIEW_POINTS
+    remaining_voxels = count
+    for rank, component_index in enumerate(ordered, start=1):
+        identity = int(component_index + 1)
+        voxels = np.argwhere(labels == identity)
+        size = int(sizes[component_index])
+        # Allocate samples proportionally while guaranteeing representation of
+        # each component. Exact voxel counts remain available separately.
+        slots = min(size, max(0, round(remaining * size / remaining_voxels)))
+        if remaining and not slots:
+            slots = 1
+        if slots:
+            indices = np.linspace(0, size - 1, slots, dtype=np.int64)
+            world = nib.affines.apply_affine(image.affine, voxels[indices])
+            points = ((world - centre) / radius).round(5).tolist()
+        else:
+            points = []
+        components.append({'id': rank, 'foreground_voxels': size, 'points': points})
+        remaining -= slots
+        remaining_voxels -= size
+
+    return {'foreground_voxels': count, 'component_count': int(component_count),
+            'largest_component_voxels': components[0]['foreground_voxels'],
+            'components': components,
+            # Preserve the legacy field for older clients.
+            'points': [point for component in components for point in component['points']]}

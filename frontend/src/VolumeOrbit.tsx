@@ -4,6 +4,7 @@ import { Button } from './components/prismui/button';
 
 type Point = [number, number, number];
 type Slice = { axis: string; coarse_index: number; artifact: string };
+type MaskComponent = { id: number; foreground_voxels: number; points: Point[] };
 const initialView = { yaw: .5, pitch: -.25, zoom: 1 };
 const turn = Math.PI / 12;
 const presets = [
@@ -19,6 +20,9 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
   slices: Slice[]; previews: Record<string, string>;
 }) {
   const [points, setPoints] = useState<Point[] | null>(null);
+  const [components, setComponents] = useState<MaskComponent[]>([]);
+  const [showAllComponents, setShowAllComponents] = useState(false);
+  const [foregroundVoxels, setForegroundVoxels] = useState(0);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState(initialView);
@@ -36,12 +40,22 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
       .then(async response => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Unable to load the saved 3D mask.');
-        return data.points as Point[];
+        const listed = (data.components || []) as MaskComponent[];
+        setComponents(listed);
+        setForegroundVoxels(Number(data.foreground_voxels || 0));
+        return (listed.length ? listed[0].points : data.points) as Point[];
       })
       .then(result => { if (!controller.signal.aborted) setPoints(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause.message); });
     return () => controller.abort();
   }, [url, token, attempt]);
+
+  useEffect(() => {
+    if (!components.length) return;
+    setPoints(showAllComponents
+      ? components.flatMap(component => component.points)
+      : components[0].points);
+  }, [components, showAllComponents]);
 
   useEffect(() => {
     const element = canvas.current;
@@ -78,10 +92,12 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
       }
       const projected = points.map(project);
       projected.sort((a, b) => a[2] - b[2]);
-      const size = Math.max(2, Math.min(5, 4 * view.zoom));
+      const size = Math.max(1.5, Math.min(4.5, 3.2 * view.zoom));
       for (const [x, y, depth] of projected) {
         context.fillStyle = `hsl(188 76% ${Math.round(49 + depth * 24)}%)`;
-        context.fillRect(width / 2 + x * scale - size / 2, height / 2 - y * scale - size / 2, size, size);
+        context.beginPath();
+        context.arc(width / 2 + x * scale, height / 2 - y * scale, size / 2, 0, Math.PI * 2);
+        context.fill();
       }
     };
     draw();
@@ -150,6 +166,13 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
       <Button type="button" onClick={() => setView(initialView)}>Reset view</Button>
     </div>
     <label className="volume-confirm"><input type="checkbox" checked={grid} onChange={event => setGrid(event.target.checked)} />Show reference grid</label>
+    {components.length > 1 && <section className="volume-component-quality" aria-label="Predicted mask component quality">
+      <h4>Mask connectivity</h4>
+      <p><strong>{components.length} disconnected components</strong> · {foregroundVoxels.toLocaleString()} source-grid foreground voxels.</p>
+      <p className="caption">Largest component: {components[0].foreground_voxels.toLocaleString()} voxels. Disconnected fragments come from the saved prediction and are not joined by the viewer.</p>
+      <label className="volume-confirm"><input type="checkbox" checked={showAllComponents}
+        onChange={event => setShowAllComponents(event.target.checked)} />Show all disconnected components</label>
+    </section>}
     {selectedSlice && <section aria-label="Saved slice reference">
       <h4>Slice reference</h4>
       <label>Plane<select value={sliceIndex} onChange={event => setSliceIndex(Number(event.target.value))}>

@@ -139,4 +139,6 @@
 .volume-orbit-inspector button[aria-pressed=true] { outline: 2px solid #50a3c7; outline-offset: -2px; }
 .volume-orbit-slice { display: block; width: 100%; max-width: 190px; margin-top: 8px; border-radius: 8px; }
 .volume-orbit-run { font-size: .8rem; overflow-wrap: anywhere; }
+.volume-component-quality { padding: 10px; border: 1px solid #b77721; border-radius: 9px; background: color-mix(in srgb, #b77721 9%, transparent); }
+.volume-component-quality p { margin: 6px 0; }
 @media(max-width: 900px) { .volume-orbit { grid-template-columns: minmax(0, 1fr); } }
