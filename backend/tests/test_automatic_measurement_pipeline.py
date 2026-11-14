@@ -36,8 +36,8 @@ def test_saved_source_mask_measurement_reports_and_access(monkeypatch):
         assert response.status_code==201,response.text
         record=response.json()['records'][0]
         assert record['status']=='experimental_measurement',record
-        assert response.json()['measurement_method']['id']=='sgharshitha-centerline-diameter-adaptation-v1'
-        assert record['measurement_method']['id']=='sgharshitha-centerline-diameter-adaptation-v1'
+        assert response.json()['measurement_method']['id']=='source-grid-centerline-diameter-v2'
+        assert record['measurement_method']['id']=='source-grid-centerline-diameter-v2'
         assert abs(record['narrowing_percent']-50)<3
         assert len(record['sensitivity']['variants'])==2
         assert record['severity']['category'] is None

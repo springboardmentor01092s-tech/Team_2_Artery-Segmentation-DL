@@ -1492,6 +1492,38 @@ def volume_artifact(case_id: str, run_id: str, name: str,
     return FileResponse(path, media_type='image/png' if name.endswith('.png') else 'application/json' if name.endswith('.json') else 'application/gzip', filename=name)
 
 
+@app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/evidence.zip')
+def volume_evidence(case_id: str, run_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
+    research_report_access(case_id, user, db)
+    row = db.get(VolumeAnalysis, run_id)
+    if not row or row.case_id != case_id or row.status != 'completed':
+        raise HTTPException(404, 'Completed volume analysis unavailable')
+    from io import BytesIO
+    from zipfile import ZipFile, ZIP_DEFLATED
+    from fastapi.responses import Response
+    from .volume_measurements import saved_measurement
+    from .volume_reporting import snapshot, csv_text, pdf_bytes
+    folder = STORAGE/'volumes'/row.id/'outputs'
+    volume = volume_run_out(row)
+    volume['experimental_geometry'] = saved_measurement(folder/'mask_source.nii.gz')
+    document = snapshot(volume)
+    members = {'analysis.json': json.dumps(document, allow_nan=False).encode(),
+        'geometry.json': json.dumps(document['experimental_geometry'], allow_nan=False).encode(),
+        'measurements.csv': csv_text(document).encode(), 'report.pdf': pdf_bytes(document)}
+    for name in ['mask_source.nii.gz','probability_coarse.nii.gz','overlay_0.png','overlay_1.png','overlay_2.png','result.json']:
+        if (folder/name).is_file():
+            members[name] = (folder/name).read_bytes()
+    manifest = dict(case_id=case_id, run_id=run_id,
+        files={name: hashlib.sha256(value).hexdigest() for name,value in members.items()},
+        unavailable={'interactive_mpr_cpr':'Synchronized source-volume MPR/CPR viewer pending', 'attribution':'Target-specific model attribution pending'})
+    stream = BytesIO()
+    with ZipFile(stream, 'w', ZIP_DEFLATED) as archive:
+        for name,value in members.items():
+            archive.writestr(name,value)
+        archive.writestr('manifest.json',json.dumps(manifest))
+    return Response(stream.getvalue(), media_type='application/zip', headers={'Content-Disposition': f'attachment; filename="volume-{run_id}-evidence.zip"'})
+
+
 @app.get('/api/cases/{case_id}/volumes/analyses/{run_id}/report/{format}')
 def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'csv', 'pdf'],
                            user: User = Depends(require_case_role), db: Session = Depends(get_db)):
@@ -1501,7 +1533,12 @@ def volume_research_report(case_id: str, run_id: str, format: Literal['json', 'c
         raise HTTPException(404, 'Volume analysis not found')
     from .volume_reporting import snapshot, csv_text, pdf_bytes
     try:
-        document = snapshot(volume_run_out(row))
+        volume = volume_run_out(row)
+        from .volume_measurements import saved_measurement
+        mask_path = STORAGE/'volumes'/row.id/'outputs'/'mask_source.nii.gz'
+        if row.status == 'completed' and mask_path.is_file():
+            volume['experimental_geometry'] = saved_measurement(mask_path)
+        document = snapshot(volume)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
     if format == 'json':
@@ -2474,10 +2511,11 @@ def authorize_research_protocol(data: ResearchProtocolAuthorizationIn,
 
 @app.post('/api/cases/{case_id}/automatic-measurements/{event_id}', status_code=201)
 def save_automatic_measurements(case_id: str, event_id: str,
-        user: User = Depends(require_roles(*ROLE_CLINICAL_REVIEWERS)), db: Session = Depends(get_db)):
+        user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     case = accessible_case(case_id, user, db, required_action='read')
-    if not case_out(case, db, user)['permissions']['can_review']:
-        raise HTTPException(403, 'Case review permission required')
+    permissions = case_out(case, db, user)['permissions']
+    if not (permissions['can_run_analysis'] or permissions['can_review']):
+        raise HTTPException(403, 'Case analysis permission required')
     event = db.get(AnalysisEvent, event_id)
     image = db.get(Image, event.image_id) if event else None
     if image is None or image.case_id != case.id:
@@ -2510,6 +2548,15 @@ def save_automatic_measurements(case_id: str, event_id: str,
         if mask is not None and not reasons:
             measured = measure_candidate(mask, gray, candidate, event.id,
                 authorization=authorization if applicable else None)
+            if applicable and measured['status'] == 'abstained' and authorization.get('status') == 'researcher_authorized':
+                from .saved_measurement import gharshitha_mask_estimate
+                estimate = gharshitha_mask_estimate(mask, candidate)
+                if estimate:
+                    measured = {**measured, **estimate, 'cross_section_assessment': measured,
+                        'quality_status': 'exploratory_only_quality_gate_failed',
+                        'eligible_for_reference_validation': False,
+                        'uncertainty_status': 'not_quantified',
+                        'protocol_authorization': authorization}
             if not applicable:
                 measured['severity']=dict(status='indeterminate',category=None,reason='Protocol modality/anatomy does not apply')
             records.append(measured)
@@ -2523,7 +2570,7 @@ def save_automatic_measurements(case_id: str, event_id: str,
     snapshot = dict(schema_version='corovision.automatic-measurement.v1',
         case_id=case.id, image_id=image.id, analysis_event_id=event.id,
         model_version=event.model_version, model_provenance=(result.get('structured_result') or {}).get('models'),
-        artifact_sha256=hashes, algorithm_version='saved-run-source-cross-section-v3',
+        artifact_sha256=hashes, algorithm_version='saved-run-source-cross-section-v4-mask-estimates',
         measurement_method=dict(id=METHOD_ID, source=METHOD_SOURCE,
             role='primary experimental severity-measurement method'),
         records=records, protocol_authorization=authorization, clinical_validated=False)
@@ -2549,7 +2596,8 @@ def get_automatic_measurements(case_id: str, event_id: str,
     if image is None or image.case_id != case.id:
         raise HTTPException(404, 'Saved analysis not found in this case')
     folder = STORAGE / 'automatic_measurements'
-    return [json.loads(path.read_text()) for path in sorted(folder.glob(f'{event.id}-*.json'))] if folder.exists() else []
+    records = [json.loads(path.read_text()) for path in folder.glob(f'{event.id}-*.json')] if folder.exists() else []
+    return sorted(records, key=lambda record: record.get('created_at', ''), reverse=True)
 
 
 @app.post('/api/cases/{case_id}/research-reports', status_code=201)
@@ -2627,7 +2675,8 @@ def export_research_report(case_id: str, report_id: str, format: Literal['json',
         from .image_panels import report_images
         content, media = pdf_bytes(snapshot, report_images(image, event, snapshot.get('image_panels'))), 'application/pdf'
         if format == 'zip':
-            content, media = evidence_zip(snapshot, content), 'application/zip'
+            from .image_panels import paths
+            content, media = evidence_zip(snapshot, content, paths(image, event)), 'application/zip'
     audit(db, user.id, f'research_report_exported:{report_id}:{format}', case_id)
     db.commit()
     return Response(content, media_type=media, headers={'Content-Disposition': f'attachment; filename="research-report-v{snapshot["version"]}.{format}"'})

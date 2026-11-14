@@ -71,7 +71,7 @@ def test_review_run_binding_reports_exports_and_immutable_history(monkeypatch, t
             manifest = json.loads(archive.read('manifest.json'))
             assert manifest['analysis_run_id'] == event_id
             assert manifest['report_id'] == snapshot['report_id']
-            assert set(archive.namelist()) == {'manifest.json', 'report.json', 'report.csv', 'report.pdf'}
+            assert {'manifest.json', 'report.json', 'report.csv', 'report.pdf', 'candidates.json', 'measurements.json', 'model_provenance.json'} <= set(archive.namelist())
             assert json.loads(archive.read('report.json')) == snapshot
             assert archive.read('report.pdf').startswith(b'%PDF-')
             for item in manifest['artifacts']:

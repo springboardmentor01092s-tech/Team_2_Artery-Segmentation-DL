@@ -2,9 +2,20 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { apiUrl } from './api';
 
 type Record = {id:string; analysis_event_id:string; created_at:string; result:{narrowing_percent:number; minimum_diameter:number; reference_diameter:number; diameter_unit:string; candidate_id:string; reference_segment_id:string; measurement_frame:string; quality_gate?:{status:string}; severity:{status:string;category:string|null;protocol_id?:string;protocol_version?:string;reference?:string;measurement_method?:string}; explanation:{text:string}}};
-type Props = {token:string;caseId:string;imageId:string;runId:string;candidates:string[];canReview:boolean};
+type Props = {token:string;caseId:string;imageId:string;runId:string;candidates:string[];canReview:boolean;canAssess:boolean};
+const reasonLabel=(reason?:string)=>({
+  mask_width_percentile_estimate:'Experimental Gharshitha mask-width estimate · source pixels',
+  low_local_boundary_contrast:'Not assessable · insufficient vessel-boundary contrast',
+  no_stable_nearby_reference_segment:'Not assessable · no stable nearby reference segment',
+  ambiguous_vessel_paths:'Not assessable · candidate crosses multiple vessel paths',
+  no_candidate_crossing_centerline:'Not assessable · no centerline crosses the candidate',
+  boundary_sensitivity_measurement_failed:'Not assessable · measurement is unstable at the vessel boundary',
+  reference_suitability_unconfirmed_equal_widths:'Not assessable · reference suitability is unconfirmed',
+  candidate_vessel_association_unverified:'Not assessable · vessel association is unverified',
+  original_coordinate_mapping_unreliable:'Not assessable · source-coordinate mapping is unreliable'
+}[reason||'']||reason?.replaceAll('_',' ')||'Not assessable · measurement evidence is insufficient');
 
-export default function StenosisMeasurements({token,caseId,imageId,runId,candidates,canReview}:Props) {
+export default function StenosisMeasurements({token,caseId,imageId,runId,candidates,canReview,canAssess}:Props) {
   const [rows,setRows]=useState<Record[]>([]);
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(true);
@@ -13,6 +24,7 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
   const [canAuthorize,setCanAuthorize]=useState(false);
   const [authorizationChecked,setAuthorizationChecked]=useState(false);
   const [selectedProtocol,setSelectedProtocol]=useState('COROVISION_CADRADS_INFORMED_XCA');
+  const candidateKey=candidates.join('|');
   useEffect(()=>{let active=true;Promise.all([
     fetch(apiUrl('/api/research/severity-protocol'),{headers:{Authorization:`Bearer ${token}`}}).then(r=>{if(!r.ok)throw Error('Protocol status unavailable');return r.json()}),
     fetch(apiUrl('/api/auth/me'),{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json())
@@ -29,7 +41,24 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
       const record=await response.json();setAutomatic([record]);
     }catch(e){setError(e instanceof Error?e.message:'Assessment failed');}finally{setSaving(false);}
   }
-  useEffect(()=>{setAutomatic([]);let active=true;fetch(apiUrl(`/api/cases/${caseId}/automatic-measurements/${runId}`),{headers:{Authorization:`Bearer ${token}`}}).then(r=>{if(!r.ok)throw Error('Automatic measurement history could not be loaded');return r.json()}).then(rows=>{if(active)setAutomatic(rows)}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[caseId,runId,token]);
+  useEffect(()=>{setAutomatic([]);let active=true;
+    async function loadOrAssess(){
+      try {
+        const historyResponse=await fetch(apiUrl(`/api/cases/${caseId}/automatic-measurements/${runId}`),{headers:{Authorization:`Bearer ${token}`}});
+        if(!historyResponse.ok)throw Error('Automatic measurement history could not be loaded');
+        const history=await historyResponse.json();
+        history.sort((left: {created_at?:string}, right: {created_at?:string}) =>
+          (right.created_at ?? '').localeCompare(left.created_at ?? ''));
+        if(!active)return;
+        if(history.length||!canAssess||!candidates.length){setAutomatic(history);return;}
+        const assessmentResponse=await fetch(apiUrl(`/api/cases/${caseId}/automatic-measurements/${runId}`),{method:'POST',headers:{Authorization:`Bearer ${token}`}});
+        if(!assessmentResponse.ok)throw Error('Automatic severity assessment could not be completed');
+        const assessment=await assessmentResponse.json();
+        if(active)setAutomatic([assessment]);
+      } catch(e) {if(active)setError(e instanceof Error?e.message:'Automatic assessment failed');}
+    }
+    loadOrAssess();return()=>{active=false};
+  },[caseId,runId,token,canAssess,candidateKey]);
   const url=apiUrl(`/api/cases/${caseId}/stenosis-measurements`);
   useEffect(()=>{
     const controller=new AbortController();setRows([]);setError('');setLoading(true);
@@ -59,8 +88,8 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
   }
   return <section aria-label="Reviewed stenosis measurements">
     <p className="eyebrow">IMAGE ANALYSIS · STENOSIS ANALYSIS</p>
-    <h3>Severity Assessment · Gharshitha measurement workflow</h3>
-    <p className="caption">The primary experimental measurement method adapts S. Gharshitha’s centerline diameter and nearby-reference comparison. CoroVision adds source-coordinate mapping, unique-vessel association, branch and contrast checks, stable-reference selection and boundary-sensitivity gating. Detection identifies a candidate; reviewed diameter measurements quantify narrowing; an eligible versioned protocol interprets the percentage. Model confidence is never used as percentage narrowing. New entries preserve previous records.</p>
+    <h3>Severity Assessment · Vessel diameter workflow</h3>
+    <p className="caption">The experimental measurement method uses centerline diameter and nearby-reference comparison with source-coordinate mapping, unique-vessel association, branch and contrast checks, stable-reference selection and boundary-sensitivity gating. Every compatible saved run is assessed automatically. Detection identifies a candidate; diameter measurements quantify narrowing; an eligible versioned protocol interprets the percentage. Model confidence is never used as percentage narrowing. New entries preserve previous records.</p>
     <div className="metadata"><div><span>Detected lesions</span><strong>{candidates.length || 'No candidate above threshold'}</strong></div><div><span>Saved run</span><strong>{runId}</strong></div><div><span>Automatic normal grade</span><strong>Never inferred from no detection</strong></div></div>
     {error&&<p role="alert">{error}</p>}
     {candidates.length > 0 && <div className="stenosis-summary-scroll" tabIndex={0} role="region" aria-label="Candidate measurement summary">
@@ -78,19 +107,20 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
             <td>{reviewed?.reference_segment_id ?? assessed?.association?.path_id ?? 'Unavailable'}</td>
             <td>{diameter(measurement?.minimum_diameter)}</td>
             <td>{diameter(measurement?.reference_diameter)}</td>
-            <td><strong>{measurement?.severity?.category ?? 'Indeterminate'}</strong></td>
+            <td><strong>{measurement?.severity?.category ?? (assessed ? 'Not assessable' : error ? 'Unable to load' : 'Pending')}</strong></td>
             <td>{measurement?.narrowing_percent == null ? 'Unavailable' : `${measurement.narrowing_percent.toFixed(2)}%`}</td>
-            <td>{reviewed ? 'Reviewed record' : assessed ? assessed.status.replaceAll('_', ' ') : 'No saved measurement'}</td>
+            <td>{reviewed ? 'Reviewed record' : assessed ? reasonLabel(assessed.reasons[0]) : error ? 'Connection or assessment failed. Retry assessment.' : 'Automatic assessment pending'}</td>
           </tr>;
         })}</tbody>
       </table>
     </div>}
     <details className="evidence-details"><summary>Research protocol · {protocolStatus.replaceAll('_',' ')}</summary><label>Protocol to review<select value={selectedProtocol} onChange={e=>{setSelectedProtocol(e.target.value);setAuthorizationChecked(false)}}><option value="COROVISION_CADRADS_INFORMED_XCA">CAD-RADS-informed XCA Research Severity · v1.0.0</option><option value="COROVISION_XCA_RESEARCH_5CLASS">Original five-category experiment · v1.0.0</option></select></label><p>Experimental research adaptation, not official CAD-RADS patient reporting or clinically validated severity.</p>{selectedProtocol==='COROVISION_CADRADS_INFORMED_XCA'?<p>No measured narrowing: exactly 0%; Minimal: (0,25%); Mild: [25,50%); Moderate: [50,70%); Severe: [70,100%). The continuous intervals are an XCA research adaptation of published CCTA terminology.</p>:<p>Normal: exactly 0%; Mild: (0,50%); Moderate: [50,70%); Severe: [70,90%); Critical: [90,100%).</p>}<p>A 100% calculation requires separate possible-occlusion assessment. Measurements crossing boundaries under sensitivity remain indeterminate. Selecting an option does not activate it; new assessments use the recorded authorization.</p>{canAuthorize&&<><label><input type="checkbox" checked={authorizationChecked} onChange={e=>setAuthorizationChecked(e.target.checked)}/> I authorize the selected definitions for experimental Research Mode only. Quality gates remain required.</label><button type="button" disabled={saving||!authorizationChecked} onClick={()=>protocolDecision('authorize')}>Record researcher authorization</button><button type="button" disabled={saving||protocolStatus!=='researcher_authorized'} onClick={()=>protocolDecision('deactivate')}>Deactivate research protocol</button></>}</details>
     <h4>Saved-run automatic measurement assessment</h4>
-    <p className="caption">Runs the Gharshitha-derived saved-mask measurement workflow against the selected immutable analysis. Missing vessel association, stable reference evidence or uncertainty withholds narrowing and severity.</p>
-    {canReview&&<button type="button" disabled={saving} onClick={assessSavedRun}>{saving?'Assessing…':'Assess and save measurement readiness'}</button>}
-    {automatic.map(record=><article key={record.id}><small>Saved assessment {record.id}</small>{record.records.map(candidate=><section key={candidate.candidate_id} className="evidence-details"><strong>{candidate.candidate_id}: {candidate.status.replaceAll('_',' ')}</strong><div className="metadata"><div><span>MLD / RVD</span><strong>{candidate.minimum_diameter?.toFixed(2)??'Unavailable'} / {candidate.reference_diameter?.toFixed(2)??'Unavailable'} source px</strong></div><div><span>Narrowing</span><strong>{candidate.narrowing_percent==null?'Unavailable':`${candidate.narrowing_percent.toFixed(2)}%`}</strong></div><div><span>Geometric path</span><strong>{candidate.association?.path_id??'Unassociated'}</strong></div><div><span>Sensitivity range</span><strong>{candidate.sensitivity?.narrowing_range_percentage_points?.map(v=>v.toFixed(2)).join('–')??'Unavailable'}</strong></div></div><p>{candidate.reasons.map(reason=>reason.replaceAll('_',' ')).join('; ')}</p><p>Research severity: {candidate.severity?.category??'Indeterminate'} · {candidate.severity?.reason}</p><details><summary>Original-coordinate measurement evidence</summary><pre>{JSON.stringify({minimum:candidate.minimum_cross_section?.endpoints,reference:candidate.reference_cross_sections,association:candidate.association},null,2)}</pre></details></section>)}</article>)}
-    {loading?<p role="status">Loading reviewed measurements…</p>:!rows.length?<p>No reviewed measurements saved for this run. Narrowing and severity remain unavailable.</p>:rows.map(row=><article key={row.id} className="evidence-details">
+    <p className="caption">Runs the saved-mask measurement workflow against the selected immutable analysis. It starts automatically for every compatible saved run. Missing vessel association, stable reference evidence or uncertainty is reported as not assessable instead of producing an unsupported severity.</p>
+    {canAssess&&<button type="button" disabled={saving} onClick={assessSavedRun}>{saving?'Assessing…':'Reassess saved-run measurement readiness'}</button>}
+    {automatic.slice(0, 1).map(record=><article key={record.id}><small>Saved assessment {record.id}</small>{record.records.map(candidate=><section key={candidate.candidate_id} className="evidence-details"><strong>{candidate.candidate_id}: {candidate.severity?.category??'Not assessable'}</strong><div className="metadata"><div><span>MLD / RVD</span><strong>{candidate.minimum_diameter?.toFixed(2)??'Unavailable'} / {candidate.reference_diameter?.toFixed(2)??'Unavailable'} source px</strong></div><div><span>Narrowing</span><strong>{candidate.narrowing_percent==null?'Unavailable':`${candidate.narrowing_percent.toFixed(2)}%`}</strong></div><div><span>Geometric path</span><strong>{candidate.association?.path_id??'Unassociated'}</strong></div><div><span>Sensitivity range</span><strong>{candidate.sensitivity?.narrowing_range_percentage_points?.map(v=>v.toFixed(2)).join('–')??'Unavailable'}</strong></div></div><p><strong>Assessment result:</strong> {candidate.reasons.length?candidate.reasons.map(reasonLabel).join('; '):candidate.severity?.reason}</p><p>Research severity: {candidate.severity?.category??'Not assessable'}{candidate.severity?.category?` · ${candidate.severity.reason}`:''}</p><details><summary>Original-coordinate measurement evidence</summary><pre>{JSON.stringify({minimum:candidate.minimum_cross_section?.endpoints,reference:candidate.reference_cross_sections,association:candidate.association},null,2)}</pre></details></section>)}</article>)}
+    {automatic.length > 1 && <details><summary>Earlier assessments ({automatic.length - 1})</summary><p>Earlier saved assessments are retained in the run evidence. The candidate table and details above display the latest assessment.</p></details>}
+    {loading?<p role="status">Loading reviewed measurements…</p>:!rows.length?<p>{automatic.length?'Automatic assessment is shown above. No separate reviewed measurement has been saved.':candidates.length?'Automatic assessment is starting for this saved run.':'Severity task completed: no lesion candidate is available for diameter-based grading.'}</p>:rows.map(row=><article key={row.id} className="evidence-details">
       <strong>{row.result.candidate_id} · {row.result.narrowing_percent.toFixed(2)}% estimated diameter reduction</strong>
       <div className="metadata"><div><span>Minimum lumen diameter</span><strong>{row.result.minimum_diameter} {row.result.diameter_unit}</strong></div><div><span>Reference vessel diameter</span><strong>{row.result.reference_diameter} {row.result.diameter_unit}</strong></div><div><span>Reference segment</span><strong>{row.result.reference_segment_id}</strong></div><div><span>Measurement frame</span><strong>{row.result.measurement_frame}</strong></div><div><span>Quality gate</span><strong>{row.result.quality_gate?.status||'Legacy record — not stored'}</strong></div></div>
       <p>{row.result.explanation.text}</p><p>Research severity category: {row.result.severity.category||'Indeterminate — no approved compatible protocol'}</p>

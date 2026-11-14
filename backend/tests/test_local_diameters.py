@@ -13,7 +13,7 @@ def fixture(contrast=1):
 def test_local_known_widths_and_reference():
     result=candidate_diameters(**fixture())
     assert result['algorithm'] == METHOD_ID
-    assert 'Gharshitha' in result['method_source']
+    assert result['method_source']=='Centerline distance-transform widths with nearby-reference comparison'
     assert result['status']=='experimental_measurement'
     assert abs(result['minimum_diameter']-12)<1
     assert abs(result['reference_diameter']-24)<1

@@ -92,7 +92,7 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
       ["gradcam", analysis.gradcam_url],
       ["centerline", analysis.centerline_url],
       ["mask", analysis.structured_result?.artifacts?.artery_mask],
-      ["contours", analysis.structured_result?.artifacts?.vessel_contours_prepared],
+      ["contours", analysis.structured_result?.artifacts?.vessel_contours_prepared || `/api/images/${analysis.image_id}/analyses/${analysis.id}/panels/boundary`],
     ] as const;
     Promise.all(entries.map(async ([key, path]) => {
       if (!path) return;
@@ -138,10 +138,14 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
   const selectedLesion = analysis?.structured_result?.candidates.find(c => c.candidate_id === focusedCandidate);
   const stages = analysis?.structured_result?.stages;
   const candidateCount = analysis?.structured_result?.candidates.length;
+  const openSeverity = () => {
+    if (onReview) { onReview(); return; }
+    document.getElementById('severity-assessment')?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
 
   return <div className="workbench-page analysis-console">
     <div className="page-heading"><div><p className="eyebrow">{reviewMode ? 'SAVED EVIDENCE' : 'IMAGING WORKSPACE'}</p><h2>{reviewMode ? 'Severity review' : 'Coronary analysis'}</h2></div><span className="stage-badge">Research only</span></div>
-    <nav className="case-section-nav" aria-label="Analysis review report workflow"><Button variant={reviewMode ? 'outline' : 'default'} onClick={onImageReview}>1 · Image Review</Button><Button variant={reviewMode ? 'default' : 'outline'} disabled={!analysis || !onReview} onClick={onReview}>2 · Severity Review</Button><Button variant="outline" disabled={!analysis} onClick={onReports}>3 · Reports</Button></nav>
+    <nav className="case-section-nav" aria-label="Analysis review report workflow"><Button variant={reviewMode ? 'outline' : 'default'} onClick={onImageReview}>1 · Image Review</Button><Button variant={reviewMode ? 'default' : 'outline'} disabled={!analysis} onClick={openSeverity}>2 · Severity Review</Button><Button variant="outline" disabled={!analysis} onClick={onReports}>3 · Reports</Button></nav>
     <div className="workbench-selectors">
       <label>Case<select value={selectedCase?.id || ""} onChange={(event) => onCaseChange(event.target.value)}><option value="">Select a case</option>{cases.map((item) => <option value={item.id} key={item.id}>{item.case_code} · {item.status}</option>)}</select></label>
       <label>Study image<select value={selectedImage?.id || ""} onChange={(event) => onImageChange(event.target.value)} disabled={!selectedCase?.images.length}><option value="">Select an image</option>{selectedCase?.images.map((item) => <option value={item.id} key={item.id}>{item.original_name}</option>)}</select></label>
@@ -158,8 +162,8 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
           {(selectedImage.modality || selectedCase?.modality) !== 'XCA' && <p className="caption">Select an X-ray coronary angiogram for this analysis.</p>}
         </div>
         <div className="case-analysis-actions">
-          {analysis && <Button type="button" className="primary" onClick={!reviewMode && onReview ? onReview : onReports}>
-            {!reviewMode && onReview ? 'Next: Review severity' : 'Next: Open reports'} →
+          {analysis && <Button type="button" className="primary" onClick={!reviewMode ? openSeverity : onReports}>
+            {!reviewMode ? 'Next: Review severity' : 'Next: Open reports'} →
           </Button>}
           {canRunAnalysis ? <Button type="button" variant={analysis ? 'outline' : 'default'}
             className={analysis ? undefined : 'primary'} disabled={!canAnalyze || analysisBusy} onClick={onRun}>
@@ -170,6 +174,7 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
           <div><dt>Artery outline</dt><dd>{stages?.artery_segmentation?.status === 'skipped' ? 'Not assessed' : analysis.artery_pixels > 0 ? 'Available' : 'No vessel pixels found'}</dd></div>
           <div><dt>Vessel measurements</dt><dd>{stages?.vessel_analysis?.status === 'skipped' || !analysis.vessel_analysis ? 'Unavailable' : 'Available for review'}</dd></div>
           <div><dt>Possible narrowing</dt><dd>{stages?.stenosis_detection?.status === 'skipped' || candidateCount == null ? 'Not assessed' : candidateCount ? `${candidateCount} saved candidate${candidateCount === 1 ? '' : 's'}` : 'No candidate locations saved'}</dd></div>
+          <div><dt>Severity grading</dt><dd>{candidateCount == null ? 'Not assessed' : candidateCount ? 'See saved measurement assessment below' : 'No candidate to grade'}</dd></div>
         </dl>}
       </Card>
       <div className="analysis-record-strip" aria-label="Selected evidence record">
@@ -228,6 +233,13 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
           {mode === "overlay" && overlay && <label className="workbench-opacity">Overlay opacity <input type="range" min="0" max="100" value={opacity} onChange={(event) => setOpacity(Number(event.target.value))} /> <output>{opacity}%</output></label>}
           {["localization", "overlay"].includes(mode) && !!analysis?.structured_result?.candidates.length && <label className="caption"><input type="checkbox" checked={showCandidates} onChange={(event) => setShowCandidates(event.target.checked)} /> Show saved candidate bounds and raw scores. Overlapping candidates may represent the same region.</label>}
           {!xaiLayers.contours && <p className="caption">Vessel contours: no saved, run-bound contour artifact. Lesion outlines, when present, are saved detector polygons.</p>}
+          {analysis && (!analysis.attention_map_url || !analysis.gradcam_url) && <details className="evidence-details">
+            <summary>Explainability layer availability</summary>
+            <p>Selected model: {analysis.model_version}. Layer availability follows the selected saved run.</p>
+            {!analysis.attention_map_url && <p>Attention requires an attention-gate architecture and saved gate activations. This run supplies no attention map.</p>}
+            {!analysis.gradcam_url && <p>Grad-CAM requires a defined prediction target and captured convolutional activations and gradients. This run supplies no Grad-CAM artifact.</p>}
+            <p>Vessel contours are derived from the saved artery mask. Probability views display the saved model scores.</p>
+          </details>}
           <p className="caption">{mode === "localization" ? "Red outlines mark saved candidates on the prepared angiogram. Raw scores are uncalibrated." : mode === "overlay" && !overlay ? "Outlined regions are saved detector polygons; raw scores are uncalibrated. Select a contour or its label to inspect the matching candidate." : mode === "overlay" ? "Cyan marks predicted artery pixels; coral marks predicted stenosis pixels. Colors are model output, not verified anatomy." : mode === "centerline" ? "The artery mask is shown faintly under cyan traced paths; yellow labels mark grouped junctions; green dots mark endpoints. Nodes are graph candidates, not confirmed anatomical branches." : mode === "attention" ? "Attention gates show where the model weights skip features; this visualization is not a faithful or clinically validated explanation." : mode === "artery_probability" || mode === "probability" ? "Pixel probabilities are uncalibrated model scores; color intensity is not a patient-level confidence score." : mode === "gradcam" ? "Grad-CAM highlights features that influence the stenosis segmentation logits. It is a research saliency map, not a clinical explanation." : "Review all model outputs against the original study."}</p>
         </Card>
         <Card className="panel workbench-findings">
@@ -273,7 +285,7 @@ export default function AnalysisWorkbench({ onImageReview, reviewMode, assessmen
       </div>
       {analysis && <Card className="panel"><details className="evidence-details"><summary>Model provenance, structured explanation & limitations</summary><pre className="provenance-json">{JSON.stringify({ model: analysis.model_version, models: analysis.structured_result?.models, preprocessing: analysis.structured_result?.input || selectedImage.processing_record }, null, 2)}</pre><ResultEvidence result={analysis.structured_result} /></details></Card>}
       {analysis && <Card className="panel"><ImagePanelGallery token={token} imageId={selectedImage.id} runId={analysis.id} modelVersion={analysis.model_version} /></Card>}
-      {analysis && selectedCase && <Card className="panel"><StenosisMeasurements key={analysis.id} token={token} caseId={selectedCase.id} imageId={selectedImage.id} runId={analysis.id} candidates={analysis.structured_result?.candidates.map(c=>c.candidate_id)||[]} canReview={!!selectedCase.permissions?.can_review} /></Card>}
+      {analysis && selectedCase && <div id="severity-assessment"><Card className="panel"><StenosisMeasurements key={analysis.id} token={token} caseId={selectedCase.id} imageId={selectedImage.id} runId={analysis.id} candidates={analysis.structured_result?.candidates.map(c=>c.candidate_id)||[]} canReview={!!selectedCase.permissions?.can_review} canAssess={!!(selectedCase.permissions?.can_run_analysis||selectedCase.permissions?.can_review)} /></Card></div>}
       <AnalysisHistory imageId={selectedImage.id} token={token} history={history} onSelect={onSelectAnalysis} />
     </>}
   </div>;

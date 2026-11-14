@@ -29,3 +29,18 @@ Both current checkpoint hashes match `ml/releases/corovision_20261023.json`: art
 Live XAI remains held by the documented Kaggle-only execution protocol and unresolved provider/quota/ownership/authorization gates. Real reference agreement remains blocked by zero completed measurements; clinical QCA and exposure-cleared patient cohorts remain unavailable. Protocol activation awaits an actual owner action in the researcher/admin UI; tests did not activate production state.
 
 Resume state: base revision `a8faf5b1f4f6b8ba4c6ba05ff7e91239aeb928c7`, dirty user checkout preserved, no commits or pushes. Backend currently runs on 8000 and frontend on 5173. Next browser test requires extension file-URL permission. Next engineering review should prioritize incomplete candidate coverage, calibration/transform edge cases, and real-reference validation of geometric association. Do not claim those scientific conditions are solved by the unique-path screen.
+
+## 14 November 2026 master-audit continuation
+
+- Current base revision: `b6a7ac097f583f6e4d298293aa6b3484662880ce`; the pre-existing dirty checkout was preserved. No commit or push was made.
+- Frontend production build passed. Frontend Node tests: **20 passed**.
+- Changed measurement/reporting backend tests: **8 passed** with one dependency deprecation warning.
+- Connected Chrome verified the overview, saved 2D case/run `4157543d-5df7-482d-ba49-f354619a3b43`, saved 3D case/run `d2c06ad4-e352-446e-be9a-d0d03544253c`, and report-builder inventory.
+- 2D evidence preserved case/image/run identity, source-pixel units when calibration was absent, three candidate-specific MLD/RVD results, distinct raw detector scores, experimental research severity labels, unavailable sensitivity, and no automatic normal inference.
+- 3D evidence rendered synchronized saved slice previews, source-grid geometry, a perpendicular-section candidate, distinct diameter and area narrowing, explicit coarse-mask limitations, experimental severity, and unquantified uncertainty.
+- Fixed issue `UI-3D-001`: the 3D stage reason was rendered twice above the stage definition list. Removed the redundant paragraph from `frontend/src/VolumeInference.tsx`; the canonical reason remains in the per-stage list.
+- Report versions are present (v1-v7). The browser accessibility bridge reports closed native-select options as disabled and could not select one. Source inspection shows the options are not disabled; browser download/reopen verification therefore remains pending rather than failed.
+- Full backend regression: **298 passed, 5 skipped, 3 warnings in 71.04 seconds** with `.venv/bin/python -m pytest -q`. Skips remain opt-in external/model checks; warnings are dependency deprecations.
+- Training remains paused. No model weights, datasets, credentials, database, uploads, or generated build artifacts were published.
+
+Next exact actions: rebuild after `UI-3D-001`; verify the corrected 3D panel; test report reopen/download consistency; run 1280px and smaller responsive checks; then complete the remaining administration/security and per-control browser inventory. Scientific blockers remain independent patient evaluation, qualified reference measurements, severity agreement, current target-specific XAI faithfulness, and unseen-patient performance.

@@ -8,6 +8,41 @@ from .local_diameters import METHOD_ID, METHOD_SOURCE, candidate_diameters
 from .narrowing import experimental_research_grade
 
 
+def gharshitha_mask_estimate(mask, candidate):
+    """Archived percentile/ring method, reported as an experimental mask estimate."""
+    from scipy.ndimage import distance_transform_edt, maximum_filter
+    box = candidate.get('bbox_source_xyxy')
+    if not box or candidate.get('coordinate_warning'):
+        return None
+    x1, y1, x2, y2 = box
+    distance = distance_transform_edt(mask)
+    skeleton = mask & (distance >= maximum_filter(distance, size=5)) & (distance >= 2)
+    ys, xs = np.nonzero(skeleton)
+    inside = (xs >= x1) & (xs < x2) & (ys >= y1) & (ys < y2)
+    if inside.sum() < 3:
+        return None
+    components, _ = label(mask, structure=np.ones((3, 3)))
+    pool = np.flatnonzero(inside)
+    nearest = pool[np.argmin((xs[pool]-(x1+x2)/2)**2 + (ys[pool]-(y1+y2)/2)**2)]
+    same = components[ys, xs] == components[ys[nearest], xs[nearest]]
+    outside_distance = np.hypot(np.maximum(np.maximum(x1-xs, xs-x2), 0), np.maximum(np.maximum(y1-ys, ys-y2), 0))
+    ring = same & (outside_distance > 3) & (outside_distance <= 45)
+    local = inside & same
+    if local.sum() < 3 or ring.sum() < 5:
+        return None
+    widths = 2 * distance[ys, xs]
+    minimum = float(np.percentile(widths[local], 10))
+    reference = float(np.percentile(widths[ring], 75))
+    narrowing = float(np.clip((1-minimum/reference)*100, 0, 100))
+    grade = next((name for limit, name in [(25,'minimal'),(50,'mild'),(70,'moderate'),(101,'severe')] if narrowing < limit), 'severe')
+    return dict(minimum_diameter=minimum, reference_diameter=reference, narrowing_percent=narrowing,
+        status='experimental_mask_estimate', unit='source_px', reasons=['mask_width_percentile_estimate'],
+        measurement_method={'id':'gharshitha-mask-percentiles-v1','reference_ring_source_px':45,
+            'limitations':'Predicted mask widths. Branches and segmentation errors affect the reference and grade.'},
+        severity={'status':'experimental_unvalidated','category':grade,'reason':'Gharshitha percentile/ring research rules'},
+        clinical_validated=False)
+
+
 def source_mask(image, mask_path):
     with Image.open(image.original_path) as original:
         gray=np.asarray(original.convert('L'),dtype=float)/255

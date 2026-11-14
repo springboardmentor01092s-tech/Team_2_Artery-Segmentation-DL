@@ -34,6 +34,13 @@ def snapshot(run):
                     'Downstream unavailable stages were not executed. Review the original volume and model limitations.'},
         'artifacts': run.get('artifacts', {}), 'limitations': result.get('limitations', [])}
     document['snapshot_sha256'] = hashlib.sha256(json.dumps(document, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    geometry = run.get('experimental_geometry')
+    if geometry:
+        document['experimental_geometry'] = geometry
+        for name in ['vessel_graph', 'diameter_measurement', 'stenosis_detection', 'severity']:
+            stages[name] = dict(status='experimental_mask_geometry', reason=f"Computed from saved mask using {geometry.get('method')}. {len(geometry.get('paths', []))} paths and {len(geometry.get('candidates', []))} narrowing candidates.")
+        document['explanation']['text'] = 'Saved segmentation with physical-space skeleton paths, mask-width estimates and rule-based narrowing candidates.'
+        document['snapshot_sha256'] = hashlib.sha256(json.dumps({k:v for k,v in document.items() if k != 'snapshot_sha256'}, sort_keys=True, allow_nan=False).encode()).hexdigest()
     return document
 
 
@@ -47,6 +54,10 @@ def csv_text(document):
     for stage, item in document['stages'].items():
         writer.writerow([safe(x) for x in [document['case_id'],document['analysis_run_id'],document['model_id'],
             document['checkpoint_sha256'],stage,item['status'],item['reason']]])
+    writer.writerow([])
+    writer.writerow(['candidate_id','path_id','minimum_diameter_mm','reference_diameter_mm','diameter_narrowing_percent','experimental_grade','ras_mm','minimum_area_mm2','reference_area_mm2','area_narrowing_percent','uncertainty_status'])
+    for candidate in document.get('experimental_geometry', {}).get('candidates', []):
+        writer.writerow([safe(candidate.get(key)) for key in ['id','path_id','minimum_diameter_mm','reference_diameter_mm','narrowing_percent','severity','location_ras_mm','minimum_area_mm2','reference_area_mm2','area_narrowing_percent','uncertainty_status']])
     return stream.getvalue()
 
 
@@ -68,6 +79,20 @@ def pdf_bytes(document):
         report.field(title, stage['status'].replace('_', ' ').capitalize())
 
     report.section('Interpretation')
+    geometry = document.get('experimental_geometry')
+    if geometry:
+        report.section('Experimental 3D mask geometry')
+        report.field('Extracted centerline paths', len(geometry['paths']))
+        for candidate in geometry['candidates']:
+            report.field('Candidate / path', candidate['id']+' / '+candidate['path_id'])
+            report.field('Minimum / reference mask width (mm)', f"{candidate['minimum_diameter_mm']:.2f} / {candidate['reference_diameter_mm']:.2f}")
+            report.field('Narrowing (%)', round(candidate['narrowing_percent'], 2))
+            report.field('Minimum / reference area (mm2)', f"{candidate.get('minimum_area_mm2')} / {candidate.get('reference_area_mm2')}")
+            report.field('Area narrowing (%)', candidate.get('area_narrowing_percent'))
+            report.field('Diameter definition', 'Area-equivalent perpendicular section')
+            report.field('Experimental severity', candidate['severity'])
+        for limitation in geometry['limitations']:
+            report.paragraph(limitation)
     report.paragraph('The saved vessel mask is a research prediction. Voxel count describes the predicted mask size. '
                      'Anatomical accuracy and clinical severity require separate validation.')
     for limitation in document['limitations']:

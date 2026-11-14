@@ -25,7 +25,7 @@ Role: Demo Researcher / Medical Researcher.
 - Segmentation record: 8,662 artery pixels and 2,405 stenosis-mask pixels.
 - Vessel evidence: four saved paths; P1 minimum mask width 2.34 source px, maximum 12.68 source px, sampled extent 261.68 source px, 407 samples.
 - Candidate evidence: C1 0.6291, C2 0.2955 and C3 0.2585 raw uncalibrated scores.
-- Severity: Gharshitha-derived measurement workflow is displayed. Narrowing/category are correctly withheld because no reviewed eligible local/reference measurement is saved.
+- Severity: the source-grid vessel-diameter workflow is displayed and automatically assessed for compatible saved runs. Narrowing/category are withheld when eligible local/reference evidence is unavailable.
 - Reporting: report builder binds the selected case, image and run; three immutable prior versions are available. Original/overlay, vessel evidence, candidate evidence and human assessment sections are selectable.
 
 ### 3D CTA proof

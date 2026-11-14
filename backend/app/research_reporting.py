@@ -15,13 +15,20 @@ NOTICE = ('Research output, not a standalone diagnosis. Model scores are uncalib
           'This research snapshot is not a clinically approved report.')
 
 
-def evidence_zip(snapshot, pdf):
+def evidence_zip(snapshot, pdf, saved_artifacts=None):
     """Package the authorized snapshot and its rendered exports."""
     files = {
         'report.json': json.dumps(snapshot, indent=2).encode('utf-8'),
         'report.csv': tabular(snapshot).encode('utf-8'),
         'report.pdf': pdf,
     }
+    for name, path in (saved_artifacts or {}).items():
+        if path.is_file():
+            files['saved_artifacts/'+name+path.suffix] = path.read_bytes()
+    structured = snapshot['analysis'].get('structured_result') or {}
+    files['candidates.json'] = json.dumps(structured.get('candidates', []), indent=2).encode()
+    files['measurements.json'] = json.dumps(snapshot.get('automatic_measurements', []), indent=2).encode()
+    files['model_provenance.json'] = json.dumps(snapshot.get('provenance', {}), indent=2).encode()
     manifest = {
         'schema_version': 1,
         'report_id': snapshot['report_id'],
@@ -157,6 +164,11 @@ def pdf_bytes(snapshot, image_paths):
             report.field('Saved assessment', assessment.get('id'))
             for record in assessment.get('records', []):
                 report.field('Candidate / status', f"{record['candidate_id']} / {record['status']}")
+                report.field('Measurement method', (record.get('measurement_method') or {}).get('id', 'Unavailable'))
+                report.field('Quality status', record.get('quality_status', record['status']))
+                report.field('Uncertainty status', record.get('uncertainty_status', 'See saved sensitivity evidence'))
+                if record.get('cross_section_assessment'):
+                    report.paragraph('Exploratory percentile estimate. The quality-controlled assessment abstained: '+', '.join(record['cross_section_assessment'].get('reasons', [])))
                 report.field('Minimum / reference width (source px)',
                     f"{record.get('minimum_diameter')} / {record.get('reference_diameter')}")
                 report.field('Narrowing (%)', record.get('narrowing_percent'))

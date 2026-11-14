@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiUrl } from './api';
 import { Button } from './components/prismui/button';
 import VolumeOrbit from './VolumeOrbit';
+import VolumeMeasurementPanel from './VolumeMeasurementPanel';
 
 type VolumeRun = { id: string; status: string; error: string | null; created_at: string;model_key?:string;
   input_kind: 'medical_study' | 'synthetic_fixture' | 'unspecified';
@@ -9,13 +10,13 @@ type VolumeRun = { id: string; status: string; error: string | null; created_at:
   coarse_foreground_voxels: number; source_shape: number[]; limitations: string[];
   slices: { axis: string; coarse_index: number; artifact: string }[] } };
 
-type Props = {caseId: string; token: string; readOnly?: boolean; anatomy?: string};
+type Props = {caseId: string; token: string; readOnly?: boolean; anatomy?: string; historyOnly?: boolean; onOpenAnalysis?: () => void};
 
 export default function VolumeInference(props: Props) {
   return <VolumeCase key={`${props.caseId}:${props.token}`} {...props} />;
 }
 
-function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary'}: Props) {
+function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', historyOnly = false, onOpenAnalysis}: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [hu, setHu] = useState(false);
   const [research, setResearch] = useState(false);
@@ -27,7 +28,7 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary'}: Pro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [previews, setPreviews] = useState<Record<string,string>>({});
-  const [report, setReport] = useState<null | {analysis_run_id:string; model_id:string; explanation:{text:string}; stages:Record<string,{status:string;reason:string}>}>(null);
+  const [report, setReport] = useState<null | {experimental_geometry?: {paths: {id:string;length_mm:number}[];candidates:{id:string;path_id:string;minimum_area_mm2?:number;reference_area_mm2?:number;area_narrowing_percent?:number;minimum_diameter_mm:number;reference_diameter_mm:number;narrowing_percent:number;severity:string;location_ras_mm:number[]}[];limitations:string[]}; analysis_run_id:string; model_id:string; explanation:{text:string}; stages:Record<string,{status:string;reason:string}>}>(null);
   const [reportError,setReportError] = useState('');
   const selected = runs.find(r => r.id === chosen) || runs[0];
   const active = runs.some(r => ['queued','running'].includes(r.status));
@@ -101,7 +102,7 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary'}: Pro
     if (!selected) return;
     try {
       const reportFormat = name === 'research-report.json' ? 'json' : name === 'research-report.csv' ? 'csv' : name === 'research-report.pdf' ? 'pdf' : null;
-      const endpoint = reportFormat ? `/api/cases/${caseId}/volumes/analyses/${selected.id}/report/${reportFormat}` : selected.artifacts[name];
+      const endpoint = name === 'evidence.zip' ? `/api/cases/${caseId}/volumes/analyses/${selected.id}/evidence.zip` : reportFormat ? `/api/cases/${caseId}/volumes/analyses/${selected.id}/report/${reportFormat}` : selected.artifacts[name];
       const response = await fetch(apiUrl(endpoint), {headers});
       if (!response.ok) throw new Error('Artifact unavailable or access expired');
       const url = URL.createObjectURL(await response.blob());
@@ -110,6 +111,15 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary'}: Pro
     } catch (cause) { setError((cause as Error).message); }
   }
 
+  if (historyOnly) return <section className="volume-inference" aria-label="3D analysis history">
+    <h3>3D analysis history</h3>
+    {error && <p role="alert">{error}</p>}
+    {!runs.length ? <p>No saved volume analyses.</p> : <table className="stenosis-summary">
+      <thead><tr><th>Date</th><th>Run</th><th>Status</th><th>Model</th><th>Duration</th></tr></thead>
+      <tbody>{runs.map(run => <tr key={run.id}><td>{new Date(run.created_at).toLocaleString()}</td><td>{run.id}</td><td>{run.status}</td><td>{run.result?.model_id ?? run.model_key ?? 'Unavailable'}</td><td>{run.result ? `${run.result.duration_seconds.toFixed(2)} s` : 'Unavailable'}</td></tr>)}</tbody>
+    </table>}
+    {onOpenAnalysis && <Button onClick={onOpenAnalysis}>Open analysis viewer</Button>}
+  </section>;
   return <section className="volume-inference" aria-labelledby="volume-inference-title">
     <header><p className="eyebrow">VOLUME ANALYSIS</p><h3 id="volume-inference-title">{anatomy==='aorta'?'Aortic CT':'Coronary CTA'} segmentation</h3>
       <p>View a 3D vessel mask and slice previews. CoroVision selects the research pipeline from the case anatomy. Small vessels may be missed.</p></header>
@@ -147,10 +157,26 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary'}: Pro
             <figcaption>{slice.axis} · coarse slice {slice.coarse_index}</figcaption></figure>)}</div></details>
           <div className="volume-downloads"><Button onClick={() => void download('mask_source.nii.gz')}>Download source-grid mask</Button><Button onClick={() => void download('probability_coarse.nii.gz')}>Download coarse probability volume</Button><Button onClick={() => void download('result.json')}>Download result JSON</Button></div>
           <section aria-label="3D explanation and stage report">
+            <Button onClick={()=>void download('evidence.zip')}>Download 3D evidence ZIP</Button>
             <h4>3D explanation and downstream stage availability</h4>
             {reportError ? <p role="alert">{reportError}</p> : !report ? <p role="status">Loading saved-run report…</p> : <>
               <p>Run {report.analysis_run_id} · {report.model_id}</p>
               <p>{report.explanation.text}</p>
+              {report.experimental_geometry && <section aria-label="Experimental 3D geometry">
+                <VolumeMeasurementPanel candidates={report.experimental_geometry.candidates} />
+                <h4>3D centerline and mask-width analysis</h4>
+                <p>{report.experimental_geometry.paths.length} extracted paths · total traced length {report.experimental_geometry.paths.reduce((sum,path)=>sum+path.length_mm,0).toFixed(2)} mm</p>
+                <table className="stenosis-summary"><thead><tr><th>Candidate / path</th><th>Minimum width</th><th>Reference width</th><th>Narrowing</th><th>Experimental grade</th><th>RAS location (mm)</th></tr></thead>
+                  <tbody>{report.experimental_geometry.candidates.map(candidate=><tr key={candidate.id}><td>{candidate.id} / {candidate.path_id}</td><td>{candidate.minimum_diameter_mm.toFixed(2)} mm<br/>{candidate.minimum_area_mm2?.toFixed(2)} mm²</td><td>{candidate.reference_diameter_mm.toFixed(2)} mm<br/>{candidate.reference_area_mm2?.toFixed(2)} mm²</td><td>Diameter {candidate.narrowing_percent.toFixed(2)}%<br/>Area {candidate.area_narrowing_percent?.toFixed(2)}%</td><td>{candidate.severity}</td><td>{candidate.location_ras_mm.map(value=>value.toFixed(2)).join(', ')}</td></tr>)}</tbody>
+                </table>
+                {!report.experimental_geometry.candidates.length && <p>No candidate met the experimental path-length and narrowing rules.</p>}
+                {report.experimental_geometry.limitations.map(text=><p key={text}>{text}</p>)}
+              </section>}
+              {!report.experimental_geometry && <table className="stenosis-summary">
+                <caption>Selected 3D scan measurement assessment</caption>
+                <thead><tr><th scope="col">Minimum lumen</th><th scope="col">Reference lumen</th><th scope="col">Narrowing</th><th scope="col">Research severity</th></tr></thead>
+                <tbody><tr><td>Unavailable</td><td>Unavailable</td><td>Unavailable</td><td>{report.stages.severity?.status.replaceAll('_', ' ') ?? 'Unavailable'}</td></tr></tbody>
+              </table>}
               <dl>{Object.entries(report.stages).map(([name,item])=><div key={name} style={{marginBlock:'1rem'}}>
                 <dt><strong>{name.replaceAll('_',' ')} — {item.status.replaceAll('_',' ')}</strong></dt>
                 <dd style={{marginInlineStart:0}}>{item.reason}</dd>

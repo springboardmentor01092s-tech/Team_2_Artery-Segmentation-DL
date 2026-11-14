@@ -7,8 +7,8 @@ import math
 import numpy as np
 
 
-METHOD_ID = 'sgharshitha-centerline-diameter-adaptation-v1'
-METHOD_SOURCE = 'S. Gharshitha teammate pipeline: centerline distance-transform widths and nearby reference comparison'
+METHOD_ID = 'source-grid-centerline-diameter-v2'
+METHOD_SOURCE = 'Centerline distance-transform widths with nearby-reference comparison'
 
 
 def candidate_diameters(mask, image, path_xy, candidate_xyxy, *, run_id, candidate_id,
