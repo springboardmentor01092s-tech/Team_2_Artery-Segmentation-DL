@@ -1419,32 +1419,39 @@ def create_volume_analysis(case_id: str, background: BackgroundTasks, file: Uplo
     if db.scalar(select(func.count()).select_from(VolumeAnalysis).where(VolumeAnalysis.status.in_(['queued','running']))) >= 2:
         raise HTTPException(429, '3D queue is full; wait for an existing run to finish')
     filename = (file.filename or '').lower()
-    if not filename.endswith(('.nii','.nii.gz')):
-        raise HTTPException(415, 'Use a de-identified scalar NIfTI .nii or .nii.gz')
-    suffix = '.nii.gz' if filename.endswith('.gz') else '.nii'
+    if not filename.endswith(('.nii','.nii.gz','.zip')):
+        raise HTTPException(415, 'Use a de-identified scalar NIfTI or a ZIP containing exactly one CT DICOM series')
+    suffix = '.nii.gz' if filename.endswith(('.gz','.zip')) else '.nii'
     with TemporaryDirectory(prefix='corovision-3d-') as temporary:
-        source = Path(temporary)/('source'+suffix)
-        count, digest = 0, hashlib.sha256()
-        with source.open('wb') as stream:
+        temporary_path = Path(temporary)
+        upload_path = temporary_path / ('upload.zip' if filename.endswith('.zip') else 'source'+suffix)
+        count, upload_digest = 0, hashlib.sha256()
+        with upload_path.open('wb') as stream:
             while chunk := file.file.read(2*1024*1024):
                 count += len(chunk)
                 if count > VOLUME_UPLOAD_LIMIT:
-                    raise HTTPException(413, '3D NIfTI upload exceeds 384 MiB; generic preparation and 2D limits are separate')
-                digest.update(chunk)
+                    raise HTTPException(413, '3D upload exceeds 384 MiB; generic preparation and 2D limits are separate')
+                upload_digest.update(chunk)
                 stream.write(chunk)
         if count == 0:
-            raise HTTPException(413, 'Choose a non-empty NIfTI file')
+            raise HTTPException(413, 'Choose a non-empty volume file')
         try:
+            source = upload_path
+            if filename.endswith('.zip'):
+                from .volume_preprocessing import dicom_zip_to_nifti
+                source = temporary_path / 'source.nii.gz'
+                dicom_zip_to_nifti(upload_path, source, temporary_path / 'dicom-series')
             inspect_input(source)  # Header-only validation; heavy preprocessing runs once, in the job.
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         except Exception:
-            raise HTTPException(422, 'Invalid NIfTI header; require finite scalar 3D CT in millimetres, at most 96 million voxels')
+            raise HTTPException(422, 'Invalid 3D input; require one de-identified CT series or finite scalar NIfTI in millimetres')
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
         if not JOB_SLOTS.acquire(blocking=False):
             raise HTTPException(429, '3D queue is full; wait for an existing run to finish')
         try:
             row = VolumeAnalysis(id=str(uuid4()), case_id=case.id, created_by=user.id,
-                                 source_sha256=digest.hexdigest(), input_kind=input_kind, status='queued',model_key=model_key)
+                                 source_sha256=digest, input_kind=input_kind, status='queued',model_key=model_key)
             folder = STORAGE/'volumes'/row.id
             folder.mkdir(parents=True, exist_ok=False)
             shutil.copyfile(source, folder/('source'+suffix))

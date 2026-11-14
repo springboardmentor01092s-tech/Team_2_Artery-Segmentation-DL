@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.volume_preprocessing import (prepare_volume, augment_training_volume, geometry,
-                                      validate, read_volume, register_rigid)
+                                      validate, read_volume, register_rigid, dicom_zip_to_nifti)
 
 
 def volume():
@@ -126,11 +126,31 @@ def test_dicom_series_geometry_and_identifiers(tmp_path):
     np.testing.assert_allclose(image.GetSpacing(), [.7, .5, 2])
     assert image.GetOrigin() == (10, 20, 0)
     assert sitk.GetArrayFromImage(image)[0, 0, 0] == -800
+    archive_path = tmp_path / "series.zip"
+    with ZipFile(archive_path, "w") as archive:
+        for path in sorted(tmp_path.glob("slice_*.dcm")):
+            archive.write(path, f"nested/{path.name}")
+    output = tmp_path / "converted.nii.gz"
+    converted = dicom_zip_to_nifti(archive_path, output, tmp_path / "extracted")
+    assert output.is_file()
+    assert geometry(converted) == geometry(image)
     import pydicom
     path = tmp_path / "slice_0.dcm"
     ds = pydicom.dcmread(path); ds.PatientName = "Identified^Sample"; ds.save_as(path)
     with pytest.raises(ValueError, match="identifying"):
         read_volume(tmp_path)
+
+
+def test_dicom_zip_rejects_unsafe_paths_and_corruption(tmp_path):
+    unsafe = tmp_path / "unsafe.zip"
+    with ZipFile(unsafe, "w") as archive:
+        archive.writestr("../slice.dcm", b"not dicom")
+    with pytest.raises(ValueError, match="unsafe path"):
+        dicom_zip_to_nifti(unsafe, tmp_path / "out.nii.gz", tmp_path / "unsafe-extract")
+    corrupt = tmp_path / "corrupt.zip"
+    corrupt.write_bytes(b"not a zip")
+    with pytest.raises(ValueError, match="corrupt"):
+        dicom_zip_to_nifti(corrupt, tmp_path / "out2.nii.gz", tmp_path / "corrupt-extract")
 
 
 def test_volume_upload_export_and_access(tmp_path):

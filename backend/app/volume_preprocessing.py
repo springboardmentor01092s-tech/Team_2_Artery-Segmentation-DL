@@ -9,6 +9,43 @@ import numpy as np
 import SimpleITK as sitk
 
 MAX_VOXELS = 32_000_000
+MAX_DICOM_ARCHIVE_FILES = 2_000
+MAX_DICOM_ARCHIVE_EXPANDED_BYTES = 768 * 1024 * 1024
+
+
+def dicom_zip_to_nifti(archive_path: Path, output_path: Path, extraction_root: Path):
+    """Safely flatten one de-identified DICOM series ZIP and write scalar NIfTI."""
+    from zipfile import BadZipFile, ZipFile
+
+    extraction_root.mkdir(parents=True, exist_ok=False)
+    try:
+        with ZipFile(archive_path) as archive:
+            entries = [entry for entry in archive.infolist() if not entry.is_dir()]
+            if not entries or len(entries) > MAX_DICOM_ARCHIVE_FILES:
+                raise ValueError("DICOM ZIP must contain 1-2000 files")
+            expanded = sum(entry.file_size for entry in entries)
+            if expanded > MAX_DICOM_ARCHIVE_EXPANDED_BYTES:
+                raise ValueError("Expanded DICOM ZIP exceeds 768 MiB")
+            for index, entry in enumerate(entries):
+                # Unix symlink bits are unsafe even when the member name is benign.
+                if (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                    raise ValueError("DICOM ZIP symbolic links are unsupported")
+                member = Path(entry.filename)
+                if member.is_absolute() or ".." in member.parts:
+                    raise ValueError("DICOM ZIP contains an unsafe path")
+                destination = extraction_root / f"slice-{index:05d}.dcm"
+                with archive.open(entry) as source, destination.open("wb") as target:
+                    copied = 0
+                    while block := source.read(1024 * 1024):
+                        copied += len(block)
+                        if copied > entry.file_size or copied > 64 * 1024 * 1024:
+                            raise ValueError("Individual DICOM ZIP member exceeds the safe limit")
+                        target.write(block)
+    except BadZipFile as exc:
+        raise ValueError("Unreadable or corrupt DICOM ZIP") from exc
+    image = read_volume(extraction_root)
+    sitk.WriteImage(image, str(output_path), useCompression=True)
+    return image
 
 
 def geometry(image):

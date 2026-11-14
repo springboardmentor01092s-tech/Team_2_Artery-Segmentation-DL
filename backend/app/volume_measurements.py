@@ -10,6 +10,8 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt, convolve, map_coordinates, label
 from skimage.morphology import skeletonize
 
+METHOD = 'lee-skeleton-perpendicular-sections-v3'
+
 
 def cross_section(mask, affine, center, tangent, radius_mm=12, step_mm=.25):
     """Sample a physical plane and retain the lumen component at its centre."""
@@ -48,10 +50,11 @@ def saved_measurement(path):
     """Reuse geometry only when both its source hash and method match."""
     path = Path(path)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    cache = path.parent / f'geometry-sections-v2-{digest}.json'
+    cache = path.parent / f'geometry-sections-v3-{digest}.json'
     if cache.is_file():
         result = json.loads(cache.read_text())
-        if result.get('mask_sha256') == digest:
+        if (result.get('mask_sha256') == digest
+                and result.get('method') == METHOD):
             return result
     result = measure(path)
     result['mask_sha256'] = digest
@@ -66,9 +69,22 @@ def measure(path):
     path = Path(path)
     image = nib.load(path)
     mask = np.asarray(image.dataobj) > 0
+    component_labels, component_count = label(mask, np.ones((3, 3, 3), dtype=np.uint8))
+    component_sizes = sorted(np.bincount(component_labels.ravel())[1:].astype(int).tolist(), reverse=True)
     occupied = np.where(mask)
     if not occupied[0].size:
-        return dict(status='empty_mask', paths=[], candidates=[])
+        return dict(status='abstained', method=METHOD, reasons=['empty_prediction'], component_count=0,
+                    component_sizes_voxels=[], paths=[], candidates=[], clinical_validated=False)
+    if component_count != 1:
+        return dict(status='abstained', method=METHOD, reasons=['disconnected_prediction'],
+                    component_count=int(component_count), component_sizes_voxels=component_sizes,
+                    paths=[], candidates=[], clinical_validated=False,
+                    measurement_scope='withheld_before_centerline_or_stenosis_measurement')
+    if any(np.take(mask, index, axis=axis).any() for axis in range(3) for index in (0, -1)):
+        return dict(status='abstained', method=METHOD, reasons=['prediction_touches_volume_boundary'],
+                    component_count=1, component_sizes_voxels=component_sizes,
+                    paths=[], candidates=[], clinical_validated=False,
+                    measurement_scope='withheld_before_centerline_or_stenosis_measurement')
     origin = np.array([axis.min() for axis in occupied])
     end = np.array([axis.max()+1 for axis in occupied])
     slices = tuple(slice(int(a), int(b)) for a, b in zip(origin, end))
@@ -145,7 +161,7 @@ def measure(path):
             area_narrowing_percent=max(0,(1-sections[0]['area_mm2']/sections[1]['area_mm2'])*100),
             cross_sections=sections, protocol_id='CCTA_GEOMETRY_RESEARCH_V1',
             uncertainty_status='not_quantified', reference_status='experimental_path_percentile_selection'))
-    return dict(status='experimental_mask_geometry', method='lee-skeleton-perpendicular-sections-v2',
+    return dict(status='experimental_mask_geometry', method=METHOD,
         mask_sha256=hashlib.sha256(Path(path).read_bytes()).hexdigest(),
         paths=paths, candidates=candidates, unit='mm', clinical_validated=False,
         limitations=['Path profiles use EDT widths. Candidate diameters use area-equivalent perpendicular sections.',
