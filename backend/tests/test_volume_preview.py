@@ -27,6 +27,8 @@ def test_preview_preserves_component_identity_and_orders_largest(tmp_path):
     assert result['voxel_spacing_mm'] == [.7, .8, 1.5]
     assert result['quality_status'] == 'abstained_disconnected_prediction'
     assert result['measurement_eligible'] is False
+    assert result['mesh']['vertices'] and result['mesh']['faces']
+    assert max(max(face) for face in result['mesh']['faces']) < len(result['mesh']['vertices'])
     assert len(result['points']) == sum(len(item['points']) for item in result['components'])
     assert max(abs(value) for point in result['points'] for value in point) <= 1
 

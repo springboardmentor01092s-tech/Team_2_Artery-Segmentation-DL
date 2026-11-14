@@ -3,6 +3,7 @@ from threading import BoundedSemaphore
 
 PREVIEW_SLOTS = BoundedSemaphore(1)
 MAX_PREVIEW_POINTS = 16_000
+MAX_PREVIEW_FACES = 20_000
 
 
 def mask_preview(path):
@@ -26,7 +27,7 @@ def mask_preview(path):
                 'isolated_fragment_voxels': 0, 'isolated_fragment_volume_mm3': 0,
                 'voxel_spacing_mm': nib.affines.voxel_sizes(image.affine).round(6).tolist(),
                 'quality_status': 'abstained_empty_prediction', 'measurement_eligible': False,
-                'components': [], 'points': []}
+                'mesh': {'vertices': [], 'faces': []}, 'components': [], 'points': []}
 
     from scipy.ndimage import label
     labels, component_count = label(source_mask, structure=np.ones((3, 3, 3), dtype=np.uint8))
@@ -40,6 +41,29 @@ def mask_preview(path):
     centre = (occupied_world.min(axis=0) + occupied_world.max(axis=0)) / 2
     radius = np.linalg.norm(occupied_world - centre, axis=1).max()
     radius = float(radius or 1)
+
+    # Extract an actual bounded isosurface from the preserved binary mask. The
+    # point sample remains for older clients and as a low-cost fallback.
+    mesh = {'vertices': [], 'faces': []}
+    if min(source_mask.shape) >= 2:
+        from skimage.measure import marching_cubes
+        lower = np.maximum(occupied.min(axis=0) - 1, 0)
+        upper = np.minimum(occupied.max(axis=0) + 2, source_mask.shape)
+        cropped = source_mask[tuple(slice(int(a), int(b)) for a, b in zip(lower, upper))]
+        padded = np.pad(cropped.astype(np.uint8), 1)
+        vertices, faces, _, _ = marching_cubes(padded, level=.5)
+        vertices += lower - 1
+        world_vertices = nib.affines.apply_affine(image.affine, vertices)
+        normalized = ((world_vertices - centre) / radius).round(5)
+        if len(faces) > MAX_PREVIEW_FACES:
+            selected_faces = np.linspace(0, len(faces)-1, MAX_PREVIEW_FACES, dtype=np.int64)
+            faces = faces[selected_faces]
+            used = np.unique(faces)
+            remap = np.full(len(vertices), -1, dtype=np.int64)
+            remap[used] = np.arange(len(used))
+            normalized = normalized[used]
+            faces = remap[faces]
+        mesh = {'vertices': normalized.tolist(), 'faces': faces.astype(int).tolist()}
 
     components = []
     remaining = MAX_PREVIEW_POINTS
@@ -75,6 +99,7 @@ def mask_preview(path):
             'quality_status': 'abstained_disconnected_prediction' if component_count > 1
                               else 'research_geometry_only',
             'measurement_eligible': component_count == 1,
+            'mesh': mesh,
             'components': components,
             # Preserve the legacy field for older clients.
             'points': [point for component in components for point in component['points']]}

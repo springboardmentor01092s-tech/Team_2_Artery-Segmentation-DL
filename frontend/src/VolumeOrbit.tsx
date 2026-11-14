@@ -6,6 +6,7 @@ type Point = [number, number, number];
 type Slice = { axis: string; coarse_index: number; artifact: string };
 type MaskComponent = { id: number; foreground_voxels: number; points: Point[] };
 type MaskQuality = { largestFraction: number; fragmentVoxels: number; fragmentVolumeMm3: number };
+type SurfaceMesh = { vertices: Point[]; faces: [number, number, number][] };
 const initialView = { yaw: .5, pitch: -.25, zoom: 1 };
 const turn = Math.PI / 12;
 const presets = [
@@ -25,6 +26,7 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
   const [showAllComponents, setShowAllComponents] = useState(false);
   const [foregroundVoxels, setForegroundVoxels] = useState(0);
   const [maskQuality, setMaskQuality] = useState<MaskQuality | null>(null);
+  const [mesh, setMesh] = useState<SurfaceMesh>({ vertices: [], faces: [] });
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState(initialView);
@@ -50,6 +52,7 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
           fragmentVoxels: Number(data.isolated_fragment_voxels || 0),
           fragmentVolumeMm3: Number(data.isolated_fragment_volume_mm3 || 0),
         });
+        setMesh((data.mesh || { vertices: [], faces: [] }) as SurfaceMesh);
         return (listed.length ? listed[0].points : data.points) as Point[];
       })
       .then(result => { if (!controller.signal.aborted) setPoints(result); })
@@ -97,21 +100,37 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
           line([-1, offset, -.95], [1, offset, -.95], '#365367');
         }
       }
-      const projected = points.map(project);
-      projected.sort((a, b) => a[2] - b[2]);
-      const size = Math.max(1.5, Math.min(4.5, 3.2 * view.zoom));
-      for (const [x, y, depth] of projected) {
-        context.fillStyle = `hsl(188 76% ${Math.round(49 + depth * 24)}%)`;
-        context.beginPath();
-        context.arc(width / 2 + x * scale, height / 2 - y * scale, size / 2, 0, Math.PI * 2);
-        context.fill();
+      if (mesh.vertices.length && mesh.faces.length) {
+        const vertices = mesh.vertices.map(project);
+        const faces = mesh.faces.map(face => ({ face, depth: face.reduce((sum, index) => sum + vertices[index][2], 0) / 3 }));
+        faces.sort((a, b) => a.depth - b.depth);
+        for (const { face, depth } of faces) {
+          const triangle = face.map(index => position(vertices[index]));
+          context.beginPath();
+          context.moveTo(...triangle[0]);
+          context.lineTo(...triangle[1]);
+          context.lineTo(...triangle[2]);
+          context.closePath();
+          context.fillStyle = `hsl(188 70% ${Math.round(42 + depth * 18)}%)`;
+          context.fill();
+        }
+      } else {
+        const projected = points.map(project);
+        projected.sort((a, b) => a[2] - b[2]);
+        const size = Math.max(1.5, Math.min(4.5, 3.2 * view.zoom));
+        for (const [x, y, depth] of projected) {
+          context.fillStyle = `hsl(188 76% ${Math.round(49 + depth * 24)}%)`;
+          context.beginPath();
+          context.arc(width / 2 + x * scale, height / 2 - y * scale, size / 2, 0, Math.PI * 2);
+          context.fill();
+        }
       }
     };
     draw();
     const observer = new ResizeObserver(draw);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [points, view, grid]);
+  }, [points, mesh, view, grid]);
 
   function rotate(yaw: number, pitch: number) {
     setView(current => ({ ...current, yaw: (current.yaw + yaw) % (2 * Math.PI),
@@ -124,7 +143,7 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
 
   return <div className="volume-orbit">
     <div className="volume-orbit-stage">
-    <div className="volume-orbit-heading"><strong>Vessel viewport</strong><span>Predicted mask · Research use</span></div>
+    <div className="volume-orbit-heading"><strong>Vessel surface viewport</strong><span>Saved predicted-mask mesh · Research use</span></div>
     <canvas ref={canvas} className="volume-orbit-canvas" tabIndex={0}
       aria-label="Interactive 3D vessel mask. Use arrow keys to rotate."
       onKeyDown={event => {
@@ -194,7 +213,7 @@ export default function VolumeOrbit({ url, token, runId, shape, slices, previews
     <section aria-label="Saved run details">
       <h4>Saved run</h4>
       <p className="volume-orbit-run">{runId}</p>
-      <p className="caption">Source grid {shape.join(' × ')} voxels. The viewport samples the predicted mask. Use the full mask download for detailed review.</p>
+      <p className="caption">Source grid {shape.join(' × ')} voxels. The viewport renders a bounded surface extracted from the saved prediction. Use the full mask download for detailed review.</p>
     </section>
     </aside>
   </div>;
