@@ -1,5 +1,8 @@
 """Independent binary baselines for DCA and ARCADE, with resume and locked test."""
 import argparse, json, random, time, platform
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+from segmentation_metrics import boundary_metrics
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageOps
@@ -76,8 +79,8 @@ def evaluate(model,loader,device):
         p=model(x.to(device)).sigmoid().cpu()>=.5; g=y>=.5
         for i,k in enumerate(ids):
             tp=int((p[i]&g[i]).sum()); fp=int((p[i]&~g[i]).sum()); fn=int((~p[i]&g[i]).sum()); tn=int((~p[i]&~g[i]).sum())
-            rows.append({'id':k,'dice':2*tp/(2*tp+fp+fn) if 2*tp+fp+fn else 1.,'iou':tp/(tp+fp+fn) if tp+fp+fn else 1.,'precision':tp/(tp+fp) if tp+fp else None,'recall':tp/(tp+fn) if tp+fn else None,'specificity':tn/(tn+fp) if tn+fp else None,'tp':tp,'fp':fp,'fn':fn,'tn':tn})
-    summary={k:float(np.mean([r[k] for r in rows if r[k] is not None])) if any(r[k] is not None for r in rows) else None for k in ['dice','iou','precision','recall','specificity']}
+            rows.append({'id':k,'dice':2*tp/(2*tp+fp+fn) if 2*tp+fp+fn else 1.,'iou':tp/(tp+fp+fn) if tp+fp+fn else 1.,'precision':tp/(tp+fp) if tp+fp else None,'recall':tp/(tp+fn) if tp+fn else None,'specificity':tn/(tn+fp) if tn+fp else None,'tp':tp,'fp':fp,'fn':fn,'tn':tn,**boundary_metrics(p[i].numpy().squeeze(),g[i].numpy().squeeze())})
+    summary={k:float(np.mean([r[k] for r in rows if r[k] is not None])) if any(r[k] is not None for r in rows) else None for k in ['dice','iou','precision','recall','specificity','hausdorff','hd95','assd']}
     summary['cases']=len(rows); summary['resolution']=loader.dataset.size; summary['threshold']=.5
     return summary,rows
 

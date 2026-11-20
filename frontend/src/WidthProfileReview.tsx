@@ -43,7 +43,7 @@ export default function WidthProfileReview({ value, runId, expanded = false, can
         <text x="45" y="20" fill="currentColor">Mask width (source pixels), maximum {ymax.toFixed(2)}</text>
         <text x="480" y="198" fill="currentColor">{xmax.toFixed(2)}</text>
       </svg>
-      <p className="caption">{samples.length} saved samples · coordinate frame {String(profile?.coordinate_frame)} · method {String(profile?.method)}</p>
+      <details className="tech-details"><summary>Technical details</summary><p className="caption">{samples.length} saved samples · coordinate frame {String(profile?.coordinate_frame)} · method {String(profile?.method)}</p></details>
       <p className="caption">{samples.filter(s => Array.isArray(s.quality_flags) && s.quality_flags.length).length} samples have branch/border review flags. Review individual flags in the evidence download.</p>
     </> : <p className="caption">{candidateId ? 'No candidate-linked width profile was saved for this region. Whole-vessel profiles are not substituted for lesion measurements.' : 'No usable open paths were saved. This does not establish absence of disease.'}</p>}
     <p className="caption">Rejected paths: {Array.isArray(bundle.rejected_paths) ? bundle.rejected_paths.length : 0}. Uncertainty and reference-lumen validation remain unavailable.</p>

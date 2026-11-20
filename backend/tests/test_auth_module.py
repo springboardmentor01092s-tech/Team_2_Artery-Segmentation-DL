@@ -89,7 +89,18 @@ def test_remembered_session_lasts_longer_on_local_demo():
         if LOCAL_DEMO_SESSIONS:
             assert 29 < remaining_days < 31
         else:
-            assert 0 < remaining_days < 1
+            # Normal authenticated browser-tab sessions must cover the requested
+            # five-hour-plus demonstration window, even if configuration is bad.
+            assert (remaining_days * 24 * 60) >= 308
+            assert remaining_days < 1
+
+
+def test_normal_session_configuration_never_allows_less_than_309_minutes(monkeypatch):
+    from app.security import configured_session_minutes
+    monkeypatch.setenv("SESSION_MINUTES", "1")
+    assert configured_session_minutes() == 309
+    monkeypatch.setenv("SESSION_MINUTES", "invalid")
+    assert configured_session_minutes() == 480
 
 
 def test_admin_role_assignment_and_case_restriction():

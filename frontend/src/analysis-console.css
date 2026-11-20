@@ -19,6 +19,9 @@
 .analysis-console .workbench-toolbar button { background:#222a35; color:#e1e9f6; border:1px solid #3a4555; border-radius:5px; min-height:36px; }
 .analysis-console .workbench-toolbar button:disabled { opacity:.35; }
 .analysis-console .workbench-viewer-panel > .caption, .analysis-console .workbench-opacity { grid-column:1/-1; color:var(--console-muted); font-size:11px; line-height:1.6; margin:0; }
+.analysis-console .workbench-viewer-notes { grid-column:1/-1; min-width:0; display:grid; gap:12px; overflow-wrap:anywhere; }
+.analysis-console .workbench-viewer-notes > .caption { color:var(--console-muted); margin:0; }
+.analysis-console .workbench-viewer-notes > .evidence-details { padding:0 12px 10px; border:1px solid var(--console-line); border-radius:8px; }
 .analysis-console .workbench-findings { border-left:1px solid var(--console-line)!important; }
 .analysis-inspector-heading { border-bottom:1px solid var(--console-line); margin-bottom:16px; padding-bottom:14px; }
 .analysis-inspector-heading .eyebrow { color:#88caff; font-size:10px; letter-spacing:.14em; }

@@ -1,0 +1,410 @@
+[
+  {
+    "id": "4d341199-2b78-4e3b-9545-5175034dc622",
+    "owner_id": "754425df-5219-4b17-86a8-07cc83c5d394",
+    "assigned_doctors": [
+      {
+        "id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+        "name": "Demo Radiologist",
+        "role": "clinician"
+      },
+      {
+        "id": "982913b5-2b4b-45dd-972a-6500b3a15991",
+        "name": "Demo Doctor",
+        "role": "doctor"
+      }
+    ],
+    "case_code": "PUBLIC-CTA-CHECK-ddf29e",
+    "patient_code": null,
+    "age_band": null,
+    "gender": null,
+    "medical_history": [],
+    "risk_factors": [],
+    "clinical_notes": null,
+    "scan_date": null,
+    "modality": "CTA",
+    "modalities": [
+      "CTA"
+    ],
+    "intended_tasks": [
+      "volume_preparation"
+    ],
+    "processing_routes": [
+      {
+        "modality": "CTA",
+        "intended_task": "volume_preparation",
+        "pipeline": "volume_preparation_export"
+      }
+    ],
+    "anatomy": "coronary",
+    "intended_task": "volume_preparation",
+    "source_dataset": "3D Slicer CTACardio public research test sample",
+    "source_reference": "SlicerTestingData SHA256 3b0d4eb1a7d8ebb0c5a89cc0504640f76a030b4e869e33ff34c564c3d3b88ad2",
+    "clinical_metadata_enabled": false,
+    "inference_compatible": false,
+    "status": "created",
+    "workflow_status": "draft",
+    "processing_status": "not_started",
+    "report_status": "draft",
+    "report_version": 0,
+    "report_approved_by": null,
+    "report_approved_at": null,
+    "permissions": {
+      "can_edit": false,
+      "can_upload": false,
+      "can_run_analysis": false,
+      "can_review": false,
+      "can_export": false,
+      "can_assign": false,
+      "can_delete": false,
+      "can_submit_report": false,
+      "can_approve_report": false
+    },
+    "notes": null,
+    "created_at": "2026-10-25T15:57:49.264689",
+    "reviews": [],
+    "latest_review": null,
+    "report_revisions": [],
+    "comments": [],
+    "images": []
+  },
+  {
+    "id": "11abaebb-9f5f-4574-ac89-ac75a6370937",
+    "owner_id": "754425df-5219-4b17-86a8-07cc83c5d394",
+    "assigned_doctors": [
+      {
+        "id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+        "name": "Demo Radiologist",
+        "role": "clinician"
+      },
+      {
+        "id": "982913b5-2b4b-45dd-972a-6500b3a15991",
+        "name": "Demo Doctor",
+        "role": "doctor"
+      }
+    ],
+    "case_code": "SYNTHETIC-3D-CHECK-603d5a",
+    "patient_code": null,
+    "age_band": null,
+    "gender": null,
+    "medical_history": [],
+    "risk_factors": [],
+    "clinical_notes": null,
+    "scan_date": null,
+    "modality": "CTA",
+    "modalities": [
+      "CTA"
+    ],
+    "intended_tasks": [
+      "volume_preparation"
+    ],
+    "processing_routes": [
+      {
+        "modality": "CTA",
+        "intended_task": "volume_preparation",
+        "pipeline": "volume_preparation_export"
+      }
+    ],
+    "anatomy": "coronary",
+    "intended_task": "volume_preparation",
+    "source_dataset": "Synthetic geometry acceptance fixture \u2014 not patient data",
+    "source_reference": null,
+    "clinical_metadata_enabled": false,
+    "inference_compatible": false,
+    "status": "created",
+    "workflow_status": "draft",
+    "processing_status": "not_started",
+    "report_status": "draft",
+    "report_version": 0,
+    "report_approved_by": null,
+    "report_approved_at": null,
+    "permissions": {
+      "can_edit": false,
+      "can_upload": false,
+      "can_run_analysis": false,
+      "can_review": false,
+      "can_export": false,
+      "can_assign": false,
+      "can_delete": false,
+      "can_submit_report": false,
+      "can_approve_report": false
+    },
+    "notes": null,
+    "created_at": "2026-10-25T12:59:36.408403",
+    "reviews": [],
+    "latest_review": null,
+    "report_revisions": [],
+    "comments": [],
+    "images": []
+  },
+  {
+    "id": "b43834ff-1641-478d-a89e-06068d265b81",
+    "owner_id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+    "assigned_doctors": [
+      {
+        "id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+        "name": "Demo Radiologist",
+        "role": "clinician"
+      },
+      {
+        "id": "982913b5-2b4b-45dd-972a-6500b3a15991",
+        "name": "Demo Doctor",
+        "role": "doctor"
+      }
+    ],
+    "case_code": "PUBLIC-ARCADE-CHECK-5ddc8f",
+    "patient_code": null,
+    "age_band": null,
+    "gender": null,
+    "medical_history": [],
+    "risk_factors": [],
+    "clinical_notes": null,
+    "scan_date": null,
+    "modality": "XCA",
+    "modalities": [
+      "XCA"
+    ],
+    "intended_tasks": [
+      "artery_and_stenosis"
+    ],
+    "processing_routes": [
+      {
+        "modality": "XCA",
+        "intended_task": "artery_and_stenosis",
+        "pipeline": "xca_2d"
+      }
+    ],
+    "anatomy": "coronary",
+    "intended_task": "artery_and_stenosis",
+    "source_dataset": null,
+    "source_reference": null,
+    "clinical_metadata_enabled": false,
+    "inference_compatible": true,
+    "status": "analyzed",
+    "workflow_status": "pending_review",
+    "processing_status": "completed",
+    "report_status": "draft",
+    "report_version": 0,
+    "report_approved_by": null,
+    "report_approved_at": null,
+    "permissions": {
+      "can_edit": false,
+      "can_upload": false,
+      "can_run_analysis": false,
+      "can_review": false,
+      "can_export": false,
+      "can_assign": false,
+      "can_delete": false,
+      "can_submit_report": false,
+      "can_approve_report": false
+    },
+    "notes": null,
+    "created_at": "2026-10-25T10:29:26.844174",
+    "reviews": [
+      {
+        "id": "87c4b044-4a8f-4867-975f-0840d7d9accc",
+        "version": 1,
+        "case_id": "b43834ff-1641-478d-a89e-06068d265b81",
+        "reviewer_id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+        "reviewer_name": "Demo Radiologist",
+        "reviewer_role": "clinician",
+        "analysis_event_id": "88554854-018a-4737-9f68-a392521756bc",
+        "image_id": "31bbef13-f350-4cfa-adc2-eb5afe6012ff",
+        "decision": "reviewed",
+        "stenosis_severity": "insufficient_evidence",
+        "notes": "Integration verification on a public ARCADE test image only. Insufficient validated reference-diameter evidence for severity; this entry is a workflow test, not a medical assessment.",
+        "created_at": "2026-10-25T12:06:12.053142+00:00"
+      }
+    ],
+    "latest_review": {
+      "id": "87c4b044-4a8f-4867-975f-0840d7d9accc",
+      "version": 1,
+      "case_id": "b43834ff-1641-478d-a89e-06068d265b81",
+      "reviewer_id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+      "reviewer_name": "Demo Radiologist",
+      "reviewer_role": "clinician",
+      "analysis_event_id": "88554854-018a-4737-9f68-a392521756bc",
+      "image_id": "31bbef13-f350-4cfa-adc2-eb5afe6012ff",
+      "decision": "reviewed",
+      "stenosis_severity": "insufficient_evidence",
+      "notes": "Integration verification on a public ARCADE test image only. Insufficient validated reference-diameter evidence for severity; this entry is a workflow test, not a medical assessment.",
+      "created_at": "2026-10-25T12:06:12.053142+00:00"
+    },
+    "report_revisions": [],
+    "comments": [],
+    "images": [
+      {
+        "id": "31bbef13-f350-4cfa-adc2-eb5afe6012ff",
+        "original_name": "public-arcade-validation.png",
+        "width": 512,
+        "height": 512,
+        "modality": "XCA",
+        "spacing_mm": null,
+        "processed_spacing_mm": null,
+        "roi_box": null,
+        "frame_index": null,
+        "page_index": null,
+        "latest_analysis_id": "b56f26a2-a737-44ad-898d-c2b71a2fca89",
+        "preprocessing": [
+          "file_type_and_size_validation",
+          "exact_duplicate_check",
+          "grayscale_conversion",
+          "preserved_model_bilinear_resize_and_pad",
+          "save_lossless_png_preview"
+        ],
+        "processing_record": {
+          "modality": "XCA",
+          "modality_source": "operator_declared",
+          "intended_tasks": [
+            "artery_and_stenosis"
+          ],
+          "pipeline_version": "2.2",
+          "standard_pipeline": "baseline",
+          "request_signature": {
+            "profile": "standard",
+            "standard_pipeline": "baseline",
+            "model_resize": true,
+            "denoise": false,
+            "enhance": false,
+            "roi_box": null,
+            "frame_index": null,
+            "page_index": null
+          },
+          "resize_geometry": {
+            "content_size_xy": [
+              512,
+              512
+            ],
+            "padding_left_top_xy": [
+              0,
+              0
+            ],
+            "source_roi_origin_xy": [
+              0,
+              0
+            ],
+            "source_pixels_per_content_pixel_xy": [
+              1.0,
+              1.0
+            ]
+          },
+          "model_input_resize": "PIL.ImageOps.pad/BILINEAR",
+          "profile": "standard",
+          "options": {
+            "denoise": false,
+            "contrast_enhancement": false
+          },
+          "source_format": "image/png",
+          "source_dimensions": {
+            "width": 512,
+            "height": 512
+          },
+          "target_size": 512,
+          "roi_box_xyxy": null,
+          "frame_index": null,
+          "page_index": null,
+          "source_sha256": "748a2d4fcd2df8a11e5c1b836abbdf5201d21f75be808e0e71865ef8cda7bf55",
+          "processed_sha256": "31ebb4d16b4966a56f35007d089eedc1d4467458e2b5a029f855b39e450f7542",
+          "steps": [
+            "file_type_and_size_validation",
+            "exact_duplicate_check",
+            "grayscale_conversion",
+            "preserved_model_bilinear_resize_and_pad",
+            "save_lossless_png_preview"
+          ],
+          "warnings": [
+            "physical_pixel_spacing_unavailable"
+          ],
+          "created_at": "2026-10-25T10:29:26.868624+00:00"
+        },
+        "preview_url": "/api/images/31bbef13-f350-4cfa-adc2-eb5afe6012ff/preview",
+        "source_url": "/api/images/31bbef13-f350-4cfa-adc2-eb5afe6012ff/source"
+      }
+    ]
+  },
+  {
+    "id": "5cc29288-3835-45d4-ac24-bce048af70a8",
+    "owner_id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+    "assigned_doctors": [
+      {
+        "id": "1ab628f8-0f51-4f96-9436-947909d235e1",
+        "name": "Demo Radiologist",
+        "role": "clinician"
+      },
+      {
+        "id": "982913b5-2b4b-45dd-972a-6500b3a15991",
+        "name": "Demo Doctor",
+        "role": "doctor"
+      }
+    ],
+    "case_code": "CASE-001",
+    "patient_code": "ID-001",
+    "age_band": "30_39",
+    "gender": "male",
+    "medical_history": [
+      "diabetes"
+    ],
+    "risk_factors": [
+      "sedentary"
+    ],
+    "clinical_notes": null,
+    "scan_date": "2026-10-24",
+    "modality": "XCA",
+    "modalities": [
+      "XCA"
+    ],
+    "intended_tasks": [
+      "artery_segmentation",
+      "artery_and_stenosis",
+      "stenosis_localization"
+    ],
+    "processing_routes": [
+      {
+        "modality": "XCA",
+        "intended_task": "artery_segmentation",
+        "pipeline": "xca_2d"
+      },
+      {
+        "modality": "XCA",
+        "intended_task": "artery_and_stenosis",
+        "pipeline": "xca_2d"
+      },
+      {
+        "modality": "XCA",
+        "intended_task": "stenosis_localization",
+        "pipeline": "xca_2d"
+      }
+    ],
+    "anatomy": "coronary",
+    "intended_task": "artery_segmentation",
+    "source_dataset": null,
+    "source_reference": null,
+    "clinical_metadata_enabled": true,
+    "inference_compatible": true,
+    "status": "created",
+    "workflow_status": "draft",
+    "processing_status": "not_started",
+    "report_status": "draft",
+    "report_version": 0,
+    "report_approved_by": null,
+    "report_approved_at": null,
+    "permissions": {
+      "can_edit": false,
+      "can_upload": false,
+      "can_run_analysis": false,
+      "can_review": false,
+      "can_export": false,
+      "can_assign": false,
+      "can_delete": false,
+      "can_submit_report": false,
+      "can_approve_report": false
+    },
+    "notes": null,
+    "created_at": "2026-10-24T06:42:50.733897",
+    "reviews": [],
+    "latest_review": null,
+    "report_revisions": [],
+    "comments": [],
+    "images": []
+  }
+]

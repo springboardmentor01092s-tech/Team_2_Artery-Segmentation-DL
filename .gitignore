@@ -57,3 +57,9 @@ backend/tests/test_arcade_instance_dataset.py
 docs/*TRAINING*.md
 docs/FREE_GPU_EXECUTION_*.md
 external_artifacts/
+
+# Local presentation build workspaces and audit scratch
+.codex-build/
+audit_tests/
+*.mp4
+final_artifacts/*.pptx

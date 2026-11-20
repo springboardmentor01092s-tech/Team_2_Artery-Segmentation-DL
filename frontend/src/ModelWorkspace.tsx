@@ -16,6 +16,7 @@ export type ModelStatus = {
   validation: Record<string, { validation_dice: number; mean_image_pixel_f1?: number; selection_score?: number; validation_images: number }>;
   research_only: boolean;
   comparison?: {
+    limitations?: string;
     experiments?: Array<{
       task: string;
       architecture: string;
@@ -56,7 +57,7 @@ function EvaluationSection({ title, children }: { title: string; children: React
 }
 
 export default function ModelWorkspace({ token }: { token: string }) {
-  const [panel,setPanel]=useState<"progress"|"evaluation">("progress");
+  const [panel,setPanel]=useState<"progress"|"evaluation"|"training">("progress");
   const [status, setStatus] = useState<ModelStatus | null>(null);
   const [error, setError] = useState("");
   const [registry, setRegistry] = useState<ModelRegistry | null>(null);
@@ -90,16 +91,26 @@ export default function ModelWorkspace({ token }: { token: string }) {
     finally { setActivationBusy(false); }
   }
 
-  const navigation=<nav className="research-view-nav" aria-label="Model workspace views"><button aria-pressed={panel==="progress"} onClick={()=>setPanel("progress")}>Demonstration &amp; verification</button><button aria-pressed={panel==="evaluation"} onClick={()=>setPanel("evaluation")}>Model evaluation</button></nav>;
+  const navigation = <nav className="research-view-nav" aria-label="Model workspace views">
+    <button aria-pressed={panel === "progress"} onClick={() => setPanel("progress")}>Demonstration &amp; verification</button>
+    <button aria-pressed={panel === "evaluation"} onClick={() => setPanel("evaluation")}>Model evaluation</button>
+    <button aria-pressed={panel === "training"} onClick={() => setPanel("training")}>Training &amp; validation</button>
+  </nav>;
+  if (panel === "training") return <div className="settings-page model-workspace">
+    <div className="page-heading"><div><p className="eyebrow">RESEARCH EVIDENCE</p><h2>Training &amp; validation</h2></div></div>
+    {navigation}
+    <p className="muted">Import results from external runs to inspect recorded epochs, validation metrics, dataset provenance, and checkpoint identity. Use Model evaluation to see which checkpoints serve inference.</p>
+    <ExperimentLab token={token} />
+  </div>;
   if(panel==="progress")return <div className="settings-page model-workspace"><div className="page-heading"><div><p className="eyebrow">RESEARCH EVIDENCE</p><h2>Demonstration &amp; verification</h2></div><span className="stage-badge">Research only</span></div>{navigation}<ResearchProgress token={token}/></div>;
   return <div className="settings-page model-workspace">
     <div className="page-heading"><div><p className="eyebrow">RESEARCH EVALUATION</p><h2>Model Evaluation</h2></div><span className="stage-badge">Research only</span></div>
     {navigation}
     <p className="muted">Review the installed 2D and 3D research models, source datasets, recorded evaluations and checkpoint identities.</p>
-    <EvaluationSection title="Final application models and datasets">
+    <EvaluationSection title="Connected application models and datasets">
       <div className="table-scroll"><table><caption>Current application registry</caption>
         <thead><tr><th>Model / task</th><th>Dataset</th><th>Dimension</th><th>Modality / anatomy</th><th>Installation</th><th>Checkpoint SHA256</th></tr></thead>
-        <tbody>{status?.task_connections?.map(model => <tr key={model.id}>
+        <tbody>{status?.task_connections?.filter(model => model.connected).map(model => <tr key={model.id}>
           <th scope="row">{model.title}</th>
           <td>{model.id.startsWith('cadica') ? 'CADICA' : model.id.startsWith('imagecasx') ? 'ImageCAS-X' : model.id === 'imagecas' ? 'ImageCAS' : model.id.startsWith('aorta') ? 'AortaSeg · aligned pseudo-label subset' : model.id.startsWith('dca') ? 'DCA' : model.id.startsWith('archive') ? 'Stenosis box archive' : model.id.startsWith('hepatic') ? 'Hepatic source package' : 'ARCADE'}</td>
           <td>{model.dimension}</td><td>{model.modality} · {model.anatomy}</td>
@@ -108,9 +119,9 @@ export default function ModelWorkspace({ token }: { token: string }) {
         </tr>)}</tbody>
       </table></div>
       {!status && <p role="status">Loading installed model registry…</p>}
+      {status && !status.task_connections?.some(model => model.connected) && <p>No connected tasks reported by the runtime.</p>}
       <p className="caption">Recorded evaluation metrics and their dataset splits appear below. Installation status follows the current checkpoint registry.</p>
     </EvaluationSection>
-    <ExperimentLab token={token} />
     <EvaluationSection title="Retained model results">
       <div className="table-scroll"><table><caption>Saved selection evidence · MODEL_SELECTION_20261113.md</caption>
         <thead><tr><th>Dataset / task</th><th>Selected model</th><th>Recorded metric</th><th>Evaluation scope</th></tr></thead>
@@ -125,7 +136,7 @@ export default function ModelWorkspace({ token }: { token: string }) {
     <EvaluationSection title="Pinned release report explorer"><EvaluationExplorer token={token} /></EvaluationSection>
 
     {status?.trained_release?.research_evidence && <section aria-labelledby="dataset-results-heading" className="evaluation-datasets">
-      <div><h3 id="dataset-results-heading">Results by dataset & task</h3><p className="muted">Open a task to explore its results, validation data and limitations.</p><p className="caption">{status.trained_release.research_evidence.scope}</p></div>
+      <div><h3 id="dataset-results-heading">Archived research evidence</h3><p className="muted">These records describe past experiments. See the connected application models above for current availability.</p><p className="caption">{status.trained_release.research_evidence.scope}</p></div>
       <div className="evaluation-task-grid">{status.trained_release.research_evidence.tasks.map(task =>
         <details className="evaluation-task" key={task.task_id}>
           <summary><span><strong>{task.title}</strong><small>{task.inference_connected ? "Connected research adapter" : "Research evidence only / excluded"}</small></span><span className="evaluation-chevron" aria-hidden="true">⌄</span></summary>

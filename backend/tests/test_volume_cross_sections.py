@@ -74,3 +74,16 @@ def test_taper_disagreement_does_not_create_candidate(tmp_path):
     path = tmp_path / 'taper.nii.gz'
     nib.save(image, path)
     assert measure(path)['candidates'] == []
+
+
+def test_short_path_without_reference_window_is_retained_without_crashing(tmp_path):
+    mask = np.zeros((35, 35, 35), dtype=np.uint8)
+    mask[15:20, 15:20, 4:31] = 1
+    image = nib.Nifti1Image(mask, np.eye(4))
+    image.header.set_xyzt_units('mm')
+    path = tmp_path / 'short-reference-window.nii.gz'
+    nib.save(image, path)
+    result = measure(path)
+    assert result['status'] == 'experimental_mask_geometry'
+    assert result['paths']
+    assert result['candidates'] == []

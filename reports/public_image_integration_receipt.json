@@ -1,0 +1,53 @@
+{
+  "case_code": "PUBLIC-ARCADE-CHECK-5ddc8f",
+  "case_id": "b43834ff-1641-478d-a89e-06068d265b81",
+  "asset_id": "31bbef13-f350-4cfa-adc2-eb5afe6012ff",
+  "job_id": "c0e14f67-97b0-463c-81e0-e5eb9716697c",
+  "status": "completed",
+  "model_version": "corovision-preserved-2d-20261023",
+  "checkpoints": {
+    "syntax": "ea692f8c9c655791a44a340907629cda4e812138a6f15d93cdb2a45166177a7c",
+    "stenosis": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3"
+  },
+  "artifacts_verified": {
+    "artery_mask": true,
+    "stenosis_mask": true,
+    "raw_scores": true,
+    "overlay": true
+  },
+  "stages": {
+    "preprocessing": {
+      "status": "completed",
+      "reason": "Saved upload processing record used."
+    },
+    "artery_segmentation": {
+      "status": "review_required",
+      "reason": "Model-generated mask; anatomical correctness requires review."
+    },
+    "vessel_analysis": {
+      "status": "review_required",
+      "reason": "Mask-derived 2D estimates."
+    },
+    "stenosis_detection": {
+      "status": "review_required",
+      "reason": "Compatible image model; candidates are not diagnoses. Vessel association not assessed."
+    },
+    "severity_assessment": {
+      "status": "blocked",
+      "reason": "Validated local/reference diameter protocol unavailable."
+    }
+  },
+  "artery_pixels": 8927,
+  "severity": {
+    "status": "insufficient_evidence",
+    "reference_diameter": null,
+    "minimum_diameter": null,
+    "diameter_unit": null,
+    "narrowing_percent": null,
+    "category": null,
+    "reference_selection": null,
+    "reason": "No validated candidate-local/reference-vessel measurement protocol or category standard."
+  },
+  "explanation_method": "deterministic_saved_result_template",
+  "source": "Public ARCADE validation image 1; development-exposed; acceptance smoke test, not performance validation"
+}

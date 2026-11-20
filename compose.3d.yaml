@@ -1,0 +1,12 @@
+# Optional full-inference configuration for compose.yaml.
+services:
+  app:
+    environment:
+      COROVISION_3D_CHECKPOINT: /models/volume_release/imagecas128.pt
+    volumes:
+      - type: bind
+        source: ${COROVISION_VOLUME_MODEL_DIR:-./models/volume_release}
+        target: /models/volume_release
+        read_only: true
+        bind:
+          create_host_path: false

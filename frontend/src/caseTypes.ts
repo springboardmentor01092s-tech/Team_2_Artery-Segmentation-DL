@@ -98,6 +98,7 @@ export type AnalysisResult = {
   attention_map_url?: string;
   stenosis_probability_url?: string;
   gradcam_url?: string;
+  gradcam_plus_plus_url?: string;
   centerline_url?: string;
   artery_probability_url?: string;
   model_scores?: {

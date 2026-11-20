@@ -7,6 +7,7 @@ import { Label } from "./components/prismui/label";
 import { Building2 } from "lucide-react";
 import AccessRequests from "./AccessRequests";
 import { designOptions, saveUserDesign, useDesignVariant } from "./designPreview";
+import { utcDate } from "./lib/time";
 
 export type User = {
   id: string;
@@ -218,12 +219,12 @@ export default function AccountPanel({
         </Card>
         {!isViewer && <Card className="panel">
           <h3>Sessions</h3>
-          <p className="muted">JWT access lasts up to eight hours and can be revoked.</p>
+          <p className="muted">This session can be revoked by an administrator.</p>
           <p className="muted">Showing {showAllSessions ? sessions.length : Math.min(10, sessions.length)} of {sessions.length} sessions.</p>
           <div className="simple-list" id="account-sessions">
             {sessions.length === 0 && <p className="muted">No sessions found.</p>}
             {(showAllSessions ? sessions : sessions.slice(0, 10)).map((item) => (
-              <div key={item.id} className="list-row"><span>{new Date(item.created_at).toLocaleString()} {item.current ? "· current" : ""}</span><strong>{item.active ? "Active" : "Revoked"}</strong></div>
+              <div key={item.id} className="list-row"><span>{utcDate(item.created_at).toLocaleString()} {item.current ? "· current" : ""}</span><strong>{item.active ? "Active" : "Revoked"}</strong></div>
             ))}
           </div>
           <div className="settings-actions">
@@ -237,7 +238,7 @@ export default function AccountPanel({
           <div className="simple-list" id="account-activity">
             {audit.length === 0 && <p className="muted">No activity yet.</p>}
             {(showAllActivity ? audit : audit.slice(0, 10)).map((item) => (
-              <div key={item.id} className="list-row"><span>{item.action.replaceAll("_", " ")}</span><time>{new Date(item.created_at).toLocaleString()}</time></div>
+              <div key={item.id} className="list-row"><span>{item.action.replaceAll("_", " ")}</span><time>{utcDate(item.created_at).toLocaleString()}</time></div>
             ))}
           </div>
           {audit.length > 10 && <Button type="button" variant="outline" aria-expanded={showAllActivity} aria-controls="account-activity" onClick={() => setShowAllActivity(value => !value)}>{showAllActivity ? "Show less" : `Show all activity (${audit.length})`}</Button>}

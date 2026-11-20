@@ -1,0 +1,111 @@
+{
+  "audited_date": "2026-11-10",
+  "record": "https://zenodo.org/records/19958730",
+  "doi": "10.5281/zenodo.19958730",
+  "license": "CC BY 4.0",
+  "archive": "CARDIAG.zip",
+  "publisher_archive_bytes": 4569236433,
+  "publisher_archive_md5": "1aa8f3b77c1d8dd6b101410a496728f3",
+  "whole_archive_checksum_verified": false,
+  "archive_directory_entries": 39672,
+  "sample_index_count": 645,
+  "image_duplicate_candidates_by_zip_crc32_and_length": 0,
+  "split_index": {
+    "train": {
+      "count": 437,
+      "sha256": "cbbb66f5320020116803c86922f059b184638abd375baeed3de24d56861e4c11",
+      "member_coverage": {
+        "img.png": 437,
+        "binary.png": 437,
+        "narrowings.png": 437,
+        "uncertainty.png": 437,
+        "metadata.json": 437,
+        "catheter.png": 436
+      }
+    },
+    "val": {
+      "count": 60,
+      "sha256": "0296a69bd10dccf715ebc7238f733ef499a79eb7228ae7817877e0788146b4e3",
+      "member_coverage": {
+        "img.png": 60,
+        "binary.png": 60,
+        "narrowings.png": 60,
+        "uncertainty.png": 60,
+        "metadata.json": 60,
+        "catheter.png": 60
+      }
+    },
+    "test": {
+      "count": 148,
+      "sha256": "ac3f96a528cca991dd9cae4a55e4cf556ce69b5b3dc31b573d2bf7f984b9a1af",
+      "member_coverage": {
+        "img.png": 148,
+        "binary.png": 148,
+        "narrowings.png": 148,
+        "uncertainty.png": 148,
+        "metadata.json": 148,
+        "catheter.png": 148
+      }
+    }
+  },
+  "split_sample_id_overlap": 0,
+  "grouping_fields_verified": [
+    "id",
+    "patient_id",
+    "center_id"
+  ],
+  "grouping_metadata": {
+    "complete": true,
+    "distinct_centers": 9,
+    "distinct_center_patient_keys_total": 122,
+    "member_crc_verified_and_keyed": {
+      "train": 437,
+      "val": 60,
+      "test": 148
+    },
+    "distinct_center_patient_keys": {
+      "train": 80,
+      "val": 12,
+      "test": 30
+    },
+    "patient_overlap_by_center": {
+      "train_val": 0,
+      "train_test": 0,
+      "val_test": 0
+    },
+    "patient_id_overlap_without_center": {
+      "train_val": 0,
+      "train_test": 0,
+      "val_test": 0
+    },
+    "record_id_overlap": {
+      "train_val": 0,
+      "train_test": 0,
+      "val_test": 0
+    },
+    "failed_range_reads": {}
+  },
+  "validation_png_header_check": {
+    "samples_checked": 3,
+    "headers_crc_verified": 12,
+    "matching_width_height": [
+      512,
+      512
+    ],
+    "image_color_type": "grayscale",
+    "mask_color_type": "RGB",
+    "bit_depth": 8,
+    "split": "validation",
+    "reference_semantics_verified": false
+  },
+  "publisher_benchmark_commit": "1195c8f40d253e3611a30cd479d4b7486ccc3c23",
+  "app_release_manifest_sha256": "172c7dd02327f73920823616a23ff1853cf887b1b84a21a869d9da3b613bbcc7",
+  "author_clarification": {
+    "received": "2026-11-10",
+    "release_count": 645,
+    "anonymized_grouping_confirmed": true,
+    "expert_lumen_diameter_or_qca_reported_available": false
+  },
+  "scope": "HTTP range inspection of archive directory, split lists and selected JSON metadata. Checked PNG headers on three validation samples. No image or mask pixels decoded and no inference, training or evaluation.",
+  "checkpoint_exposure_verified": false
+}

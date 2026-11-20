@@ -1,0 +1,149 @@
+{
+  "fixture": "Synthetic HU-like gradient, not a medical study or accuracy benchmark",
+  "case_code": "SYNTHETIC-3D-CHECK-603d5a",
+  "case_id": "11abaebb-9f5f-4574-ac89-ac75a6370937",
+  "run_id": "664adbf2-160c-4db7-85de-e561edc1d242",
+  "status": "completed",
+  "source_sha256": "9ec48d8a037fc283b4d905834d9676eca6c6ac90296405c1200ce119e9a93b1c",
+  "result": {
+    "schema_version": "volume-analysis-1.0",
+    "model_id": "imagecas-coronary-unet3d-128-v1",
+    "checkpoint_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+    "checkpoint_epoch": 75,
+    "preprocessing": {
+      "version": "imagecas-source-parity-1",
+      "axis_order": "canonical RAS XYZ",
+      "clip_hu": [
+        -200,
+        800
+      ],
+      "normalization": "(clip+200)/1000",
+      "resize": "scipy zoom order=1 prefilter=False grid_mode=False",
+      "float16_storage_roundtrip": true,
+      "shape": [
+        128,
+        128,
+        128
+      ]
+    },
+    "source_shape": [
+      24,
+      28,
+      32
+    ],
+    "source_affine_ras_mm": [
+      [
+        -0.699999988079071,
+        0.0,
+        0.0,
+        20.0
+      ],
+      [
+        0.0,
+        0.8999999761581421,
+        0.0,
+        -10.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.5,
+        30.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "canonical_shape": [
+      24,
+      28,
+      32
+    ],
+    "coarse_affine_ras_mm": [
+      [
+        0.1267716513843987,
+        0.0,
+        0.0,
+        3.900000274181366
+      ],
+      [
+        0.0,
+        0.19133857760842393,
+        0.0,
+        -10.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.3661417322834646,
+        30.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "coarse_foreground_voxels": 0,
+    "source_grid_foreground_voxels": 0,
+    "duration_seconds": 4.761,
+    "device": "cpu",
+    "slices": [
+      {
+        "axis": "RAS X",
+        "coarse_index": 64,
+        "artifact": "overlay_0.png"
+      },
+      {
+        "axis": "RAS Y",
+        "coarse_index": 64,
+        "artifact": "overlay_1.png"
+      },
+      {
+        "axis": "RAS Z",
+        "coarse_index": 64,
+        "artifact": "overlay_2.png"
+      }
+    ],
+    "clinical_validated": false,
+    "severity": null,
+    "limitations": [
+      "Coarse full-field model; small vessels can be lost.",
+      "No 3D stenosis, severity or validated physical diameter estimation.",
+      "Resampling a coarse mask onto source geometry does not recover native-resolution vessel detail.",
+      "Probabilities are uncalibrated model outputs, not diagnostic confidence.",
+      "No overlap/performance metric is calculated without a matching reference mask."
+    ]
+  },
+  "artifacts_verified": {
+    "mask_source.nii.gz": {
+      "bytes": 239,
+      "sha256": "3986adaccb5d5904d412560ad2e4ea1b9362f367724ffacedd8460484166d1eb"
+    },
+    "probability_coarse.nii.gz": {
+      "bytes": 7899258,
+      "sha256": "0acaa3aab9c3ef49b7ade13564e69599f7a5167d6b5cf1abe23b05cd2527e97b"
+    },
+    "overlay_0.png": {
+      "bytes": 842,
+      "sha256": "60661f9dc2bbdd486c1083be2aa6afd59f7a33ef803907eccd9df3b9cb08f596"
+    },
+    "overlay_1.png": {
+      "bytes": 914,
+      "sha256": "8d53d8d9c3b3301d7b837a60e07790a8c4b044e2b3f89f6d223a72a7e33ad4fa"
+    },
+    "overlay_2.png": {
+      "bytes": 1226,
+      "sha256": "44b313d260377ca9b09fc94823cb0e15c1877961b177adb1d17ecb1b982b92fd"
+    },
+    "result.json": {
+      "bytes": 1641,
+      "sha256": "4ab5b54afbc40309b9d37818bfa24e75b786dd96e669b4fb32904805ededa397"
+    }
+  },
+  "source_grid_shape_and_affine_verified": true
+}

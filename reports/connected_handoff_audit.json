@@ -1,0 +1,1126 @@
+{
+  "scope": "Metadata evidence rehashed; model weights inventoried, not promoted",
+  "registry": {
+    "status": "proposal_for_user_review_no_training_changes",
+    "date": "2026-10-24",
+    "scope": "nine trained packages; five2D/four3D; ARCADE tasks share source family; do not infer nine independent cohorts",
+    "datasets": [
+      {
+        "task_id": "syntax",
+        "dataset": "ARCADE syntax",
+        "modality": "2D X-ray angiography",
+        "anatomy": "coronary arteries",
+        "annotation": "anatomical instance polygons",
+        "proposed_group": "A + separate anatomical-instance task",
+        "decision": "conditional pooling with DCA binary masks only; keep anatomical task separate",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 1000,
+          "val": 200,
+          "test": 300
+        },
+        "label_mapping": [
+          {
+            "id": 1,
+            "name": "1",
+            "supercategory": ""
+          },
+          {
+            "id": 2,
+            "name": "2",
+            "supercategory": ""
+          },
+          {
+            "id": 3,
+            "name": "3",
+            "supercategory": ""
+          },
+          {
+            "id": 4,
+            "name": "4",
+            "supercategory": ""
+          },
+          {
+            "id": 5,
+            "name": "5",
+            "supercategory": ""
+          },
+          {
+            "id": 6,
+            "name": "6",
+            "supercategory": ""
+          },
+          {
+            "id": 7,
+            "name": "7",
+            "supercategory": ""
+          },
+          {
+            "id": 8,
+            "name": "8",
+            "supercategory": ""
+          },
+          {
+            "id": 9,
+            "name": "9",
+            "supercategory": ""
+          },
+          {
+            "id": 10,
+            "name": "9a",
+            "supercategory": ""
+          },
+          {
+            "id": 11,
+            "name": "10",
+            "supercategory": ""
+          },
+          {
+            "id": 12,
+            "name": "10a",
+            "supercategory": ""
+          },
+          {
+            "id": 13,
+            "name": "11",
+            "supercategory": ""
+          },
+          {
+            "id": 14,
+            "name": "12",
+            "supercategory": ""
+          },
+          {
+            "id": 15,
+            "name": "12a",
+            "supercategory": ""
+          },
+          {
+            "id": 16,
+            "name": "13",
+            "supercategory": ""
+          },
+          {
+            "id": 17,
+            "name": "14",
+            "supercategory": ""
+          },
+          {
+            "id": 18,
+            "name": "14a",
+            "supercategory": ""
+          },
+          {
+            "id": 19,
+            "name": "15",
+            "supercategory": ""
+          },
+          {
+            "id": 20,
+            "name": "16",
+            "supercategory": ""
+          },
+          {
+            "id": 21,
+            "name": "16a",
+            "supercategory": ""
+          },
+          {
+            "id": 22,
+            "name": "16b",
+            "supercategory": ""
+          },
+          {
+            "id": 23,
+            "name": "16c",
+            "supercategory": ""
+          },
+          {
+            "id": 24,
+            "name": "12b",
+            "supercategory": ""
+          },
+          {
+            "id": 25,
+            "name": "14b",
+            "supercategory": ""
+          },
+          {
+            "id": 26,
+            "name": "stenosis",
+            "supercategory": ""
+          }
+        ],
+        "class_support": {
+          "train": {
+            "8": 310,
+            "6": 537,
+            "5": 525,
+            "7": 340,
+            "16": 305,
+            "13": 320,
+            "17": 107,
+            "25": 127,
+            "11": 21,
+            "9": 198,
+            "10": 70,
+            "15": 129,
+            "4": 303,
+            "1": 374,
+            "2": 375,
+            "3": 369,
+            "20": 232,
+            "14": 61,
+            "19": 38,
+            "24": 63,
+            "18": 49,
+            "21": 43,
+            "22": 48,
+            "23": 31,
+            "12": 1
+          },
+          "val": {
+            "5": 130,
+            "13": 70,
+            "6": 125,
+            "16": 70,
+            "25": 58,
+            "17": 20,
+            "7": 77,
+            "8": 74,
+            "20": 55,
+            "3": 66,
+            "2": 66,
+            "1": 66,
+            "4": 56,
+            "9": 50,
+            "10": 25,
+            "14": 17,
+            "15": 27,
+            "18": 24,
+            "24": 18,
+            "11": 21,
+            "22": 15,
+            "21": 13,
+            "23": 16,
+            "19": 3,
+            "12": 6
+          },
+          "test": {
+            "18": 27,
+            "5": 195,
+            "17": 67,
+            "25": 37,
+            "13": 119,
+            "16": 110,
+            "7": 83,
+            "9": 66,
+            "10": 35,
+            "8": 80,
+            "6": 188,
+            "24": 49,
+            "15": 23,
+            "1": 100,
+            "3": 100,
+            "20": 88,
+            "2": 100,
+            "11": 14,
+            "4": 92,
+            "19": 11,
+            "14": 15,
+            "23": 25,
+            "22": 24,
+            "21": 24
+          }
+        },
+        "identity": "patient/study mapping unverified",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [
+            [
+              512,
+              512
+            ]
+          ],
+          "native_shape_range": null,
+          "status": "train COCO dimensions; split counts are raw source counts before trainer exclusions"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "preserve original loader geometry, decoding and normalization; no shared transform assumed",
+        "evidence": [
+          "artifacts/dataset_audit.json",
+          "trained_models/syntax/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_02_maskrcnn_resnet50_fpn_v2\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\syntax\\corovision_syntax\\models\\syntax\\syntax\\maskrcnn_resnet50_fpn_v2\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "59422bb0d02b7ea80e4279d34b48fae70aee96bfc8b35ee0f7d7237019688654"
+          }
+        ]
+      },
+      {
+        "task_id": "stenosis",
+        "dataset": "ARCADE stenosis",
+        "modality": "2D X-ray angiography",
+        "anatomy": "coronary lesions",
+        "annotation": "stenosis instance polygons",
+        "proposed_group": "B",
+        "decision": "keep separate; no second audited compatible lesion-mask cohort",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 1000,
+          "val": 200,
+          "test": 300
+        },
+        "label_mapping": [
+          {
+            "id": 1,
+            "name": "1",
+            "supercategory": ""
+          },
+          {
+            "id": 2,
+            "name": "2",
+            "supercategory": ""
+          },
+          {
+            "id": 3,
+            "name": "3",
+            "supercategory": ""
+          },
+          {
+            "id": 4,
+            "name": "4",
+            "supercategory": ""
+          },
+          {
+            "id": 5,
+            "name": "5",
+            "supercategory": ""
+          },
+          {
+            "id": 6,
+            "name": "6",
+            "supercategory": ""
+          },
+          {
+            "id": 7,
+            "name": "7",
+            "supercategory": ""
+          },
+          {
+            "id": 8,
+            "name": "8",
+            "supercategory": ""
+          },
+          {
+            "id": 9,
+            "name": "9",
+            "supercategory": ""
+          },
+          {
+            "id": 10,
+            "name": "9a",
+            "supercategory": ""
+          },
+          {
+            "id": 11,
+            "name": "10",
+            "supercategory": ""
+          },
+          {
+            "id": 12,
+            "name": "10a",
+            "supercategory": ""
+          },
+          {
+            "id": 13,
+            "name": "11",
+            "supercategory": ""
+          },
+          {
+            "id": 14,
+            "name": "12",
+            "supercategory": ""
+          },
+          {
+            "id": 15,
+            "name": "12a",
+            "supercategory": ""
+          },
+          {
+            "id": 16,
+            "name": "13",
+            "supercategory": ""
+          },
+          {
+            "id": 17,
+            "name": "14",
+            "supercategory": ""
+          },
+          {
+            "id": 18,
+            "name": "14a",
+            "supercategory": ""
+          },
+          {
+            "id": 19,
+            "name": "15",
+            "supercategory": ""
+          },
+          {
+            "id": 20,
+            "name": "16",
+            "supercategory": ""
+          },
+          {
+            "id": 21,
+            "name": "16a",
+            "supercategory": ""
+          },
+          {
+            "id": 22,
+            "name": "16b",
+            "supercategory": ""
+          },
+          {
+            "id": 23,
+            "name": "16c",
+            "supercategory": ""
+          },
+          {
+            "id": 24,
+            "name": "12b",
+            "supercategory": ""
+          },
+          {
+            "id": 25,
+            "name": "14b",
+            "supercategory": ""
+          },
+          {
+            "id": 26,
+            "name": "stenosis",
+            "supercategory": ""
+          }
+        ],
+        "class_support": {
+          "train": {
+            "26": 1625
+          },
+          "val": {
+            "26": 406
+          },
+          "test": {
+            "26": 386
+          }
+        },
+        "identity": "patient/study mapping unverified",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [
+            [
+              512,
+              512
+            ]
+          ],
+          "native_shape_range": null,
+          "status": "train COCO dimensions; split counts are raw source counts before trainer exclusions"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "preserve original loader geometry, decoding and normalization; no shared transform assumed",
+        "evidence": [
+          "artifacts/dataset_audit.json",
+          "trained_models/stenosis/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_maskrcnn_resnet50_fpn\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\stenosis\\corovision_stenosis\\models\\stenosis\\stenosis\\maskrcnn_resnet50_fpn\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3"
+          }
+        ]
+      },
+      {
+        "task_id": "dca2d",
+        "dataset": "DCA134",
+        "modality": "2D X-ray angiography",
+        "anatomy": "coronary vessels",
+        "annotation": "binary pixel masks",
+        "proposed_group": "A",
+        "decision": "conditional pooling with binary union of ARCADE artery categories",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 93,
+          "val": 20,
+          "test": 21
+        },
+        "label_mapping": {
+          "0": "background",
+          "1": "artery"
+        },
+        "class_support": {
+          "status": "exact voxel prevalence not recomputed; see task-specific count reports"
+        },
+        "identity": "patient/study mapping unverified",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [],
+          "native_shape_range": null,
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "Selected CPU model native256 input, evaluation common512 padded grid; preserve aspect/padding and paired mask transforms. Patient mapping unknown.",
+        "evidence": [
+          "processed/dca2d/manifest.json",
+          "trained_models/dca2d/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_cpu_baseline\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\dca\\cpu_baseline\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "20f416ab1d64cc10208bc1c94433ebeea1e53a5f99d67f7595b60d8b9b82044f"
+          }
+        ]
+      },
+      {
+        "task_id": "aorta128",
+        "dataset": "AortaSeg",
+        "modality": "3D CT",
+        "anatomy": "aorta",
+        "annotation": "binary AI pseudo-label volume",
+        "proposed_group": "E-aorta",
+        "decision": "keep separate; exclude48 geometry-mismatched pairs",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 8,
+          "val": 2,
+          "test": 2
+        },
+        "label_mapping": {
+          "0": "background",
+          "1": "aorta"
+        },
+        "class_support": {
+          "status": "exact voxel prevalence not recomputed; see task-specific count reports"
+        },
+        "identity": "case IDs; patient/study linkage beyond supplied case IDs unverified",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [],
+          "native_shape_range": {
+            "min": [
+              512,
+              512,
+              510
+            ],
+            "max": [
+              512,
+              512,
+              1019
+            ]
+          },
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "canonical RAS; full field of view resized to 128^3; CT clipped [-200,800] HU; mask nearest-neighbor",
+        "evidence": [
+          "processed/aorta128/manifest.json",
+          "trained_models/aorta128/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\aorta128\\aorta128\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "3b0af653ed92bcc750f24ecf493f03d98e13dc5ed5036096c36172b163ed92ad"
+          }
+        ]
+      },
+      {
+        "task_id": "hepatic128",
+        "dataset": "MSD Task08 HepaticVessel",
+        "modality": "3D CT",
+        "anatomy": "hepatic vessels and tumours",
+        "annotation": "multiclass expert voxel labels",
+        "proposed_group": "E-hepatic",
+        "decision": "keep separate; report vessel and tumour independently",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 218,
+          "val": 38,
+          "test": 46
+        },
+        "label_mapping": {
+          "0": "background",
+          "1": "hepatic_vessel",
+          "2": "tumour"
+        },
+        "class_support": {
+          "status": "exact voxel prevalence not recomputed; see task-specific count reports"
+        },
+        "identity": "case IDs; patient/study linkage beyond supplied case IDs unverified",
+        "dimensions": {
+          "prepared": [
+            128,
+            128,
+            128
+          ],
+          "source_2d_sizes": [],
+          "native_shape_range": {
+            "min": [
+              512,
+              512,
+              24
+            ],
+            "max": [
+              512,
+              512,
+              181
+            ]
+          },
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "CC-BY-SA-4.0",
+        "preprocessing": "Full field of view resized to 128^3; original-resolution evaluation still required.",
+        "evidence": [
+          "processed/hepatic128/manifest.json",
+          "trained_models/hepatic128/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\hepatic128\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "2d2d9e93e564c43bddadeba1e59852bdfb5ad76810af5aac54e05f1840920305"
+          }
+        ]
+      },
+      {
+        "task_id": "cadica_corrected",
+        "dataset": "CADICA",
+        "modality": "2D X-ray angiography",
+        "anatomy": "coronary lesions",
+        "annotation": "grade-labelled xyxy boxes",
+        "proposed_group": "C + separate grade-aware task",
+        "decision": "keep grade-aware task separate; conditional class-agnostic detection comparison with archive",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 4033,
+          "val": 908,
+          "test": 1185
+        },
+        "label_mapping": [
+          "p0_20",
+          "p100",
+          "p20_50",
+          "p50_70",
+          "p70_90",
+          "p90_98",
+          "p99"
+        ],
+        "class_support": {
+          "train": {
+            "p20_50": 732,
+            "p70_90": 753,
+            "p90_98": 703,
+            "p50_70": 738,
+            "p0_20": 1231,
+            "p99": 22,
+            "p100": 56
+          },
+          "val": {
+            "p0_20": 280,
+            "p20_50": 145,
+            "p70_90": 64,
+            "p90_98": 128,
+            "p50_70": 197,
+            "p99": 41
+          },
+          "test": {
+            "p0_20": 433,
+            "p90_98": 99,
+            "p70_90": 76,
+            "p20_50": 251,
+            "p50_70": 64,
+            "p100": 148
+          }
+        },
+        "identity": "supplied patient IDs and video IDs",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [
+            [
+              512,
+              512
+            ]
+          ],
+          "native_shape_range": null,
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "preserve original loader geometry, decoding and normalization; no shared transform assumed",
+        "evidence": [
+          "processed/cadica_corrected/manifest.json",
+          "trained_models/cadica_corrected/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\cadica_corrected\\cadica_corrected\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "9c4c7d52e8fe420c88eaee88e6d49b694b9bdd7be77cd0d84dee4653ab0aff46"
+          }
+        ]
+      },
+      {
+        "task_id": "stenosis_boxes",
+        "dataset": "Stenosis archive",
+        "modality": "2D X-ray angiography",
+        "anatomy": "coronary lesions",
+        "annotation": "Pascal VOC/CSV boxes",
+        "proposed_group": "C",
+        "decision": "conditional detection pooling with CADICA only after lesion-definition and negative-frame audit",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 6625,
+          "val": 874,
+          "test": 826
+        },
+        "label_mapping": [
+          "Stenosis"
+        ],
+        "class_support": {
+          "train": {
+            "Stenosis": 6626
+          },
+          "val": {
+            "Stenosis": 874
+          },
+          "test": {
+            "Stenosis": 826
+          }
+        },
+        "identity": "provisional filename groups, not verified patient IDs",
+        "dimensions": {
+          "prepared": null,
+          "source_2d_sizes": [
+            [
+              512,
+              512
+            ],
+            [
+              608,
+              608
+            ],
+            [
+              800,
+              800
+            ],
+            [
+              1000,
+              1000
+            ]
+          ],
+          "native_shape_range": null,
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "preserve original loader geometry, decoding and normalization; no shared transform assumed",
+        "evidence": [
+          "processed/stenosis_boxes/manifest.json",
+          "trained_models/stenosis_boxes/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\stenosis_boxes\\stenosis_boxes\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "57a42245560455fcec67c2b5c27cd5949041be6a85e909c62ff578d418f7bfc9"
+          }
+        ]
+      },
+      {
+        "task_id": "imagecas128",
+        "dataset": "ImageCAS",
+        "modality": "3D coronary CT angiography",
+        "anatomy": "coronary arteries",
+        "annotation": "binary voxel labels",
+        "proposed_group": "D-ImageCAS",
+        "decision": "keep separate from ImageCAS-X pending joint subject/split reconciliation",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 700,
+          "val": 150,
+          "test": 150
+        },
+        "label_mapping": {
+          "0": "background",
+          "1": "coronary_artery"
+        },
+        "class_support": {
+          "status": "exact voxel prevalence not recomputed; see task-specific count reports"
+        },
+        "identity": "case IDs; patient/study linkage beyond supplied case IDs unverified",
+        "dimensions": {
+          "prepared": [
+            128,
+            128,
+            128
+          ],
+          "source_2d_sizes": [],
+          "native_shape_range": {
+            "min": [
+              512,
+              512,
+              166
+            ],
+            "max": [
+              512,
+              512,
+              277
+            ]
+          },
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "Coarse full-field resize; original-resolution evaluation required.",
+        "evidence": [
+          "processed/imagecas128/manifest.json",
+          "trained_models/imagecas128/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\imagecas128\\imagecas128\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d"
+          }
+        ]
+      },
+      {
+        "task_id": "imagecasx128",
+        "dataset": "ImageCAS-X",
+        "modality": "3D coronary CT angiography with shared ImageCAS CT",
+        "anatomy": "coronary anatomical union",
+        "annotation": "multiclass source collapsed to binary union",
+        "proposed_group": "D-ImageCAS-X",
+        "decision": "keep separate; derived overlapping cohort is not external validation",
+        "pooling_authorized": false,
+        "splits": {
+          "train": 560,
+          "val": 80,
+          "test": 160
+        },
+        "label_mapping": {
+          "0": "background",
+          "1": "coronary_artery"
+        },
+        "class_support": {
+          "status": "exact voxel prevalence not recomputed; see task-specific count reports"
+        },
+        "identity": "case IDs; patient/study linkage beyond supplied case IDs unverified",
+        "dimensions": {
+          "prepared": [
+            128,
+            128,
+            128
+          ],
+          "source_2d_sizes": [],
+          "native_shape_range": {
+            "min": [
+              512,
+              512,
+              166
+            ],
+            "max": [
+              512,
+              512,
+              275
+            ]
+          },
+          "status": "manifest-derived; see source COCO image records for ARCADE sizes"
+        },
+        "license": "release/license compatibility not verified for pooled reuse; existing Kaggle metadata is not sufficient legal clearance",
+        "preprocessing": "Coarse full-field resize; original-resolution evaluation required.",
+        "evidence": [
+          "processed/imagecasx128/manifest.json",
+          "trained_models/imagecasx128/package.json"
+        ],
+        "selected_models": [
+          {
+            "checkpoint": "models\\candidate_01_models\\best.pt",
+            "source_checkpoint": "C:\\Users\\sridh\\Desktop\\artertry segmentation\\experiments\\cloud\\imagecasx128\\imagecasx128\\models\\best.pt",
+            "selected_for_integration": true,
+            "sha256": "8a978778e2f6d36980c08656e932d5d9b8d99938e805d21c5aa9655a0953ffa4"
+          }
+        ]
+      }
+    ],
+    "imagecas_id_overlap_by_existing_split": {
+      "train": {
+        "train": 395,
+        "val": 55,
+        "test": 107
+      },
+      "val": {
+        "train": 81,
+        "val": 13,
+        "test": 27
+      },
+      "test": {
+        "train": 84,
+        "val": 12,
+        "test": 26
+      }
+    },
+    "new_training_started": false,
+    "training_configuration_changed": false,
+    "adapter_implementation": "deferred until report review"
+  },
+  "evidence": [
+    {
+      "source": "MODEL_INVENTORY.md",
+      "available": true,
+      "sha256": "9c419f8e32f2d3872efb1b7f271b486bf76901d185a52dca574376f3083acd6c",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/MODEL_INVENTORY.md",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "trained_models/index.json",
+      "available": true,
+      "sha256": "4735fea13e1bfc00f0af41bbfd21e2063bd9c9f16a74ff9e49d8e2e7a746ca75",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/index.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "artifacts/dataset_audit.json",
+      "available": true,
+      "sha256": "a57dbd76745a91467740a2282ae4c39d7d2420d48eb5107e4de17eb075bbd263",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/artifacts_state/dataset_audit.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "artifacts/detection_audit.json",
+      "available": true,
+      "sha256": "5ba1d1a960fef123e3b5e75bddac766cbdc34134bf7c8d6bfcecfb07210e3332",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/artifacts_state/detection_audit.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "artifacts/improvement_audit/audit.json",
+      "available": true,
+      "sha256": "d8f4056c3be3da6ea1806cd276c4ebbb02bec03a654ad977d1ecef5bb97127e9",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/artifacts_state/improvement_audit/audit.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "artifacts/improvement_audit/decoded_cross_dataset_duplicates.json",
+      "available": true,
+      "sha256": "61566e33533ef9c0e31ec46692b3d108775cdb3e073c7ecbbb96685d5f2547b0",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/artifacts_state/improvement_audit/decoded_cross_dataset_duplicates.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "reports/release_readiness/cadica_audit.json",
+      "available": true,
+      "sha256": "5f14c37afebc21355ad0cb45782359ccc7b7b8cf28216d177b967e4a33fcdd93",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/reports/release_readiness/cadica_audit.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "reports/release_readiness/imagecas_shared_training_ct_headers.json",
+      "available": true,
+      "sha256": "2084b4a7b5059bb256766680f436ae5cb7622ed84d90e390b9cb14d3007ac03b",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/reports/release_readiness/imagecas_shared_training_ct_headers.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\dca2d\\manifest.json",
+      "available": true,
+      "sha256": "cadafc1aa6bb7b18442723019b0daa7950599ffc70c35aaec5e2f061fadd650a",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/dca2d/models/candidate_01_cpu_baseline/manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\cadica_corrected\\manifest.json",
+      "available": true,
+      "sha256": "591ef56edfa8727b648aa185f12cca7219df0c324bc9efffb5df2e946a67908a",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/artifacts_state/cadica_corrected_manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\stenosis_boxes\\manifest.json",
+      "available": true,
+      "sha256": "ecaf394bfd6e2b0b5334dfac67cb5b5ca80fc7bffd2de68a6bb24562a2d8c964",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_Full_20261024/workspace/processed/stenosis_boxes/manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\aorta128\\manifest.json",
+      "available": true,
+      "sha256": "fa7605d43eafc5c3b741d7069bc3a41bddcabc6827d5190869e3d5843d9154f1",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/aorta128/models/candidate_01_models/manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\hepatic128\\manifest.json",
+      "available": true,
+      "sha256": "930bd574fedde7fb678dd2ffb8a24bcdae65d694c3bdd484dce5f97329907e89",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/hepatic128/models/candidate_01_models/manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\imagecas128\\manifest.json",
+      "available": true,
+      "sha256": "c3e7e891ae8a119a862b232706a175ab5d64e65e20c595d8b47e567d9e965693",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/imagecas128/models/candidate_01_models/manifest.json",
+      "dataset_audit_hash_matches": true
+    },
+    {
+      "source": "processed\\imagecasx128\\manifest.json",
+      "available": true,
+      "sha256": "c7dd57eac4d104558ebc0e6144a989325bb73d414f84f4c50488ad2cfca2a858",
+      "manifest_hash_matches": true,
+      "disk_path": "CoroVision_handoff/trained_models/imagecasx128/models/candidate_01_models/manifest.json",
+      "dataset_audit_hash_matches": true
+    }
+  ],
+  "checkpoints": [
+    {
+      "task": "syntax",
+      "relative": "trained_models/syntax/models/candidate_01_maskrcnn_resnet50_fpn/best.pt",
+      "available": true,
+      "selected_in_source_package": false,
+      "expected_sha256": "78c713b42f07ebe6a9c887850a4b2f28ff92d7eb22a05822d387cee940f4a18b",
+      "transfer_manifest_sha256": "78c713b42f07ebe6a9c887850a4b2f28ff92d7eb22a05822d387cee940f4a18b",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "syntax",
+      "relative": "trained_models/syntax/models/candidate_02_maskrcnn_resnet50_fpn_v2/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "59422bb0d02b7ea80e4279d34b48fae70aee96bfc8b35ee0f7d7237019688654",
+      "transfer_manifest_sha256": "59422bb0d02b7ea80e4279d34b48fae70aee96bfc8b35ee0f7d7237019688654",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "stenosis",
+      "relative": "trained_models/stenosis/models/candidate_01_maskrcnn_resnet50_fpn/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+      "transfer_manifest_sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "stenosis",
+      "relative": "trained_models/stenosis/models/candidate_02_maskrcnn_resnet50_fpn_v2/best.pt",
+      "available": true,
+      "selected_in_source_package": false,
+      "expected_sha256": "a1a54e5256a823bfad59831da26f9d4f6d89c97127f803cba5cc4d396efbe0d9",
+      "transfer_manifest_sha256": "a1a54e5256a823bfad59831da26f9d4f6d89c97127f803cba5cc4d396efbe0d9",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "dca2d",
+      "relative": "trained_models/dca2d/models/candidate_01_cpu_baseline/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "20f416ab1d64cc10208bc1c94433ebeea1e53a5f99d67f7595b60d8b9b82044f",
+      "transfer_manifest_sha256": "20f416ab1d64cc10208bc1c94433ebeea1e53a5f99d67f7595b60d8b9b82044f",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "dca2d",
+      "relative": "trained_models/dca2d/models/candidate_02_gpu512/best.pt",
+      "available": true,
+      "selected_in_source_package": false,
+      "expected_sha256": "86497f8edab3f6e750977f1823c9866ab7e654ca953fc36a3ad6bc9c1604a4ca",
+      "transfer_manifest_sha256": "86497f8edab3f6e750977f1823c9866ab7e654ca953fc36a3ad6bc9c1604a4ca",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "aorta128",
+      "relative": "trained_models/aorta128/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "3b0af653ed92bcc750f24ecf493f03d98e13dc5ed5036096c36172b163ed92ad",
+      "transfer_manifest_sha256": "3b0af653ed92bcc750f24ecf493f03d98e13dc5ed5036096c36172b163ed92ad",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "hepatic128",
+      "relative": "trained_models/hepatic128/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "2d2d9e93e564c43bddadeba1e59852bdfb5ad76810af5aac54e05f1840920305",
+      "transfer_manifest_sha256": "2d2d9e93e564c43bddadeba1e59852bdfb5ad76810af5aac54e05f1840920305",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "cadica_corrected",
+      "relative": "trained_models/cadica_corrected/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "9c4c7d52e8fe420c88eaee88e6d49b694b9bdd7be77cd0d84dee4653ab0aff46",
+      "transfer_manifest_sha256": "9c4c7d52e8fe420c88eaee88e6d49b694b9bdd7be77cd0d84dee4653ab0aff46",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "stenosis_boxes",
+      "relative": "trained_models/stenosis_boxes/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "57a42245560455fcec67c2b5c27cd5949041be6a85e909c62ff578d418f7bfc9",
+      "transfer_manifest_sha256": "57a42245560455fcec67c2b5c27cd5949041be6a85e909c62ff578d418f7bfc9",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "imagecas128",
+      "relative": "trained_models/imagecas128/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+      "transfer_manifest_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+      "full_bytes_rehashed": false
+    },
+    {
+      "task": "imagecasx128",
+      "relative": "trained_models/imagecasx128/models/candidate_01_models/best.pt",
+      "available": true,
+      "selected_in_source_package": true,
+      "expected_sha256": "8a978778e2f6d36980c08656e932d5d9b8d99938e805d21c5aa9655a0953ffa4",
+      "transfer_manifest_sha256": "8a978778e2f6d36980c08656e932d5d9b8d99938e805d21c5aa9655a0953ffa4",
+      "full_bytes_rehashed": false
+    }
+  ],
+  "registry_integrity": {
+    "source": "reports/dataset_compatibility/DATASET_REGISTRY.json",
+    "available": true,
+    "sha256": "a52dec5e36779208277bcff2f1d23239b6cd3cc97be59ca00629b8e5e8d9b98f",
+    "manifest_hash_matches": true,
+    "disk_path": "CoroVision_Full_20261024/workspace/reports/dataset_compatibility/DATASET_REGISTRY.json"
+  },
+  "training_changes": false,
+  "pooling_authorized": false
+}

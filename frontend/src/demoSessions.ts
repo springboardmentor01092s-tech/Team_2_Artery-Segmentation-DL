@@ -1,5 +1,3 @@
-import type { User } from "./AccountPanel";
-
 export const KEY = "corovision-local-demo-accounts";
 
 export type SavedAccount = { id: string; name: string; email: string; role: string; token: string; label?: string };
@@ -31,9 +29,10 @@ export const localDemo =
 
 
 export function savedAccounts(): SavedAccount[] {
-  if (!localDemo) return [];
   try {
-    const items: unknown = JSON.parse(localStorage.getItem(KEY) || "[]");
+    localStorage.removeItem(KEY);
+    if (!localDemo) return [];
+    const items: unknown = JSON.parse(sessionStorage.getItem(KEY) || "[]");
     if (!Array.isArray(items)) return [];
     return items.filter((item): item is SavedAccount =>
       !!item && typeof item === "object" &&
@@ -52,22 +51,14 @@ export function saveDemoAccounts(accounts: SavedAccount[]): SavedAccount[] {
       map.set(acc.email, acc);
     }
   }
-  localStorage.setItem(KEY, JSON.stringify(existing));
+  sessionStorage.setItem(KEY, JSON.stringify(existing));
   return existing;
-}
-
-export function saveAccount(user: User, token: string): SavedAccount[] {
-  if (!localDemo) return [];
-  const next = savedAccounts().filter((item) => item.id !== user.id);
-  next.push({ id: user.id, name: user.display_name || user.username || user.email, email: user.email, role: user.role, token });
-  localStorage.setItem(KEY, JSON.stringify(next));
-  return next;
 }
 
 export function forgetAccount(token: string): SavedAccount[] {
   if (!localDemo) return [];
   const next = savedAccounts().filter((item) => item.token !== token);
-  localStorage.setItem(KEY, JSON.stringify(next));
+  sessionStorage.setItem(KEY, JSON.stringify(next));
   return next;
 }
 

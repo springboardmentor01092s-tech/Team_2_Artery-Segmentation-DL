@@ -1,0 +1,296 @@
+{
+  "deleted_case_ids": [
+    "4d341199-2b78-4e3b-9545-5175034dc622",
+    "11abaebb-9f5f-4574-ac89-ac75a6370937",
+    "b43834ff-1641-478d-a89e-06068d265b81",
+    "5cc29288-3835-45d4-ac24-bce048af70a8"
+  ],
+  "deletion": "administrator trash; originals retained",
+  "scope": "Real application acceptance, not accuracy evaluation or model improvement",
+  "2d": {
+    "case_id": "393e6175-625d-4ee7-a7a4-732c7f200c73",
+    "case_code": "FRESH-2D-6a7902",
+    "job": {
+      "id": "a13c0f7b-def3-4444-9b04-fc9ec42b61f5",
+      "image_id": "7b62cf5c-7deb-4a38-bfa7-e8bcfafa5ac6",
+      "case_id": "393e6175-625d-4ee7-a7a4-732c7f200c73",
+      "status": "completed",
+      "model_version": "corovision-preserved-2d-20261023",
+      "progress": 100,
+      "created_at": "2026-10-27T08:49:52.847799",
+      "started_at": "2026-10-27T08:49:53.251125",
+      "completed_at": "2026-10-27T08:49:57.726218",
+      "result_event_id": "980c5b4d-9f5e-440f-ba60-23c7156eed31",
+      "error_code": null,
+      "error_detail": null,
+      "status_url": "/api/analysis/jobs/a13c0f7b-def3-4444-9b04-fc9ec42b61f5",
+      "result_url": "/api/analysis/jobs/a13c0f7b-def3-4444-9b04-fc9ec42b61f5/result"
+    },
+    "report_id": "5862be9c-ae4a-4c88-bcc1-ce762b92329e",
+    "stages": {
+      "preprocessing": {
+        "status": "completed",
+        "reason": "Saved upload processing record used."
+      },
+      "artery_segmentation": {
+        "status": "review_required",
+        "reason": "Model-generated mask; anatomical correctness requires review."
+      },
+      "vessel_analysis": {
+        "status": "review_required",
+        "reason": "Mask-derived 2D estimates."
+      },
+      "stenosis_detection": {
+        "status": "review_required",
+        "reason": "Compatible image model; candidates are not diagnoses. Vessel association not assessed."
+      },
+      "severity_assessment": {
+        "status": "blocked",
+        "reason": "Validated local/reference diameter protocol unavailable."
+      }
+    },
+    "explanation": {
+      "version": "corovision.explanation.v1",
+      "method": "deterministic_saved_result_template",
+      "sections": [
+        {
+          "title": "Analysis summary",
+          "source_refs": [
+            "model_version",
+            "stages",
+            "input"
+          ],
+          "text": "Research analysis with corovision-preserved-2d-20261023. preprocessing: completed. artery segmentation: review required. vessel analysis: review required. stenosis detection: review required. severity assessment: blocked."
+        },
+        {
+          "title": "Artery segmentation",
+          "source_refs": [
+            "measurements.artery_pixels",
+            "artifacts",
+            "quality"
+          ],
+          "text": "The model predicted 8927 artery-mask pixels in the prepared image. The mask requires image review; prediction alone does not establish anatomical correctness."
+        },
+        {
+          "title": "Vessel structure",
+          "source_refs": [
+            "measurements.vessel_analysis",
+            "stages.vessel_analysis"
+          ],
+          "text": "Centerlines and diameter/length estimates derive from the predicted 2D mask. Use the recorded units; projection and segmentation errors affect these estimates."
+        },
+        {
+          "title": "Stenosis candidates",
+          "source_refs": [
+            "candidates",
+            "measurements.stenosis_pixels"
+          ],
+          "text": "The mask model returned 1 candidate instance(s). Scores are raw model outputs, not calibrated patient disease probabilities."
+        },
+        {
+          "title": "Severity assessment",
+          "source_refs": [
+            "severity"
+          ],
+          "text": "Not assessed \u2014 insufficient evidence. A validated candidate-local diameter and reference-segment protocol is unavailable."
+        },
+        {
+          "title": "Evidence and limitations",
+          "source_refs": [
+            "validation_evidence",
+            "limitations",
+            "review_status"
+          ],
+          "text": "Validation metrics describe their recorded dataset/split and aggregation, not accuracy on this image. A human assessment is separate from these model and algorithm outputs. Research output; not a standalone diagnosis. Raw scores are not calibrated patient confidence. No detections do not establish absence of disease. No validated automatic severity or vessel-segment association. 2D projection and preprocessing can change measurement reliability."
+        }
+      ]
+    },
+    "artifacts_verified": {
+      "overlay": {
+        "bytes": 217544,
+        "sha256": "241b598cdb6555952dec0d81fd36a11348244d1288b65e733f4fb7977ff314dd"
+      },
+      "artery_mask": {
+        "bytes": 1985,
+        "sha256": "10049a8829b2c7fd0cf3147494289201512d399080a4b87e2de34d7814d03510"
+      },
+      "stenosis_mask": {
+        "bytes": 538,
+        "sha256": "e40e19a7b35c52796739d30ba28fa8bbae71a450afbb17b29f6e310137cbbe3f"
+      },
+      "raw_scores": {
+        "bytes": 941332,
+        "sha256": "c37fe788ff0de549d21e85ddace4205f41e5540b90e4a282163f94287ca8b55c"
+      }
+    }
+  },
+  "3d": {
+    "case_id": "c5454723-fea5-47ed-804c-375e8a3436da",
+    "case_code": "FRESH-3D-fdbe28",
+    "job": {
+      "id": "d0fbbf42-e090-4fb5-a586-65eaab605321",
+      "case_id": "c5454723-fea5-47ed-804c-375e8a3436da",
+      "status": "completed",
+      "model_key": "imagecas",
+      "created_at": "2026-10-27T08:49:58.581085+00:00",
+      "source_sha256": "b2a26becb48c2850e752449bf51f62fe26cc2d2174a0ee3e6b3bd6f3230a4ef8",
+      "error": null,
+      "result": {
+        "schema_version": "volume-analysis-1.0",
+        "model_id": "imagecas-coronary-unet3d-128-v1",
+        "model_key": "imagecas",
+        "anatomy": "coronary",
+        "checkpoint_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+        "checkpoint_epoch": 75,
+        "preprocessing": {
+          "version": "imagecas-source-parity-1",
+          "axis_order": "canonical RAS XYZ",
+          "clip_hu": [
+            -200,
+            800
+          ],
+          "normalization": "(clip+200)/1000",
+          "resize": "scipy zoom order=1 prefilter=False grid_mode=False",
+          "float16_storage_roundtrip": true,
+          "shape": [
+            128,
+            128,
+            128
+          ]
+        },
+        "source_shape": [
+          512,
+          512,
+          321
+        ],
+        "source_affine_ras_mm": [
+          [
+            -0.9335939884185791,
+            0.0,
+            0.0,
+            238.53326416015625
+          ],
+          [
+            0.0,
+            -0.9335939884185791,
+            0.0,
+            238.53326416015625
+          ],
+          [
+            0.0,
+            0.0,
+            1.25,
+            -200.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "canonical_shape": [
+          512,
+          512,
+          321
+        ],
+        "coarse_affine_ras_mm": [
+          [
+            3.7564293549755425,
+            0.0,
+            0.0,
+            -238.53326392173767
+          ],
+          [
+            0.0,
+            3.7564293549755425,
+            0.0,
+            -238.53326392173767
+          ],
+          [
+            0.0,
+            0.0,
+            3.149606299212598,
+            -200.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "coarse_foreground_voxels": 342,
+        "source_grid_foreground_voxels": 13728,
+        "duration_seconds": 7.891,
+        "device": "cpu",
+        "slices": [
+          {
+            "axis": "RAS X",
+            "coarse_index": 64,
+            "artifact": "overlay_0.png"
+          },
+          {
+            "axis": "RAS Y",
+            "coarse_index": 64,
+            "artifact": "overlay_1.png"
+          },
+          {
+            "axis": "RAS Z",
+            "coarse_index": 64,
+            "artifact": "overlay_2.png"
+          }
+        ],
+        "clinical_validated": false,
+        "severity": null,
+        "limitations": [
+          "Coarse full-field model; small vessels can be lost.",
+          "No 3D stenosis, severity or validated physical diameter estimation.",
+          "Resampling a coarse mask onto source geometry does not recover native-resolution vessel detail.",
+          "Probabilities are uncalibrated model outputs, not diagnostic confidence.",
+          "No overlap/performance metric is calculated without a matching reference mask."
+        ],
+        "analysis_id": "d0fbbf42-e090-4fb5-a586-65eaab605321",
+        "case_id": "c5454723-fea5-47ed-804c-375e8a3436da",
+        "source_sha256": "b2a26becb48c2850e752449bf51f62fe26cc2d2174a0ee3e6b3bd6f3230a4ef8",
+        "input_kind": "medical_study",
+        "completed_at": "2026-10-27T08:50:06.478164+00:00"
+      },
+      "input_kind": "medical_study",
+      "artifacts": {
+        "mask_source.nii.gz": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/mask_source.nii.gz",
+        "probability_coarse.nii.gz": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/probability_coarse.nii.gz",
+        "overlay_0.png": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/overlay_0.png",
+        "overlay_1.png": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/overlay_1.png",
+        "overlay_2.png": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/overlay_2.png",
+        "result.json": "/api/cases/c5454723-fea5-47ed-804c-375e8a3436da/volumes/analyses/d0fbbf42-e090-4fb5-a586-65eaab605321/artifacts/result.json"
+      }
+    },
+    "artifacts_verified": {
+      "mask_source.nii.gz": {
+        "bytes": 372190,
+        "sha256": "3cd24dd0aa06fdfad27b796d6dc70d42f8798b3419cf401fcef610c9d6fcd7a3"
+      },
+      "probability_coarse.nii.gz": {
+        "bytes": 7941253,
+        "sha256": "fa92b3b26a66ff1402e90b1be1230eddda920ed269a37baf3c7c1f87201196c9"
+      },
+      "overlay_0.png": {
+        "bytes": 9879,
+        "sha256": "1ff6656993de3216494695faf9dd2eadaad2b127fa52ab60da44a4fe717369f9"
+      },
+      "overlay_1.png": {
+        "bytes": 12047,
+        "sha256": "8db51b88a2b413e3e7d999e9fa150ba945a7509ecbd7606a76266a08405397fb"
+      },
+      "overlay_2.png": {
+        "bytes": 7704,
+        "sha256": "cbbaaf1f87aa334669396192d35d2a397544c8c6b6fae169bb633e7bea2b57ea"
+      },
+      "result.json": {
+        "bytes": 2023,
+        "sha256": "0b958bad8115c8d784674edf3a3b5f8e5f8af3a66d564055c0a265181789abe0"
+      }
+    }
+  }
+}

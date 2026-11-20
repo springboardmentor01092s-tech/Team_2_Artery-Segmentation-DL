@@ -12,11 +12,16 @@ existing account and use **Profile and security → Connected accounts**.
 
 ## Local OAuth configuration
 
-Set `FRONTEND_ORIGIN` and `OAUTH_REDIRECT_BASE` to the same browser origin,
-usually `http://127.0.0.1:5173`. Register these exact callback URLs:
+Set `FRONTEND_ORIGIN` and `OAUTH_REDIRECT_BASE` to the browser origin that
+serves the app. For the documented Docker/combined production service, both
+are `http://127.0.0.1:8000`; a separate Vite development server normally uses
+`http://127.0.0.1:5173`. Register callback URLs for the origin actually in use:
 
-- Google: `http://127.0.0.1:5173/api/auth/oauth/google/callback`
-- GitHub: `http://127.0.0.1:5173/api/auth/oauth/github/callback`
+- Google Docker callback: `http://127.0.0.1:8000/api/auth/oauth/google/callback`
+- GitHub Docker callback: `http://127.0.0.1:8000/api/auth/oauth/github/callback`
+
+For a separate Vite server, substitute `5173` in both the configured origins
+and the registered callback URI.
 
 Copy `backend/.env.example` to `backend/.env` and fill in the relevant values.
 The backend loads this file when it starts, and `.gitignore` excludes it. Restart
@@ -36,6 +41,11 @@ The backend checks the OAuth `state` cookie, uses provider account IDs, requires
 a verified email, and sends the browser a short-lived one-time ticket. The
 frontend exchanges that ticket for its normal revocable app session; provider
 tokens are not stored in the browser or database.
+
+Production remains invitation-only by default. An owner may explicitly set
+`GOOGLE_AUTO_PROVISION=1` to permit a verified Google identity to create only a
+Viewer account. This does not grant administrator or researcher access, and is
+not a substitute for organization-controlled invitation workflows.
 
 ## Password reset delivery
 

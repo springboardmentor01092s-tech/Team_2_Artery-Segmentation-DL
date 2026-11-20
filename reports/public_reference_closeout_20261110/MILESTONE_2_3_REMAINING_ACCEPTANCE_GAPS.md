@@ -1,0 +1,11 @@
+# Milestone 2 3 remaining acceptance gaps
+
+- **Satisfied software checks.** Case 60 exact saved case/image/run restored automatically on refresh. Six candidate exports were identical before and after refresh, matched the API, and unauthenticated overlay access was denied. Verification used Chromium against an isolated localhost database populated from saved Kaggle outputs, with inference disabled. See [screenshot](CASE60_BROWSER.png) and [receipt](CASE60_BROWSER_RECEIPT.json).
+- **Public development evidence.** The [segmentation replay](SEGMENTATION_PUBLIC_BENCHMARK.md) and [detector comparison](LESION_LOCALIZATION_PUBLIC_BENCHMARK.md) are archived development evidence. Current accepted baseline retained.
+- **Functional prototype.** Source-pixel profiles, synthetic geometry and narrowing arithmetic, and the reviewer measurement workflow are available at their documented evidence levels. See [substitution matrix](CLINICAL_EVIDENCE_SUBSTITUTION_MATRIX.csv).
+- **Independent references needed.** Original aligned artery and lesion annotations for locked benchmarks, expert centerline or derived references on aligned masks, calibrated lumen/QCA and severity references, and checkpoint exposure records.
+- **Execution gates.** No new Kaggle run. Shared job ownership and free quota could not be verified here. Keep frozen weights, protected splits and the conditional trial intact.
+
+The app exposes evaluation in Evaluation Explorer and Model Analytics, profiles and calibration in Width Profile Review, reviewed narrowing and severity in Stenosis Measurements, attribution status in Result Evidence and provenance/downloads in Research Progress. Scientific acceptance remains open for Milestones 2 and 3.
+
+The follow-up adds [official archive index and ARCADE annotation metadata checks](OFFICIAL_ARCHIVE_INDEX_RECEIPT.json) and [nine-phantom geometry results](../research_validation_followup/RESEARCH_DIAMETER_VALIDATION.md). Research Progress links the new receipt. Targeted verification from `backend` with `.venv/bin/python -m pytest -q tests/test_research_progress.py tests/test_narrowing.py tests/test_stenosis_measurements.py` passed 27 tests. The ARCADE cohort and CADICA release remain ineligible for independent scoring pending the gates above. No browser replay was repeated.

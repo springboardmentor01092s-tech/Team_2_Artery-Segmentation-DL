@@ -42,7 +42,7 @@ def test_review_run_binding_reports_exports_and_immutable_history(monkeypatch, t
         manifest = client.get(panels_url, headers=owner).json()
         assert manifest['analysis_run_id'] == event_id
         assert manifest['model_version'] == analysis['model_version']
-        assert len(manifest['panels']) == 11
+        assert len(manifest['panels']) == 12  # includes Grad-CAM++
         assert not next(p for p in manifest['panels'] if p['key'] == 'landmarks')['available']
         assert client.get(panels_url, headers=outsider).status_code == 404
         assert client.get(panels_url).status_code == 401
@@ -72,8 +72,10 @@ def test_review_run_binding_reports_exports_and_immutable_history(monkeypatch, t
         path = base+'/research-reports/'+snapshot['report_id']
         assert client.get(path, headers=outsider).status_code == 404
         assert client.get(path).status_code == 401
-        assert client.get(path+'/export/zip', headers=outsider).status_code == 404
-        assert client.get(path+'/export/zip').status_code == 401
+        for export_format in ('json', 'csv', 'pdf', 'zip'):
+            export_path = f'{path}/export/{export_format}'
+            assert client.get(export_path, headers=outsider).status_code == 404
+            assert client.get(export_path).status_code == 401
         bundle = client.get(path+'/export/zip', headers=owner)
         assert bundle.status_code == 200
         with ZipFile(BytesIO(bundle.content)) as archive:

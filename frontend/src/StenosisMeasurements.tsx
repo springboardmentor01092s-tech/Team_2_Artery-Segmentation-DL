@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { apiUrl } from './api';
+import { utcDate } from "./lib/time";
 
 type Record = {id:string; analysis_event_id:string; created_at:string; result:{narrowing_percent:number; minimum_diameter:number; reference_diameter:number; diameter_unit:string; candidate_id:string; reference_segment_id:string; measurement_frame:string; quality_gate?:{status:string}; severity:{status:string;category:string|null;protocol_id?:string;protocol_version?:string;reference?:string;measurement_method?:string}; explanation:{text:string}}};
 type Props = {token:string;caseId:string;imageId:string;runId:string;candidates:string[];canReview:boolean;canAssess:boolean};
@@ -17,6 +18,27 @@ const reasonLabel=(reason?:string)=>({
 const neutralizeLegacyMethodLabel=(value?:string)=>value?.toLowerCase().includes('percentile/ring research rules')
   ? 'Percentile/ring research rules'
   : value;
+
+function MeasurementDemo() {
+  const [lumen, setLumen] = useState(1.6);
+  const reference = 4;
+  const narrowing = ((40 - Math.round(lumen * 10)) / 40) * 100;
+  const category = narrowing >= 70 ? 'Severe' : narrowing >= 50 ? 'Moderate' :
+    narrowing >= 25 ? 'Mild' : narrowing > 0 ? 'Minimal' : 'No measured narrowing';
+  return <details className="evidence-details">
+    <summary>Try a synthetic lumen and severity example</summary>
+    <p>Demonstration only. These fictional diameters are separate from the saved angiogram and are never written to case records or reports.</p>
+    <label>Example minimum lumen diameter: {lumen.toFixed(1)} mm
+      <input type="range" min="0.1" max={reference} step="0.1" value={lumen}
+        onChange={event => setLumen(Number(event.target.value))} />
+    </label>
+    <div className="metadata">
+      <div><span>Example reference diameter</span><strong>{reference.toFixed(1)} mm</strong></div>
+      <div><span>Calculated diameter reduction</span><strong>{narrowing.toFixed(1)}%</strong></div>
+      <div><span>Illustrative research band</span><strong>{category}</strong></div>
+    </div>
+  </details>;
+}
 type AutomaticCandidate={candidate_id:string;status:string;quality_status?:string;eligible_for_reference_validation?:boolean;reasons:string[];minimum_diameter?:number|null;reference_diameter?:number|null;narrowing_percent?:number|null;association?:{path_id:string;status:string};sensitivity?:{narrowing_range_percentage_points?:number[]};severity?:{category?:string|null;reason?:string};minimum_cross_section?:{endpoints:number[][]};reference_cross_sections?:{endpoints:number[][]}[];cross_section_assessment?:{status?:string;reasons?:string[]}};
 const automaticEligible=(candidate?:AutomaticCandidate)=>!!candidate
   && candidate.status!=='abstained'
@@ -104,6 +126,8 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
     <h3>Severity Assessment · Vessel diameter workflow</h3>
     <p className="caption">The experimental measurement method uses centerline diameter and nearby-reference comparison with source-coordinate mapping, unique-vessel association, branch and contrast checks, stable-reference selection and boundary-sensitivity gating. Every compatible saved run is assessed automatically. Detection identifies a candidate; diameter measurements quantify narrowing; an eligible versioned protocol interprets the percentage. Model confidence is never used as percentage narrowing. New entries preserve previous records.</p>
     <div className="metadata"><div><span>Detected lesions</span><strong>{candidates.length || 'No candidate above threshold'}</strong></div><div><span>Saved run</span><strong>{runId}</strong></div><div><span>Automatic normal grade</span><strong>Never inferred from no detection</strong></div></div>
+    {candidates.length === 0 && <p className="caption">This saved run has no retained candidate to measure. Minimum lumen diameter, reference diameter, and lesion severity are unavailable for this run.</p>}
+    {['127.0.0.1', 'localhost'].includes(window.location.hostname) && window.location.port === '8001' && <MeasurementDemo />}
     {error&&<p role="alert">{error}</p>}
     {candidates.length > 0 && <div className="stenosis-summary-scroll" tabIndex={0} role="region" aria-label="Candidate measurement summary">
       <table className="stenosis-summary">
@@ -142,7 +166,7 @@ export default function StenosisMeasurements({token,caseId,imageId,runId,candida
       <p>{row.result.explanation.text}</p><p>Research severity category: {row.result.severity.category||'Indeterminate — no approved compatible protocol'}</p>
       {row.result.severity.category&&<p>Protocol: {row.result.severity.protocol_id} · version {row.result.severity.protocol_version} · reference {row.result.severity.reference}. Research classification from reviewed measurements; clinical validation is not established.</p>}
       <p className="caption">This measurement-based category is separate from detector confidence, CADICA source-grade predictions, ischemia and clinical risk.</p>
-      <small>Record {row.id} · {new Date(row.created_at).toLocaleString()}</small>
+      <small>Record {row.id} · {utcDate(row.created_at).toLocaleString()}</small>
     </article>)}
     {canReview&&candidates.length>0&&<details><summary>Record calibrated local/reference measurements</summary>
       <form onSubmit={save}>

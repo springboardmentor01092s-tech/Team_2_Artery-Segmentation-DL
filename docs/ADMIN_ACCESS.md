@@ -22,7 +22,7 @@ With a Railway shell:
 railway ssh -- python -m app.cli create-admin
 ```
 
-The command prompts for an email and password without accepting the password in command-line arguments or environment variables. Passwords require 14–128 characters with uppercase, lowercase, number and symbol characters. The command refuses to run after an administrator exists. Public registration always creates a viewer account; it cannot create an administrator.
+The command prompts for an email and password without accepting the password in command-line arguments or environment variables. Passwords require 14–128 characters with uppercase, lowercase, number and symbol characters. The command refuses to run after an administrator exists. Production registration requires a valid invitation and creates a viewer account.
 
 Additional roles are assigned through the authenticated Administrator workspace and are audited. There is no shared credential between installations.
 
@@ -34,8 +34,13 @@ An authenticated deployment owner with private container access can run:
 python -m app.cli reset-admin-password
 ```
 
-The command prompts securely, only resets an existing administrator, revokes that administrator's sessions and writes an audit event. It is not exposed as a public API.
+The command prompts securely, only resets an existing administrator, revokes that administrator’s sessions, clears the current authenticator and login throttle, and writes an audit event. The administrator enrolls a new authenticator at the next production sign-in. It is not exposed as a public API.
 
-## Current authentication boundary
+## First sign-in and invitations
 
-The application supports hashed passwords, login throttling, eight-hour revocable sessions, logout, password-reset delivery when SMTP is configured, account suspension and OAuth when configured. MFA enrollment is not currently implemented; do not claim MFA protection until a separately tested factor-enrollment and recovery workflow is added.
+1. Open the installation URL and sign in with the bootstrapped credentials.
+2. Add the displayed setup key to a time-based authenticator and enter its six-digit code. Subsequent production sign-ins require the password and a fresh authenticator code.
+3. In **User Management**, enter the recipient’s email and create an invitation. Share the link privately. It expires in 24 hours and can be redeemed once using that email.
+4. Use the existing role and case-access controls to assign any additional permissions after registration.
+
+The browser keeps the login session in tab storage. Production administrators must complete MFA before accessing protected routes. Production OAuth cannot create a new account. Deployment owners should restrict access to the database and its backups because they contain authenticator secrets. Use HTTPS for hosted sign-in.

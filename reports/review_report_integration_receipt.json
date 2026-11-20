@@ -1,0 +1,25 @@
+{
+  "case_id": "b43834ff-1641-478d-a89e-06068d265b81",
+  "asset_id": "31bbef13-f350-4cfa-adc2-eb5afe6012ff",
+  "report_id": "db480980-74bc-487f-aeb1-90fbbac1e8cc",
+  "report_analysis_id": "88554854-018a-4737-9f68-a392521756bc",
+  "latest_analysis_id": "a67e848f-1a07-4caa-a0ed-db2407ab8e47",
+  "history_runs": 3,
+  "report_preserved_after_rerun": true,
+  "run_linked_review": true,
+  "exports_verified": {
+    "json": {
+      "bytes": 143734,
+      "sha256": "727d8caf45fd476590c49c588636a539f50674c320806bd1ef1a35f0816bcca5"
+    },
+    "csv": {
+      "bytes": 828,
+      "sha256": "3bf81cdadd8019f17aa2b381490712110c0da190fe014b8552e64f5787f897bc"
+    },
+    "pdf": {
+      "bytes": 490282,
+      "sha256": "c000ba1841215997364bfae46f6d547eeea27a920e1831251629c2484cde6e2d"
+    }
+  },
+  "scope": "Public development-exposed ARCADE fixture, workflow acceptance only; no clinical validation."
+}

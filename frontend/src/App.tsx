@@ -6,7 +6,7 @@ import { Card } from "./components/prismui/card";
 import { Input } from "./components/prismui/input";
 import { Label } from "./components/prismui/label";
 import { GoogleLogo } from "./SocialLogos";
-import { Building2 } from "lucide-react";
+import { Building2, ShieldCheck } from "lucide-react";
 import Auth7 from "./components/ui/auth-07";
 import DocumentUploader from "./components/ui/file-upload-5";
 import { SwitchMode } from "./components/watermelon/switch-mode";
@@ -23,7 +23,7 @@ import { caseTasks, caseAnatomies, taskLabel } from "./caseConfiguration";
 import { restoreUserDesign } from "./designPreview";
 import type { AnalysisJob, AnalysisResult, CaseRecord } from "./caseTypes";
 import { canCreateCases, canReadCases, canViewModels, canOpenSection } from "./permissions";
-import { forgetAccount, localDemo, saveAccount, saveDemoAccounts, savedAccounts, type SavedAccount } from "./demoSessions";
+import { forgetAccount, localDemo, saveDemoAccounts, savedAccounts, type SavedAccount } from "./demoSessions";
 
 const AccountPanel = lazy(() => import('./AccountPanel'));
 const AdminPanel = lazy(() => import('./AdminPanel'));
@@ -44,9 +44,20 @@ const ReviewAssessment = lazy(() => import('./ReviewAssessment'));
 
 const TOKEN_KEY = "artery-analysis-token";
 
+const demoSignInChoices: SavedAccount[] = [
+  ["doctor", "doctor", "Demo Doctor"],
+  ["radiologist", "clinician", "Demo Clinician"],
+  ["researcher", "researcher", "Demo Researcher"],
+  ["mlengineer", "ml_engineer", "Demo ML Engineer"],
+  ["technician", "technician", "Demo Technician"],
+  ["viewer", "viewer", "Demo Viewer"],
+  ["admin", "admin", "Demo Administrator"],
+].map(([id, role, name]) => ({ id, role, name, email: `${id}.demo@example.com`, token: "" }));
+
 function App() {
   const [token, setToken] = useState(() => {
-    return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || "";
+    localStorage.removeItem(TOKEN_KEY);
+    return sessionStorage.getItem(TOKEN_KEY) || "";
   });
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => { restoreUserDesign(user?.id); }, [user?.id]);
@@ -67,13 +78,18 @@ function App() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [registering, setRegistering] = useState(false);
+  const [invitation, setInvitation] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("invite") || "");
+  const [registering, setRegistering] = useState(Boolean(invitation));
+  const [mfa, setMfa] = useState<{ enrollment_key?: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [oauthMfaTicket, setOauthMfaTicket] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetStep, setResetStep] = useState<"request" | "confirm">("request");
   const [resetContact, setResetContact] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [resetPassword, setResetPassword] = useState("");
-  const [capabilities, setCapabilities] = useState({ google: false, institutional_sso: false, email_reset: false });
+  const [capabilities, setCapabilities] = useState({ google: false, institutional_sso: false, email_reset: false, invitation_required: false, demo_signin_switcher: false });
+  const [capabilitiesLoaded, setCapabilitiesLoaded] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [demoAccounts, setDemoAccounts] = useState<SavedAccount[]>(savedAccounts);
   const [authNotice, setAuthNotice] = useState("");
@@ -136,6 +152,7 @@ function App() {
   const selectedImage = selected?.images.find((item) => item.id === selectedImageId) || selected?.images.at(-1);
   const selectedAnalysis = runForImage(selectedImage?.id, analysis);
   const selectedImageRef = useRef(selectedImage?.id);
+  const announcedJobRef = useRef<string | null>(null);
   selectedImageRef.current = selectedImage?.id;
   const overlayRequest = useRef(0);
   const matchingCases = cases.filter((item) =>
@@ -151,7 +168,17 @@ function App() {
   useEffect(() => () => { if (overlay.startsWith("blob:")) URL.revokeObjectURL(overlay); }, [overlay]);
 
   useEffect(() => {
-    request<typeof capabilities>("/api/auth/capabilities").then(setCapabilities).catch(() => {});
+    if (invitation) window.history.replaceState({}, "", window.location.pathname + window.location.search);
+    request<typeof capabilities>("/api/auth/capabilities").then(next => {
+      setCapabilities(next);
+      if (!next.demo_signin_switcher || !["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)) return;
+      const url = new URL(window.location.href);
+      const choice = demoSignInChoices.find(account => account.role === url.searchParams.get("demo_role"));
+      if (!choice) return;
+      url.searchParams.delete("demo_role");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      if (!sessionStorage.getItem(TOKEN_KEY) && !invitation) setEmail(choice.email);
+    }).catch(() => {}).finally(() => setCapabilitiesLoaded(true));
     if (localDemo) {
       request<{ accounts: SavedAccount[] }>("/api/auth/demo-accounts")
         .then((res) => {
@@ -182,11 +209,15 @@ function App() {
     url.searchParams.delete("auth_error");
     window.history.replaceState({}, "", url.pathname + url.search + url.hash);
     if (oauthError) {
-      setError(oauthError === "existing_account" ? "This email already has an account. Sign in with your password first." : "Social sign-in could not be completed.");
+      setError(oauthError === "invitation_required" ? "Google sign-in is verified, but this workspace requires an invitation." : oauthError === "existing_account" ? "This email already has an account. Sign in with your password first." : "Social sign-in could not be completed.");
     }
     if (ticket) {
-      request<{ access_token: string }>("/api/auth/oauth/exchange", undefined, { ticket }, "POST")
-        .then((result) => { localStorage.setItem(TOKEN_KEY, result.access_token); sessionStorage.removeItem(TOKEN_KEY); setToken(result.access_token); })
+      request<{ access_token?: string; mfa_required?: boolean; enrollment_key?: string }>("/api/auth/oauth/exchange", undefined, { ticket }, "POST")
+        .then((result) => {
+          if (result.mfa_required) { setOauthMfaTicket(ticket); setMfa(result); return; }
+          if (!result.access_token) throw new Error("Google sign-in did not return a session.");
+          sessionStorage.setItem(TOKEN_KEY, result.access_token); setToken(result.access_token);
+        })
         .catch((cause: Error) => setError(cause.message));
     }
   }, []);
@@ -225,7 +256,6 @@ function App() {
       .then((profile) => {
         if (!active || token !== activeTokenRef.current) return;
         setUser(profile);
-        if (localStorage.getItem(TOKEN_KEY) === token) setDemoAccounts(saveAccount(profile, token));
         setActiveView("overview");
         if (canReadCases(profile.role)) return loadCases(token);
         setCases([]);
@@ -380,7 +410,7 @@ function App() {
       sessionStorage.setItem(storageKey, key);
       const job = await request<AnalysisJob>(`/api/images/${selectedImage.id}/analysis/jobs`, token, { idempotency_key: key }, "POST");
       sessionStorage.removeItem(storageKey);
-      if (selectedImageRef.current === submittedImageId) setAnalysisJob(job);
+      if (selectedImageRef.current === submittedImageId) { announcedJobRef.current = job.id; setAnalysisJob(job); }
     } catch (cause) {
       setError((cause as Error).message);
       setAnalysisBusy(false);
@@ -420,7 +450,7 @@ function App() {
           setHistory(items);
           await loadCases(token);
           if (!active) return;
-          setNotice("Research analysis saved. Review masks, candidate evidence and limitations.");
+          if (announcedJobRef.current === jobId) { announcedJobRef.current = null; setNotice("Research analysis saved. Review masks, candidate evidence and limitations."); }
           setAnalysisBusy(false);
         } else timer = setTimeout(poll, 1000);
       } catch (cause) {
@@ -436,19 +466,32 @@ function App() {
     setError("");
     setBusy(true);
     try {
-      if (registering) {
-        await request("/api/auth/register", undefined, { email, password, display_name: displayName, username: username || undefined }, "POST");
-      }
-      const result = await request<{ access_token: string }>(
-        "/api/auth/login", undefined, { identifier: email, password, remember: rememberMe }, "POST",
-      );
-      if (rememberMe) {
-        localStorage.setItem(TOKEN_KEY, result.access_token);
-        sessionStorage.removeItem(TOKEN_KEY);
-      } else {
+      if (oauthMfaTicket) {
+        const result = await request<{ access_token?: string }>("/api/auth/oauth/exchange", undefined, { ticket: oauthMfaTicket, mfa_code: mfaCode }, "POST");
+        if (!result.access_token) throw new Error("Google sign-in did not return a session.");
+        setOauthMfaTicket(null);
+        setMfa(null);
+        setMfaCode("");
         sessionStorage.setItem(TOKEN_KEY, result.access_token);
-        localStorage.removeItem(TOKEN_KEY);
+        setToken(result.access_token);
+        return;
       }
+      if (registering) {
+        await request("/api/auth/register", undefined, { email, password, display_name: displayName, username: username || undefined, invitation: invitation || undefined }, "POST");
+        setRegistering(false);
+        setInvitation("");
+      }
+      const result = await request<{ access_token?: string; mfa_required?: boolean; enrollment_key?: string }>(
+        "/api/auth/login", undefined, { identifier: email, password, remember: rememberMe, mfa_code: mfaCode || undefined }, "POST",
+      );
+      if (result.mfa_required) {
+        setMfa(result);
+        return;
+      }
+      if (!result.access_token) throw new Error("Sign-in did not return a session.");
+      setMfa(null);
+      setMfaCode("");
+      sessionStorage.setItem(TOKEN_KEY, result.access_token);
       setToken(result.access_token);
       setPassword("");
     } catch (cause) {
@@ -620,11 +663,21 @@ function App() {
     }
   }
 
+  async function switchDemoSignIn(account: SavedAccount) {
+    await signOut();
+    setPassword("");
+    setMfa(null);
+    setMfaCode("");
+    setOauthMfaTicket(null);
+    setRegistering(false);
+    setResetting(false);
+    setEmail(account.email);
+  }
+
   function switchAccount(account: SavedAccount, preserveRequestedNavigation = false) {
     if (!localDemo || account.token === token) return;
     if (!preserveRequestedNavigation) resetAnalysisNavigation();
-    localStorage.setItem(TOKEN_KEY, account.token);
-    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.setItem(TOKEN_KEY, account.token);
     setUser(null);
     setCases([]);
     setSelectedId("");
@@ -653,7 +706,8 @@ function App() {
   }
 
   if (!token) {
-    const social = !resetting && !registering ? (
+    const mfaPending = Boolean(mfa && !registering && !resetting);
+    const social = !resetting ? (
       <div className="wm-auth-social">
         <Button type="button" variant="outline" className="wm-social-button" disabled={!capabilities.google} onClick={() => window.location.assign(apiUrl("/api/auth/oauth/google/start"))}>
           <GoogleLogo /> Continue with Google
@@ -661,7 +715,7 @@ function App() {
         <Button type="button" variant="outline" className="wm-social-button" disabled title="Institutional SSO is not configured">
           <Building2 className="social-icon" aria-hidden="true" /> Hospital / University SSO
         </Button>
-        {!capabilities.google && <p className="wm-auth-help">Google sign-in is unavailable until OAuth credentials are configured.</p>}
+        {capabilitiesLoaded && !capabilities.google && <p className="wm-auth-help">Google sign-in is unavailable until OAuth credentials are configured.</p>}
       </div>
     ) : undefined;
 
@@ -669,13 +723,15 @@ function App() {
       <>
       <div className="theme-switch-float"><SwitchMode width={76} height={38} /></div>
       <Auth7
-        title={resetting ? "Reset your password" : registering ? "Create your account" : "Welcome back"}
-        description={resetting ? "Get a one-time code by email." : registering ? "Join the CoroVision AI research workspace." : "Sign in to access coronary vessel analysis."}
-        social={social}
+        title={mfaPending ? "Verify it's you" : resetting ? "Reset your password" : registering ? "Create your account" : "Welcome back"}
+        description={mfaPending ? (mfa?.enrollment_key ? "Add CoroVision AI to your authenticator app, then enter the 6-digit code it shows." : "Enter the 6-digit code from your authenticator app to finish signing in.") : resetting ? "Get a one-time code by email." : registering ? "Join the CoroVision AI research workspace." : "Sign in to access coronary vessel analysis."}
+        social={mfaPending ? undefined : social}
         footer={
-          <p className="wm-auth-switch">
+          mfaPending ? <p className="wm-auth-switch">
+            Not you?{" "}<button type="button" onClick={() => { setMfa(null); setMfaCode(""); setOauthMfaTicket(null); setError(""); setAuthNotice(""); }}>Return to sign in</button>
+          </p> : <p className="wm-auth-switch">
             {resetting ? "Remember your password?" : registering ? "Already have an account?" : "Don't have an account?"}{" "}
-            <button type="button" onClick={() => { if (resetting) setResetting(false); else setRegistering(!registering); setError(""); setAuthNotice(""); }}>
+            <button type="button" onClick={() => { if (resetting) setResetting(false); else setRegistering(!registering); setMfa(null); setMfaCode(""); setError(""); setAuthNotice(""); }}>
               {resetting || registering ? "Sign in" : "Sign up"}
             </button>
           </p>
@@ -700,6 +756,22 @@ function App() {
           </form>
         ) : (
           <form className="wm-auth-form" onSubmit={handleAuth}>
+            {mfaPending ? (
+              <section className="wm-mfa-enrollment" aria-labelledby="mfa-enrollment-heading">
+                <p className="wm-mfa-badge" id="mfa-enrollment-heading"><ShieldCheck aria-hidden="true" />Administrator security check</p>
+                {mfa?.enrollment_key && <>
+                  <ol className="wm-mfa-steps">
+                    <li>Open an authenticator app such as Google Authenticator or Microsoft Authenticator.</li>
+                    <li>Add a new account using the setup key below.</li>
+                    <li>Enter the 6-digit code the app shows.</li>
+                  </ol>
+                  <details className="wm-mfa-key"><summary>Show setup key</summary><code>{mfa.enrollment_key}</code><p>Keep this key private. You only need it once, to add this account.</p></details>
+                </>}
+                <Label htmlFor="mfa-code">Authenticator code</Label>
+                <Input id="mfa-code" className="wm-otp-input" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="000000" aria-describedby="mfa-code-help" value={mfaCode} onChange={event => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required autoFocus />
+                <p className="wm-auth-help" id="mfa-code-help">Codes refresh every 30 seconds. Enter the current one.</p>
+              </section>
+            ) : <>
             {registering && (
               <>
                 <Label htmlFor="display-name">Display name</Label>
@@ -716,14 +788,21 @@ function App() {
               <div className="wm-auth-options">
                 <label className="wm-remember-option" htmlFor="remember-me">
                   <input id="remember-me" type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
-                  <span>Keep me signed in on this device</span>
+                  <span title="For security, each browser tab keeps its own sign-in.">Keep me signed in on this tab</span>
                 </label>
                 <button type="button" className="wm-auth-link" onClick={() => { setError(""); setAuthNotice(""); setResetContact(email.includes("@") ? email : ""); setResetting(true); }}>Forgot password?</button>
               </div>
             )}
+            {registering && (capabilities.invitation_required || invitation) && (
+              <>
+                <Label htmlFor="invitation">Invitation code</Label>
+                <Input id="invitation" type="password" autoComplete="off" value={invitation} onChange={event => setInvitation(event.target.value)} required />
+              </>
+            )}
+            </>}
             {error && <p className="wm-auth-message wm-auth-error" role="alert">{error}</p>}
             {authNotice && <p className="wm-auth-message" role="status">{authNotice}</p>}
-            <Button className="wm-auth-submit" disabled={busy}>{busy ? "Please wait…" : registering ? "Create account" : "Sign in"}</Button>
+            <Button className="wm-auth-submit" disabled={busy || (mfaPending && mfaCode.length !== 6)}>{busy ? "Please wait…" : mfaPending ? "Verify and continue" : registering ? "Create account" : "Sign in"}</Button>
           </form>
         )}
       </Auth7>
@@ -747,7 +826,7 @@ function App() {
               </div>
               <div className="case-list-controls"><label>Modality<ScreenShareSelect label="Modality" value={caseModality} onChange={e => { setCaseModality(e.target.value); setCasePage(1); }}><option value="all">All modalities</option>{[...new Set(cases.map(c => c.modality))].map(v => <option key={v}>{v}</option>)}</ScreenShareSelect></label><label>Research task<ScreenShareSelect label="Research task" value={caseTaskFilter} onChange={e => { setCaseTaskFilter(e.target.value); setCasePage(1); }}><option value="all">All tasks</option>{caseTasks.map(([id, title]) => <option key={id} value={id}>{title}</option>)}</ScreenShareSelect></label></div>
 <section className="case-find-results" aria-label="Case search results"><h2>Search results <span>({matchingCases.length})</span></h2>
-{visibleCases.length ? visibleCases.map(item => <button type="button" key={item.id} onClick={() => { setSelectedId(item.id); setNewCaseOpen(false); setCaseFinderOpen(false); setError(""); }}><strong>{item.case_code}</strong><span>{item.modality} · {item.anatomy} · {item.status}</span><small>{(item.intended_tasks || [item.intended_task]).map(taskLabel).join(", ")}</small><span>Open case →</span></button>) : <p className="muted">{cases.length ? "No cases match your filters." : "No accessible cases yet. Create a new study or ask the case owner to share access."}</p>}
+{visibleCases.length ? visibleCases.map(item => <button type="button" key={item.id} onClick={() => { setSelectedId(item.id); setNewCaseOpen(false); setCaseFinderOpen(false); setError(""); }}><strong>{item.case_code}</strong><span>{item.modality} · {item.anatomy} · {item.status}</span><small>{(item.intended_tasks || [item.intended_task]).map(taskLabel).join(", ")}</small><span>Open case →</span></button>) : <p className="muted">{cases.length ? "No cases match your filters." : (user?.role === "admin" ? "No cases assigned to you. Administrators see only cases they own or are assigned; use Case Access to assign one." : "No accessible cases yet. Create a new study or ask the case owner to share access.")}</p>}
 {matchingCases.length > 8 && <div className="case-pagination"><Button type="button" variant="outline" disabled={casePage <= 1} onClick={() => setCasePage(page => page - 1)}>Previous</Button><span>{Math.min(casePage, pageCount)} / {pageCount}</span><Button type="button" variant="outline" disabled={casePage >= pageCount} onClick={() => setCasePage(page => page + 1)}>Next</Button></div>}
 </section>
               </>}
@@ -770,7 +849,9 @@ function App() {
         <div className="account"><NotificationBell key={user.id} token={token} onOpenCase={(id) => { setSelectedId(id); setSelectedImageId(""); setActiveView("cases"); }} /><div className="theme-switch"><SwitchMode width={76} height={38} /></div></div>
       </header>
       <main className="workspace">
-        <MacOSSidebar activeView={activeView} onViewChange={setActiveView} user={user} role={user?.role} onNewCase={startNewCase} onLogout={signOut} savedAccounts={demoAccounts.filter((account) => account.id !== user.id)} onSwitchAccount={switchAccount}>
+        <MacOSSidebar activeView={activeView} onViewChange={setActiveView} user={user} role={user?.role} onNewCase={startNewCase} onLogout={signOut}
+          savedAccounts={capabilities.demo_signin_switcher && localDemo ? demoSignInChoices : demoAccounts.filter(account => account.id !== user.id)}
+          onSwitchAccount={capabilities.demo_signin_switcher ? switchDemoSignIn : switchAccount}>
             <>
               <h1>Cases</h1>
               <p className="muted">Authorized de-identified research studies</p>
@@ -779,7 +860,7 @@ function App() {
                 <Button type="button" variant={caseFinderOpen ? "default" : "outline"} onClick={startFindCase}>Find case</Button>
               </div>
               <div className="case-list" role="list" aria-label="Cases">
-                {matchingCases.length === 0 && <p className="empty">{cases.length ? "No cases match your filters." : "No accessible cases yet."}</p>}
+                {matchingCases.length === 0 && <p className="empty">{cases.length ? "No cases match your filters." : user?.role === "admin" ? "No cases assigned to you yet. Administrators see only cases they own or are assigned." : "No accessible cases yet."}</p>}
                 {visibleCases.map((item) => (
                   <button key={item.id} className={`case-item ${selectedId === item.id ? "active" : ""}`} onClick={() => { setSelectedId(item.id); setNewCaseOpen(false); setCaseFinderOpen(false); setError(""); }}>
                     <strong>{item.case_code}</strong>

@@ -1,0 +1,38 @@
+{
+  "verified_at": "2026-11-10T19:34:04+05:30",
+  "application_url": "http://127.0.0.1:5173/",
+  "case_code": "DEMO-DCA1-003-20261109",
+  "report_version": 2,
+  "report_id": "13d22844-82b2-498d-a71c-1fe8cadb3197",
+  "case_id": "dac0b8f5-71cb-4b58-b640-f5e5c5b85f41",
+  "image_id": "37bbfa6b-7286-4248-bf9c-5a4cbe1b9fc8",
+  "analysis_run_id": "d0286ecd-e383-4f16-8ecb-9e662c8df223",
+  "downloaded_filename": "DEMO-DCA1-003-20261109-research-v2.zip",
+  "downloaded_bytes": 228082,
+  "downloaded_sha256": "9754c99871f5979445810c386f2bbe609189fdef2b94054c125ab6dddf8ad052",
+  "archive_entries": [
+    "manifest.json",
+    "report.csv",
+    "report.json",
+    "report.pdf"
+  ],
+  "manifest_hashes_valid": true,
+  "manifest_byte_lengths_valid": true,
+  "identifiers_match_across_manifest_json_csv": true,
+  "pdf_reopened": true,
+  "pdf_pages": 2,
+  "pdf_encrypted": false,
+  "access_checks": {
+    "no_authentication_status": 401,
+    "viewer_role_status": 403,
+    "cross_user_denial_tested_by_backend_integration": true
+  },
+  "targeted_backend_tests": {
+    "passed": 10,
+    "failed": 0,
+    "command": ".venv/bin/python -m pytest tests/test_review_reporting.py tests/test_width_profiles.py -q"
+  },
+  "runtime_issue_observed": "The first browser attempt reached an older backend process whose route rejected zip with HTTP 422. Restarting the backend from the current checkout exposed the implemented zip route.",
+  "failure_message_fix": "Structured API error details now render as a status-bearing export error instead of [object Object].",
+  "training_performed": false
+}

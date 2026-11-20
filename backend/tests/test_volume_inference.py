@@ -159,6 +159,11 @@ def test_volume_job_case_permissions_history_and_artifact_isolation(tmp_path, mo
         preview = rows[0]['preview_url']
         assert client.get(preview).status_code == 401
         assert client.get(preview, headers=outsider).status_code == 404
+        for export in ('report/json', 'report/csv', 'report/pdf', 'evidence.zip'):
+            export_url = f"{base}/{rows[0]['id']}/{export}"
+            assert client.get(export_url).status_code == 401
+            assert client.get(export_url, headers=outsider).status_code == 404
+            assert client.get(export_url, headers=owner).status_code == 200
         response = client.get(preview, headers=owner)
         assert response.status_code == 200
         assert response.headers['cache-control'] == 'no-store'

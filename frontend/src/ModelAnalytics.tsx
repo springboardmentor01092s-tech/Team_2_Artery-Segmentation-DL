@@ -23,10 +23,8 @@ export default function ModelAnalytics({ status, registry, refreshing, updatedAt
   const [view, setView] = useState("Evaluation");
   const [metric, setMetric] = useState<Metric>("dice");
   const [task, setTask] = useState("all");
-  const evidence = status.trained_release?.research_evidence;
-  const connections=status.task_connections;
-  const connected = connections?.filter(item=>item.connected).length ?? evidence?.tasks.filter(item => item.inference_connected).length ?? 0;
-  const total = connections?.length ?? evidence?.tasks.length ?? 0;
+  const connections = status.task_connections;
+  const connected = connections?.filter(item => item.connected) ?? [];
   const experiments = status.comparison?.experiments ?? [];
   const filtered = experiments.filter(item => task === "all" || item.task === task);
   const releaseModels = status.trained_release?.models ?? [];
@@ -40,12 +38,18 @@ export default function ModelAnalytics({ status, registry, refreshing, updatedAt
     {view === "Evaluation" && <>
       <div className="cv-model-grid">
         <article className="cv-model-card"><h4>Connected release · validation Dice</h4><Bars rows={evaluationRows} label="Validation Dice scores" /><p className="caption">Different tasks and aggregation methods are shown separately. These scores are not a ranking across tasks.</p></article>
-        <article className="cv-model-card"><h4>Research task coverage</h4>{total ? <><div className="cv-model-donut-layout"><svg className="cv-model-donut" viewBox="0 0 120 120" role="img" aria-label={`${connected} of ${total} adapter tasks connected to inference`}><circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" strokeOpacity=".16" strokeWidth="16" /><circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" strokeWidth="16" pathLength="100" strokeDasharray={`${connected / total * 100} 100`} transform="rotate(-90 60 60)" /><text x="60" y="57" textAnchor="middle" fill="currentColor" fontSize="22" fontWeight="700">{connected}/{total}</text><text x="60" y="74" textAnchor="middle" fill="currentColor" fontSize="10">connected</text></svg><div><p><strong>{connected}</strong> connected · {(connected / total * 100).toFixed(1)}%</p><p><strong>{total - connected}</strong> not enabled · {((total - connected) / total * 100).toFixed(1)}%</p></div></div><p className="caption">Current hash-verified adapter routes, not model accuracy. The adapter registry has ten connected tasks and two excluded hepatic tasks. The evaluation catalog separately retains two unconnected frozen-ensemble proposals. CADICA has two output views sharing one checkpoint.</p></> : <p className="muted">No research task inventory is available.</p>}</article>
-      {connections&&<details className="evaluation-section"><summary>Task connection registry</summary><div className="evaluation-section-body table-scroll"><table><caption>Current adapter availability · not clinical approval</caption><thead><tr><th>Task</th><th>Input</th><th>State</th></tr></thead><tbody>{connections.map(item=><tr key={item.id}><th scope="row">{item.title}</th><td>{item.dimension} · {item.modality} · {item.anatomy}</td><td>{item.connected?'Connected · research only':item.state.replaceAll('_',' ')}</td></tr>)}</tbody></table><p>Open a coronary case to review combined 2D findings. For CT volumes, CoroVision selects the pipeline from the case anatomy.</p></div></details>}
+        <article className="cv-model-card">
+          <h4>Connected inference tasks</h4>
+          {connections ? <><p><strong>{connected.length}</strong> available in this installation</p>
+            {connected.length > 0 && <ul>{connected.map(item => <li key={item.id}>{item.title}</li>)}</ul>}
+          </> : <p>Runtime task inventory unavailable.</p>}
+          <p className="caption">Availability comes from the current runtime registry. Multiple tasks may share a checkpoint.</p>
+        </article>
       </div>
       <details className="evaluation-section"><summary>Validation results table<span aria-hidden="true">⌄</span></summary><div className="evaluation-section-body table-scroll"><table><caption>Connected model validation reports</caption><thead><tr><th scope="col">Task</th><th scope="col">Architecture</th><th scope="col">Dice</th><th scope="col">Images</th><th scope="col">Aggregation</th></tr></thead><tbody>{releaseModels.map(item => <tr key={item.task}><th scope="row">{taskName(item.task)}</th><td>{item.architecture}</td><td>{score(item.validation_dice)}</td><td>{item.validation_images}</td><td>{item.task === "syntax" ? "Mean image Dice" : "Pooled union Dice"}</td></tr>)}</tbody></table>{!releaseModels.length && <p>No connected release reports imported.</p>}</div></details>
     </>}
     {view === "Comparison" && <article className="cv-model-card"><h4>Architecture comparison · same task, same metric</h4><div className="cv-model-filters"><label>Metric<select value={metric} onChange={event => setMetric(event.target.value as Metric)}>{metrics.map(name => <option key={name} value={name}>{name.toUpperCase()}</option>)}</select></label><label>Task<select value={task} onChange={event => setTask(event.target.value)}><option value="all">All tasks (labelled separately)</option>{Array.from(new Set(experiments.map(item => item.task))).map(name => <option key={name} value={name}>{taskName(name)}</option>)}</select></label></div>
+      {status.comparison?.limitations && <p className="caption">{status.comparison.limitations}</p>}
       <Bars rows={filtered.map(item => ({ label: `${taskName(item.task)} · ${item.architecture}`, value: item.best_validation[metric] }))} label={`Architecture validation ${metric} comparison`} />
       {filtered.length ? <div className="table-scroll"><table><caption>Recorded binary-mask validation experiments</caption><thead><tr><th scope="col">Task / architecture</th>{metrics.map(name => <th scope="col" key={name}>{name.toUpperCase()}</th>)}<th scope="col">Validation images</th></tr></thead><tbody>{filtered.map((item, index) => <tr key={index}><th scope="row">{taskName(item.task)} · {item.architecture}</th>{metrics.map(name => <td key={name}>{score(item.best_validation[name])}</td>)}<td>{item.validation_images}</td></tr>)}</tbody></table></div> : <p className="muted">Import comparable experiment reports to populate this graph and table. Connected models perform different tasks and cannot substitute for a controlled architecture comparison.</p>}
       <p className="caption">Binary-mask experiments only. Instance-aware ARCADE results remain in their separate section below. Missing metrics are not treated as zero.</p>

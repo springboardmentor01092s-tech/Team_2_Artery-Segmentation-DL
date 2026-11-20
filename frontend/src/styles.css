@@ -434,8 +434,8 @@ input { width: 100%; min-height: 46px; padding: .7rem .9rem; border: 1px solid #
 .demo-account-switcher button small { display: block; color: #71717a; text-transform: capitalize; }
 .macos-switch-label { display: block; padding: .45rem .85rem; color: #71717a; font-size: .68rem; font-weight: 700; letter-spacing: .08em; }
 .macos-popover-item small { color: #71717a; font-size: .72rem; text-transform: capitalize; }
-.wm-auth-message { margin: .9rem 0 0; border-radius: .7rem; padding: .7rem .85rem; background: #eef6fb; color: #1d4b67; font-size: .85rem; line-height: 1.45; }
-.wm-auth-error { background: #fff0f0; color: #9e2929; }
+.wm-auth-message { margin: .9rem 0 0; border: 1px solid #e4e4e7; border-radius: 14px; padding: .7rem .95rem; background: #f6f6f7; color: #3f3f46; font-size: .85rem; line-height: 1.45; }
+.wm-auth-error { border-color: #f3c7c7; background: #fff5f5; color: #9e2929; }
 .wm-auth-switch { margin: 0; }
 .wm-auth-disclaimer { margin: 0; padding: 0 1.5rem 1.4rem; color: #85858b; font-size: .72rem; text-align: center; }
 .wm-auth-image-panel { position: relative; height: 100%; min-height: calc(100vh - 2rem); overflow: hidden; border-radius: 2rem; background: #47566b; }
@@ -443,6 +443,24 @@ input { width: 100%; min-height: 46px; padding: .7rem .9rem; border: 1px solid #
 .wm-auth-image-copy { position: absolute; right: clamp(2rem, 5vw, 5rem); bottom: clamp(2rem, 5vw, 5rem); left: clamp(2rem, 5vw, 5rem); color: white; text-shadow: 0 2px 10px #0005; }
 .wm-auth-image-copy span { display: block; margin-bottom: 1rem; font-size: .72rem; font-weight: 750; letter-spacing: .16em; }
 .wm-auth-image-copy h2 { margin: 0; font-size: clamp(2rem, 3.3vw, 3.8rem); font-weight: 650; line-height: 1.14; letter-spacing: -.05em; }
+/* Administrator authenticator step: same visual language as the sign-in form. */
+.wm-mfa-enrollment { display: flex; flex-direction: column; align-items: stretch; }
+.wm-mfa-badge { display: inline-flex; align-self: center; align-items: center; gap: .45rem; margin: 0 0 1.4rem; border: 1px solid #dedee1; border-radius: 999px; padding: .4rem .9rem; background: #f6f6f7; color: #3f3f46; font-size: .78rem; font-weight: 650; }
+.wm-mfa-badge > svg { width: 1rem; height: 1rem; flex: none; }
+.wm-mfa-steps { margin: 0 0 1rem; padding: .9rem 1rem .9rem 2.1rem; border: 1px solid #e4e4e7; border-radius: 14px; background: #fafafa; color: #3f3f46; font-size: .86rem; line-height: 1.55; }
+.wm-mfa-steps li + li { margin-top: .3rem; }
+.wm-mfa-key { margin: 0 0 1rem; border: 1px solid #e4e4e7; border-radius: 14px; padding: .7rem .95rem; background: #fafafa; color: #3f3f46; font-size: .84rem; }
+.wm-mfa-key summary { cursor: pointer; font-weight: 650; }
+.wm-mfa-key code { display: block; overflow-wrap: anywhere; margin-top: .65rem; border: 1px solid #e4e4e7; border-radius: 10px; padding: .6rem .7rem; background: #fff; color: #18181b; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; letter-spacing: .04em; }
+.wm-mfa-key p { margin: .55rem 0 0; color: #6a6d75; font-size: .8rem; }
+.wm-auth-form input.wm-otp-input { min-height: 3.6rem; text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.55rem; font-weight: 600; letter-spacing: .55em; text-indent: .55em; font-variant-numeric: tabular-nums; }
+.wm-auth-form input.wm-otp-input::placeholder { color: #c4c4cb; letter-spacing: .55em; }
+.wm-mfa-enrollment .wm-auth-help { text-align: center; }
+.dark .wm-mfa-badge, .dark .wm-mfa-steps, .dark .wm-mfa-key, .dark .wm-auth-message { border-color: #3b3b43; background: #1c1c21; color: #e4e4e7; }
+.dark .wm-mfa-key code { border-color: #3b3b43; background: #101012; color: #f4f4f5; }
+.dark .wm-mfa-key p { color: #b7b7c2; }
+.dark .wm-auth-form input.wm-otp-input::placeholder { color: #5a5a64; }
+.dark .wm-auth-error { border-color: #5b2a2a; background: #2a1414; color: #fca5a5; }
 @media (max-width: 480px) { .wm-auth-options { align-items: flex-start; flex-direction: column; gap: .35rem; } .wm-auth-link { margin-left: -.25rem; } }
 .analysis-panel { grid-column: 1 / -1; }
 .analysis-panel > .primary { margin-top: 1rem; }
@@ -904,3 +922,49 @@ input { width: 100%; min-height: 46px; padding: .7rem .9rem; border: 1px solid #
 .appearance-options label:focus-within { outline: 3px solid var(--accent, #3869a6); outline-offset: 3px; }
 .appearance-options input[type="radio"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
 @media (max-width: 850px) { .case-workflow, .overview-queues { grid-template-columns: 1fr; } .workflow-states { grid-template-columns: 1fr; } .user-row { flex-wrap: wrap; } }
+
+/* UI polish pass (Nov 2026): layout containment, planned modules, technical details. */
+.settings-page { grid-template-columns: minmax(0, 1fr); }
+.settings-page > * { min-width: 0; max-width: 100%; }
+.role-planned { border: 1px solid var(--theme-line, #e4e4e7); border-radius: 16px; background: var(--theme-surface, #fff); }
+.role-planned > summary { display: flex; align-items: center; gap: .6rem; padding: 1rem 1.25rem; cursor: pointer; font-weight: 650; list-style: none; }
+.role-planned > summary::-webkit-details-marker { display: none; }
+.role-planned > summary::before { content: "›"; display: inline-block; width: 1rem; color: #71717a; font-size: 1.2rem; line-height: 1; transition: transform .15s ease; }
+.role-planned[open] > summary::before { transform: rotate(90deg); }
+.role-planned > summary > span { min-width: 1.5rem; border-radius: 999px; padding: .1rem .5rem; background: #f4f4f5; color: #3f3f46; font-size: .75rem; text-align: center; }
+.role-planned > summary > small { margin-left: auto; color: #71717a; font-size: .8rem; font-weight: 500; }
+.role-planned > .role-module-grid { padding: 0 1.25rem 1.25rem; }
+.role-planned .role-module { opacity: .78; }
+.tech-details { margin-top: .5rem; }
+.tech-details > summary { width: fit-content; cursor: pointer; color: #71717a; font-size: .78rem; font-weight: 600; }
+.tech-details > .caption { overflow-wrap: anywhere; }
+.dark .role-planned { border-color: #3b3b43; background: #1c1c21; }
+.dark .role-planned > summary > span { background: #2a2a31; color: #e4e4e7; }
+.invite-panel h3 { margin: 0 0 .35rem; }
+.invite-panel > .muted { margin: 0; }
+.app-shell .settings-page form.invite-form, form.invite-form { display: grid; gap: .5rem; max-width: 640px; margin-top: 1rem; }
+.invite-form > label { font-size: .875rem; font-weight: 600; }
+.invite-row { display: flex; gap: .6rem; align-items: stretch; }
+.invite-row > input { flex: 1 1 auto; min-width: 0; }
+.invite-row > button { flex: none; min-height: 44px; padding: 0 1.1rem; border-radius: 999px; white-space: nowrap; }
+@media (max-width: 560px) { .invite-row { flex-direction: column; } }
+.report-facts.review-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; padding: .5rem 0 0; }
+.report-facts.review-stats > div { padding: 1rem 1.15rem; border: 1px solid var(--theme-line, #e4e4e7); border-radius: 14px; background: var(--theme-surface, #fff); }
+.report-facts.review-stats span { font-size: .8rem; }
+.report-facts.review-stats strong { font-size: 1.6rem; font-weight: 650; line-height: 1.1; }
+.dark .report-facts.review-stats > div { border-color: #3b3b43; background: #1c1c21; }
+@media (max-width: 700px) { .report-facts.review-stats { grid-template-columns: 1fr; } }
+.macos-sidebar-cases h1 { font-size: 1.05rem; letter-spacing: -.01em; }
+.macos-sidebar-cases { margin-top: 1rem; padding-top: .9rem; }
+.invite-row > button.primary, .panel .invite-row > .primary { margin-top: 0; }
+.audit-action { display: grid; gap: .15rem; min-width: 0; }
+.audit-action > small { overflow: hidden; color: #71717a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+.list-row { align-items: center; }
+.list-row > button { flex: none; min-height: 34px; padding: 0 .9rem; border: 1px solid var(--theme-line, #dedee1); border-radius: 999px; background: var(--theme-surface, #fff); color: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+.list-row > button:hover:not(:disabled) { border-color: #a1a1aa; }
+.dark .list-row > button { border-color: #50505b; background: #25252b; }
+/* Admin and ML overviews use the role heading as the page title: match other page titles. */
+.role-workspace-heading { align-items: center; }
+.role-workspace-heading > svg { margin-top: 0; }
+.role-workspace-heading h1 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
+.role-workspace-heading h2 { font-size: 1.3rem; font-weight: 650; letter-spacing: -.02em; }

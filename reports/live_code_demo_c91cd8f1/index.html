@@ -1,0 +1,58 @@
+<!doctype html><meta charset="utf-8"><title>CoroVision live code demonstration</title><style>body{font:16px/1.6 system-ui;margin:30px}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}figure{margin:0}img{width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef2f6;padding:16px}</style><h1>Fresh frozen-inference demonstration</h1><p>Run fcd7c282-b48e-4e47-98c0-1c94eee59fb7 · model corovision-preserved-2d-20261023. No training. Research estimates, not diagnosis. No reference mask was supplied, so image-specific accuracy is unavailable.</p><h2>Executed model path</h2><pre>85: 
+86: def predict_masks(path):
+87:     import numpy as np
+88:     import torch
+89:     from PIL import Image
+90:     from .preserved_models import predict_one
+91:     if not ready():
+92:         raise ValueError(&#x27;Trained release unavailable or hash verification failed&#x27;)
+93:     with Image.open(path) as opened:
+94:         rgb = opened.convert(&#x27;RGB&#x27;)
+95:         if rgb.size != (512, 512):
+96:             raise ValueError(&#x27;The trained release requires the application512x512 prepared preview&#x27;)
+97:         gray = np.asarray(rgb.convert(&#x27;L&#x27;), dtype=np.float32) / 255.
+98:         color = np.asarray(rgb, dtype=np.float32).copy() / 255.
+99:     with LOCK:
+100:         artery_model, stenosis_model = _models(str(artifact_root()))
+101:         with torch.inference_mode():
+102:             artery_probability = artery_model(torch.from_numpy(gray.copy())[None, None]).sigmoid()[0, 0].numpy()
+103:         instances = predict_one(stenosis_model, torch.from_numpy(color.transpose(2, 0, 1).copy()), &#x27;cpu&#x27;, .1)
+104:     artery = artery_probability &gt;= .5
+105:     stenosis = np.zeros_like(artery)
+106:     probability = np.zeros_like(artery_probability)
+107:     records = []
+
+177: def analyze_vessel_geometry(mask: np.ndarray, spacing_mm: tuple[float, float] | None = None,
+178:                             probability_map: np.ndarray | None = None,
+179:                             threshold: float = 0.5) -&gt; dict:
+180:     &quot;&quot;&quot;Describe 2D mask topology, approximate centerlines, and local mask widths.&quot;&quot;&quot;
+181:     binary = postprocess_mask(mask)
+182:     probabilities = None if probability_map is None else np.asarray(probability_map, dtype=np.float32)
+183:     if probabilities is not None and (probabilities.shape != binary.shape or not np.isfinite(probabilities).all()):
+184:         raise ValueError(&quot;probability_map must be finite and match the binary mask shape&quot;)
+185:     if probabilities is not None and (np.any(probabilities &lt; 0) or np.any(probabilities &gt; 1)):
+186:         raise ValueError(&quot;probability_map values must be within [0, 1]&quot;)
+187:     if not 0 &lt;= threshold &lt;= 1:
+188:         raise ValueError(&quot;threshold must be between 0 and 1&quot;)
+189:     skeleton = _skeletonize(binary)
+190:     height, width = binary.shape
+191:     # Metadata must not turn non-finite or malformed spacing into physical units.
+192:     try:
+193:         spacing_values = np.asarray(spacing_mm, dtype=float)
+194:         calibrated = bool(spacing_values.shape == (2,) and np.isfinite(spacing_values).all()
+195:                           and (spacing_values &gt; 0).all())
+196:     except (TypeError, ValueError):
+197:         calibrated = False
+198:     unit = &quot;mm&quot; if calibrated else &quot;px&quot;
+199:     sy, sx = spacing_values if calibrated else (1.0, 1.0)
+200: 
+201:     def neighbors(point, points):
+202:         y, x = point
+203:         found = []</pre><h2>Newly generated outputs</h2><section><figure><img src="original.png" alt="Original image"><figcaption>Original image</figcaption></figure><figure><img src="processed.png" alt="Processed input"><figcaption>Processed input</figcaption></figure><figure><img src="artery_mask.png" alt="Predicted artery mask"><figcaption>Predicted artery mask</figcaption></figure><figure><img src="centerline.png" alt="Extracted centerline"><figcaption>Extracted centerline</figcaption></figure><figure><img src="boundary.png" alt="Mask boundary"><figcaption>Mask boundary</figcaption></figure><figure><img src="overlay.png" alt="Artery and stenosis overlay"><figcaption>Artery and stenosis overlay</figcaption></figure></section><h2>Measurements</h2><pre>{
+  &quot;centerline_length&quot;: 797.96,
+  &quot;mean_diameter&quot;: 12.08,
+  &quot;diameter_unit&quot;: &quot;px&quot;,
+  &quot;branching_points&quot;: 2,
+  &quot;endpoints&quot;: 4,
+  &quot;calibration&quot;: &quot;unavailable&quot;
+}</pre><p>Widths are approximate; physical calibration and validated local/reference diameter protocol are required for narrowing. Severity remains unavailable. This is not an advanced-model comparison.</p>

@@ -1,0 +1,165 @@
+{
+ "record_type": "development_validation_only_threshold_sweep_decision",
+ "decided_utc": "2026-11-20",
+ "source": "Kaggle notebook mokshagnamannam/corovision-stenosis-validation-sweep-20261113, version 2, run 231.5 s, GPU T4 x2, returncode 0",
+ "checkpoint_sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+ "val_annotation_sha256": "e1c8909b92914c5eae26572bdfe1f0d34f438999bc814d42e919ae326e738ea0",
+ "runner_sha256": "0ed636e305282beea2d0c63f8663484613c4fb25a5f8bda3a10d04ceb9e8b7d2",
+ "validation_images": 200,
+ "test_loaded": false,
+ "training": false,
+ "weights_changed": false,
+ "baseline_reproduced": {
+  "instance_f1": 0.4020618556701031,
+  "fp": 369,
+  "official_f1": 0.439394301564994
+ },
+ "predeclared_gates": {
+  "official_f1_delta_min": 0.02,
+  "recall_delta_min": 0,
+  "precision_delta_min": -0.02,
+  "false_positives_per_image_delta_max": 0.1,
+  "pixel_union_dice_delta_min": 0
+ },
+ "rows": [
+  {
+   "score_threshold": 0.15,
+   "official_f1": 0.45039393638953146,
+   "pixel_precision": 0.5095882649764077,
+   "pixel_recall": 0.6504229292511565,
+   "pixel_dice": 0.5714563681235444,
+   "pixel_auc_roc": 0.8791250169351236,
+   "instance_precision": 0.3041018387553041,
+   "instance_recall": 0.5295566502463054,
+   "instance_f1": 0.3863432165318958,
+   "tp": 215,
+   "fp": 492,
+   "fn": 191,
+   "fp_per_image": 2.46,
+   "gate_results": {
+    "official_f1": false,
+    "instance_recall": true,
+    "instance_precision": false,
+    "fp_per_image": false,
+    "pixel_dice": true
+   },
+   "passes_all_gates": false
+  },
+  {
+   "score_threshold": 0.2,
+   "official_f1": 0.4422938370551138,
+   "pixel_precision": 0.5223784576894499,
+   "pixel_recall": 0.6275555977392551,
+   "pixel_dice": 0.5701570863369174,
+   "pixel_auc_roc": 0.8695957758561433,
+   "instance_precision": 0.31496062992125984,
+   "instance_recall": 0.49261083743842365,
+   "instance_f1": 0.38424591738712777,
+   "tp": 200,
+   "fp": 435,
+   "fn": 206,
+   "fp_per_image": 2.175,
+   "gate_results": {
+    "official_f1": false,
+    "instance_recall": true,
+    "instance_precision": false,
+    "fp_per_image": false,
+    "pixel_dice": false
+   },
+   "passes_all_gates": false
+  },
+  {
+   "score_threshold": 0.25,
+   "official_f1": 0.439394301564994,
+   "pixel_precision": 0.5395434956361782,
+   "pixel_recall": 0.607151492963985,
+   "pixel_dice": 0.5713544441219096,
+   "pixel_auc_roc": 0.8568180644883431,
+   "instance_precision": 0.34574468085106386,
+   "instance_recall": 0.4802955665024631,
+   "instance_f1": 0.4020618556701031,
+   "tp": 195,
+   "fp": 369,
+   "fn": 211,
+   "fp_per_image": 1.845
+  },
+  {
+   "score_threshold": 0.3,
+   "official_f1": 0.43196154039920015,
+   "pixel_precision": 0.546863210813649,
+   "pixel_recall": 0.597840947867727,
+   "pixel_dice": 0.5712169696027499,
+   "pixel_auc_roc": 0.8516655696295038,
+   "instance_precision": 0.3629489603024575,
+   "instance_recall": 0.4729064039408867,
+   "instance_f1": 0.4106951871657754,
+   "tp": 192,
+   "fp": 337,
+   "fn": 214,
+   "fp_per_image": 1.685,
+   "gate_results": {
+    "official_f1": false,
+    "instance_recall": false,
+    "instance_precision": true,
+    "fp_per_image": true,
+    "pixel_dice": false
+   },
+   "passes_all_gates": false
+  },
+  {
+   "score_threshold": 0.35,
+   "official_f1": 0.42672930225922345,
+   "pixel_precision": 0.5461383641389501,
+   "pixel_recall": 0.5813237696860403,
+   "pixel_dice": 0.5631820405965012,
+   "pixel_auc_roc": 0.8422536095149552,
+   "instance_precision": 0.3722334004024145,
+   "instance_recall": 0.45566502463054187,
+   "instance_f1": 0.4097452934662237,
+   "tp": 185,
+   "fp": 312,
+   "fn": 221,
+   "fp_per_image": 1.56,
+   "gate_results": {
+    "official_f1": false,
+    "instance_recall": false,
+    "instance_precision": true,
+    "fp_per_image": true,
+    "pixel_dice": false
+   },
+   "passes_all_gates": false
+  },
+  {
+   "score_threshold": 0.4,
+   "official_f1": 0.42750083882801276,
+   "pixel_precision": 0.5626674638997284,
+   "pixel_recall": 0.5656721106237387,
+   "pixel_dice": 0.5641657867364751,
+   "pixel_auc_roc": 0.832656396700492,
+   "instance_precision": 0.38344226579520696,
+   "instance_recall": 0.43349753694581283,
+   "instance_f1": 0.4069364161849711,
+   "tp": 176,
+   "fp": 283,
+   "fn": 230,
+   "fp_per_image": 1.415,
+   "gate_results": {
+    "official_f1": false,
+    "instance_recall": false,
+    "instance_precision": true,
+    "fp_per_image": true,
+    "pixel_dice": false
+   },
+   "passes_all_gates": false
+  }
+ ],
+ "thresholds_passing_all_gates": [],
+ "decision": "RETAIN score threshold 0.25 with pixel threshold 0.5 and the existing Mask R-CNN ResNet50-FPN checkpoint; no candidate threshold met the predeclared acceptance gates.",
+ "frozen_configuration_for_protected_test": {
+  "checkpoint_sha256": "f0bc898c95b6efdd53863d5a430fb4b850c2451b440c5a53b92a73e73c5be2e3",
+  "score_threshold": 0.25,
+  "pixel_threshold": 0.5
+ },
+ "automatic_activation": false,
+ "clinical_validation": false
+}

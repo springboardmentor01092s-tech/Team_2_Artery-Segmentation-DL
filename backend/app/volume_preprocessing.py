@@ -71,6 +71,34 @@ def read_volume(path: Path):
     """Read NIfTI or one unambiguous, de-identified DICOM series directory."""
     if path.is_dir():
         import pydicom
+        identities = set()
+        instances = set()
+        for member in sorted(path.iterdir()):
+            if not member.is_file():
+                continue
+            try:
+                ds = pydicom.dcmread(member, stop_before_pixels=True)
+                if any(str(getattr(ds, tag, '')).strip() for tag in
+                       ('PatientName', 'PatientID', 'PatientBirthDate', 'PatientAddress',
+                        'PatientTelephoneNumbers', 'ReferringPhysicianName')):
+                    raise ValueError('Remove identifying DICOM tags before preparation')
+                if str(getattr(ds, 'Modality', '')) != 'CT':
+                    raise ValueError('DICOM volume requires CT slices')
+                identity = tuple(str(getattr(ds, key, '')) for key in
+                                 ('PatientID', 'StudyInstanceUID', 'SeriesInstanceUID'))
+                if not identity[1] or not identity[2]:
+                    raise ValueError('DICOM study and series identifiers are required')
+                identities.add(identity)
+                instance = str(getattr(ds, 'SOPInstanceUID', ''))
+                if not instance or instance in instances:
+                    raise ValueError('Missing or duplicate DICOM SOP instance identity')
+                instances.add(instance)
+            except ValueError:
+                raise
+            except Exception as exc:
+                raise ValueError('Unreadable DICOM slice in series') from exc
+        if len(identities) != 1:
+            raise ValueError('Mixed patient, study or series; upload exactly one DICOM series')
         series = sitk.ImageSeriesReader.GetGDCMSeriesIDs(str(path)) or []
         if len(series) != 1:
             raise ValueError("Provide a directory containing exactly one DICOM series")
@@ -78,8 +106,20 @@ def read_volume(path: Path):
         if not files:
             raise ValueError("DICOM series contains no slices")
         positions = []
+        first_spacing = None
+        first_shape = None
         for file in files:
             ds = pydicom.dcmread(file, stop_before_pixels=True)
+            from pydicom.uid import CTImageStorage
+            if str(ds.SOPClassUID) != str(CTImageStorage):
+                raise ValueError('Only classic single-frame CT Image Storage is supported')
+            spacing = np.asarray(ds.PixelSpacing, dtype=float)
+            shape = (int(ds.Rows), int(ds.Columns))
+            if spacing.shape != (2,) or not np.isfinite(spacing).all() or np.any(spacing <= 0):
+                raise ValueError('Positive finite DICOM pixel spacing is required')
+            if first_spacing is not None and (shape != first_shape or not np.allclose(spacing, first_spacing, atol=1e-6)):
+                raise ValueError('DICOM slice dimensions or pixel spacing differ')
+            first_spacing, first_shape = spacing, shape
             if int(ds.Rows)*int(ds.Columns)*len(files) > MAX_VOXELS:
                 raise ValueError("DICOM volume exceeds the 32-million-voxel limit")
             if any(str(getattr(ds, tag, "")).strip() for tag in
@@ -90,6 +130,11 @@ def read_volume(path: Path):
                 raise ValueError("Enhanced multi-frame DICOM volumes require a dedicated importer")
             orientation = np.asarray(ds.ImageOrientationPatient, dtype=float)
             position = np.asarray(ds.ImagePositionPatient, dtype=float)
+            if orientation.shape != (6,) or position.shape != (3,) or not np.isfinite(orientation).all() or not np.isfinite(position).all():
+                raise ValueError('Finite DICOM orientation and origin are required')
+            axes = orientation.reshape(2, 3)
+            if not np.allclose(axes @ axes.T, np.eye(2), atol=1e-4):
+                raise ValueError('DICOM orientation axes must be orthonormal')
             if positions and not np.allclose(orientation, first_orientation, atol=1e-4):
                 raise ValueError("DICOM slice orientations differ")
             first_orientation = orientation

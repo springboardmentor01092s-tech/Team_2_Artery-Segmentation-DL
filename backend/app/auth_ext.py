@@ -18,6 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .database import get_db
+from . import admin_mfa
 from .models import AuditEvent, AuthSession, OAuthIntent, OAuthTicket, OneTimeCode, SocialAccount, User, UserIdentity, UserProfile, now
 from .security import SECRET_KEY, create_token, current_user, hash_password, session_expiry, verify_password
 
@@ -79,7 +80,8 @@ def email_ready() -> bool:
 @router.get("/capabilities")
 def capabilities():
     return {"google": provider_ready("google"), "institutional_sso": False,
-            "email_reset": email_ready()}
+            "email_reset": email_ready(), "invitation_required": os.getenv("COROVISION_ENV") == "production",
+            "demo_signin_switcher": os.getenv("CV_DEMO_SIGNIN_SWITCHER") == "1"}
 
 
 def send_code(destination: str, code: str, purpose: str):
@@ -196,6 +198,15 @@ def provider_ready(provider: str) -> bool:
     return provider in PROVIDERS and all(os.getenv(key) for key in PROVIDERS[provider])
 
 
+def google_auto_provision_enabled() -> bool:
+    """Allow a verified Google identity to create the lowest-privilege account.
+
+    This is intentionally opt-in. Production deployments that require
+    invitations keep their existing policy unless the owner enables it.
+    """
+    return os.getenv("GOOGLE_AUTO_PROVISION", "0") == "1"
+
+
 def callback_url(provider: str) -> str:
     return f"{OAUTH_REDIRECT_BASE}/api/auth/oauth/{provider}/callback"
 
@@ -305,16 +316,27 @@ def oauth_callback(provider: str, request: Request, code: str | None = None, sta
     if account:
         user = db.get(User, account.user_id)
     else:
-        if db.scalar(select(User).where(User.email == email)):
-            response = RedirectResponse(f"{FRONTEND_ORIGIN}/?auth_error=existing_account", status_code=302)
+        # Google has already established ownership of a verified email address.
+        # An existing local account with that exact address may therefore be
+        # linked and signed in without requiring a forgotten local password.
+        # This is deliberately limited to the verified provider identity above;
+        # an unverified/mismatched address never reaches this branch.
+        matched_user = db.scalar(select(User).where(User.email == email))
+        if matched_user:
+            user = matched_user
+            db.add(SocialAccount(user_id=user.id, provider=provider, subject=subject))
+            db.add(AuditEvent(user_id=user.id, action=f"{provider}_linked_verified_email_login"))
+        elif os.getenv("COROVISION_ENV") == "production" and not google_auto_provision_enabled():
+            response = RedirectResponse(f"{FRONTEND_ORIGIN}/?auth_error=invitation_required", status_code=302)
             response.delete_cookie("cv_oauth_state", path="/api/auth/oauth")
             return response
-        user = User(email=email, password_hash=hash_password(secrets.token_urlsafe(48)), role="viewer")
-        db.add(user)
-        db.flush()
-        db.add(UserProfile(user_id=user.id, display_name=name))
-        db.add(SocialAccount(user_id=user.id, provider=provider, subject=subject))
-        db.add(AuditEvent(user_id=user.id, action=f"{provider}_registered"))
+        else:
+            user = User(email=email, password_hash=hash_password(secrets.token_urlsafe(48)), role="viewer")
+            db.add(user)
+            db.flush()
+            db.add(UserProfile(user_id=user.id, display_name=name))
+            db.add(SocialAccount(user_id=user.id, provider=provider, subject=subject))
+            db.add(AuditEvent(user_id=user.id, action=f"{provider}_registered"))
     if not user:
         raise HTTPException(400, "Social account is unavailable")
     ticket = secrets.token_urlsafe(32)
@@ -330,6 +352,7 @@ def oauth_callback(provider: str, request: Request, code: str | None = None, sta
 
 class TicketIn(BaseModel):
     ticket: str
+    mfa_code: str | None = Field(default=None, min_length=6, max_length=6)
 
 
 @router.post("/oauth/exchange")
@@ -341,10 +364,23 @@ def exchange_oauth_ticket(data: TicketIn, db: Session = Depends(get_db)):
     if expires <= now():
         raise HTTPException(400, "Invalid or expired sign-in ticket")
     user = db.get(User, ticket.user_id)
-    if not user:
+    if not user or user.status != "active":
         raise HTTPException(400, "Account unavailable")
+    mfa_verified = admin_mfa.required(user.role)
+    if mfa_verified:
+        factor = admin_mfa.enrollment(db, user.id)
+        if not data.mfa_code:
+            enrollment_key = factor.secret if factor.last_counter == -1 else None
+            db.commit()
+            return {"mfa_required": True, "enrollment_key": enrollment_key}
+        if not admin_mfa.consume(db, factor, data.mfa_code):
+            db.add(AuditEvent(user_id=user.id, action="administrator_mfa_failed_oauth"))
+            db.commit()
+            raise HTTPException(401, "Invalid or already used authenticator code")
+        db.add(AuditEvent(user_id=user.id, action="administrator_mfa_verified_oauth"))
     ticket.consumed_at = now()
     session = AuthSession(user_id=user.id, expires_at=session_expiry(remember=True))
     db.add(session)
+    db.add(AuditEvent(user_id=user.id, action="oauth_login"))
     db.commit()
-    return {"access_token": create_token(user, session), "token_type": "bearer", "expires_at": session.expires_at}
+    return {"access_token": create_token(user, session, mfa_verified=mfa_verified), "token_type": "bearer", "expires_at": session.expires_at}

@@ -1,0 +1,10 @@
+task,original_gate,evidence_level,functional,scientific,exact_blocker
+Case 60 browser workflow,Exact run restore and export,D,Verified,Software gate passed,None
+Segmentation,Independent matched mask benchmark,C,Available,Development only,Original annotation alignment and checkpoint exposure
+Centerline,Independent matched geometry,D,Verified on fixtures,Pending,Aligned independent masks or centerlines
+Physical diameter,Calibrated expert lumen,E,Source-pixel estimates,Pending,Exact-frame calibration and reference diameters
+Localization,Independent lesion matching,C,Available,Development only,Intact CADICA archive and locked exposure-cleared cohort
+Narrowing,Reviewed calibrated lesion/reference widths,D,Verified on fixtures,Pending,Paired calibrated measurements
+Severity,Approved independent grade,E,Review workflow available,Pending,Matched expert grades and approved protocol
+XAI,Model attribution and faithfulness,D,Integrity tests pass,Pending,Frozen input binding and authorized forward-only run
+Unseen-patient evaluation,Checkpoint exposure excluded,E,Protocol available,Pending,Cross-source exposure manifests

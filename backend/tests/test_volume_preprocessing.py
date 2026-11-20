@@ -135,10 +135,22 @@ def test_dicom_series_geometry_and_identifiers(tmp_path):
     assert output.is_file()
     assert geometry(converted) == geometry(image)
     import pydicom
-    path = tmp_path / "slice_0.dcm"
+    path = tmp_path / 'extracted' / 'slice-00000.dcm'
+    original_bytes = path.read_bytes()
+    for tag, value, message in [
+        ('PixelSpacing', [.5, .9], 'pixel spacing differ'),
+        ('ImageOrientationPatient', [2, 0, 0, 0, 1, 0], 'orthonormal'),
+        ('StudyInstanceUID', generate_uid(), 'Mixed patient, study or series'),
+    ]:
+        ds = pydicom.dcmread(path)
+        setattr(ds, tag, value)
+        ds.save_as(path)
+        with pytest.raises(ValueError, match=message):
+            read_volume(tmp_path / 'extracted')
+        path.write_bytes(original_bytes)
     ds = pydicom.dcmread(path); ds.PatientName = "Identified^Sample"; ds.save_as(path)
     with pytest.raises(ValueError, match="identifying"):
-        read_volume(tmp_path)
+        read_volume(tmp_path / 'extracted')
 
 
 def test_dicom_zip_rejects_unsafe_paths_and_corruption(tmp_path):

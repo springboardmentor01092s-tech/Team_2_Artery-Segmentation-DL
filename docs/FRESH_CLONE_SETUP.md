@@ -55,9 +55,28 @@ confidence remain unavailable without supporting validated measurements.
 
 ## Accounts
 
-Register an account in the app, or optionally run `python scripts/setup_local.py --demo` to seed demo users. Generated passwords are saved only in ignored `backend/demo-credentials.json`. Automatic sharing with the demo team is off by default.
+The Docker production profile is invitation-only. First create the local
+administrator in the private container terminal, without placing a password in
+an environment variable or command history:
 
-For an administrator without demos, set private `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables, then run `backend/.venv/bin/python backend/create_admin.py` on macOS/Linux or `backend\.venv\Scripts\python.exe backend\create_admin.py` on Windows from the repository root. Do not put real passwords in Git. Institutional SSO, Google sign-in, and email reset require their external configuration.
+```bash
+docker compose exec app python -m app.cli create-admin
+```
+
+The interactive command accepts an email and a strong password, refuses to
+create a second initial administrator, and requires MFA enrolment on the first
+production sign-in. The administrator then opens **User Management** to issue
+an email-bound, single-use 24-hour invitation. Redeeming an invitation creates
+a Viewer account. Roles and case grants are assigned afterwards through the
+authenticated administrator workspace.
+
+`python scripts/setup_local.py --demo` is a separate local-development option.
+Its generated credentials are saved only in ignored
+`backend/demo-credentials.json`; demo sessions are disabled in the Docker
+production profile. Do not reuse a hosted account in a local clone. Each
+installation has its own database, administrator, sessions and MFA secrets.
+Institutional SSO, Google sign-in and email recovery require their external
+provider configuration.
 
 ## Optional capabilities
 

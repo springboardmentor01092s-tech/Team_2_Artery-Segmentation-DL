@@ -29,12 +29,8 @@ def _auc(values):
     return float(np.trapezoid(values, dx=1 / max(1, len(values) - 1)))
 
 
-def matched_instance_score(output, reference_mask, *, label=1, minimum_iou=.1):
-    """Return the score of the same spatial detection target or zero if lost.
-
-    This prevents an unrelated high-score instance from replacing the candidate
-    being perturbed during deletion/insertion diagnostics.
-    """
+def matched_instance_index(output, reference_mask, *, label=1, minimum_iou=.1, minimum_score=None):
+    """Return the output index of the best spatially matched eligible detection."""
     import torch
 
     reference = torch.as_tensor(reference_mask, dtype=torch.bool)
@@ -43,17 +39,26 @@ def matched_instance_score(output, reference_mask, *, label=1, minimum_iou=.1):
     masks = output['masks'].detach().cpu()[:, 0] >= .5
     if masks.shape[-2:] != reference.shape:
         raise ValueError('Reference mask and detector output use different coordinates')
-    eligible = torch.where(labels == int(label))[0]
+    allowed = labels == int(label)
+    if minimum_score is not None:
+        allowed &= scores >= minimum_score
+    eligible = torch.where(allowed)[0]
     if eligible.numel() == 0 or not bool(reference.any()):
-        return 0.0
+        return None
     candidate_masks = masks[eligible]
     intersection = (candidate_masks & reference).flatten(1).sum(1).float()
     union = (candidate_masks | reference).flatten(1).sum(1).float().clamp_min(1)
     iou = intersection / union
     best = int(torch.argmax(iou))
     if float(iou[best]) < float(minimum_iou):
-        return 0.0
-    return float(scores[eligible[best]])
+        return None
+    return int(eligible[best])
+
+
+def matched_instance_score(output, reference_mask, *, label=1, minimum_iou=.1):
+    """Return the score of the same spatial detection target or zero if lost."""
+    index = matched_instance_index(output, reference_mask, label=label, minimum_iou=minimum_iou)
+    return 0.0 if index is None else float(output['scores'][index].detach().cpu())
 
 
 def evaluate_forward_occlusion(image, attribution, score_fn, *, randomized_score_fn=None,

@@ -28,6 +28,38 @@ class InvalidImage(ValueError):
     pass
 
 
+def source_grayscale(raw: bytes, filename: str, frame_index: int | None = None) -> PILImage.Image:
+    """Decode a retained raster/DICOM source at its native 2D geometry."""
+    if filename.lower().endswith((".dcm", ".dicom")):
+        try:
+            import pydicom
+            from pydicom.pixels import apply_modality_lut, pixel_array
+            ds = pydicom.dcmread(BytesIO(raw), force=False)
+            frame_count = int(getattr(ds, "NumberOfFrames", 1))
+            if frame_count > 1 and frame_index is None:
+                raise InvalidImage("Choose a frame index for a multi-frame DICOM study")
+            pixels = pixel_array(BytesIO(raw), index=frame_index if frame_count > 1 else None)
+            if pixels.ndim != 2:
+                raise InvalidImage("Only single-frame 2D DICOM images are supported")
+            pixels = np.asarray(apply_modality_lut(pixels, ds), dtype=np.float32)
+            if not np.isfinite(pixels).all():
+                raise InvalidImage("DICOM contains non-finite intensities")
+            low, high = np.percentile(pixels, [1, 99])
+            pixels = np.clip((pixels-low)/max(high-low, 1e-6), 0, 1)
+            if getattr(ds, "PhotometricInterpretation", "") == "MONOCHROME1":
+                pixels = 1-pixels
+            return PILImage.fromarray((pixels*255).astype("uint8")).convert("L")
+        except InvalidImage:
+            raise
+        except Exception as exc:
+            raise InvalidImage(f"Unreadable DICOM: {type(exc).__name__}") from exc
+    try:
+        with PILImage.open(BytesIO(raw)) as opened:
+            return ImageOps.exif_transpose(opened).convert("L").copy()
+    except (UnidentifiedImageError, OSError, PILImage.DecompressionBombError) as exc:
+        raise InvalidImage("Unreadable image") from exc
+
+
 def content_geometry(width, height, roi_box=None, model_resize=False):
     """Record resize/padding geometry using the same aspect rule as Pillow."""
     crop_width = roi_box[2]-roi_box[0] if roi_box else width

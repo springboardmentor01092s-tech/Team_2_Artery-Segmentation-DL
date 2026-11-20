@@ -1,0 +1,65 @@
+{
+  "scope": "ZIP central directories and development COCO JSON only. No image decoding, mask rasterization or inference.",
+  "arcade_index_range": [
+    450525237,
+    451573812
+  ],
+  "cadica_index_range": [
+    3067723571,
+    3076112178
+  ],
+  "arcade_index_sha256": "319d9d0e0333f78d4f2950f569d5d090582a5dec70773a59fe4f44327bd5c78e",
+  "cadica_index_sha256": "17b9d56e105b17aeb1122448dba70f10c4ef3d2735b5593e2f383d458ce826fe",
+  "saved_mapping_sha256": "bba2a222cdc1d9f2a7f9f921b6dced1e0c9ecc6a9b1be30cbb7afe2d27a6e202",
+  "arcade_png_counts": {
+    "stenosis/test": 300,
+    "stenosis/train": 1000,
+    "stenosis/val": 200,
+    "syntax/test": 300,
+    "syntax/train": 1000,
+    "syntax/val": 200
+  },
+  "cadica_member_counts": {
+    "directory": 1692,
+    ".xlsx": 1,
+    ".png": 31500,
+    ".txt": 4463,
+    ".json": 1,
+    ".mat": 269
+  },
+  "cadica_selected_video_list_counts": {
+    "/lesionVideos.txt": 42,
+    "/nonlesionVideos.txt": 42,
+    "_selectedFrames.txt": 382
+  },
+  "arcade_validation": {
+    "syntax": {
+      "coco_sha256": "680b3ea028d1e4084dcfc32d234279947507312865469f10bdc1897422e1e63d",
+      "agrees_with_saved_coco_hash": true,
+      "images": 200,
+      "annotations": 1168,
+      "correspondence_matches": 200,
+      "box_records": 1168,
+      "polygon_records": 1168
+    },
+    "stenosis": {
+      "coco_sha256": "e1c8909b92914c5eae26572bdfe1f0d34f438999bc814d42e919ae326e738ea0",
+      "agrees_with_saved_coco_hash": true,
+      "images": 200,
+      "annotations": 406,
+      "correspondence_matches": 200,
+      "box_records": 406,
+      "polygon_records": 406
+    }
+  },
+  "cadica_readme_range": [
+    1281895244,
+    1281896700
+  ],
+  "cadica_readme_sha256": "0c03564a88e7a88d0aba7d373f3be665bdc6ed9d0f30c164864063cea087ce5c",
+  "arcade_crc_size_groups": {
+    "repeated": 132,
+    "cross_split": 1,
+    "limitation": "CRC32 plus length is an archive metadata screen. Near duplicates and checkpoint exposure remain unknown."
+  }
+}

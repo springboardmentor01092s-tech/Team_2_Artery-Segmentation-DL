@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, X, Check, MailCheck, Trash2, Undo2 } from "lucide-react";
 import { request } from "./api";
 import Alert1, { type AlertTone } from "./components/watermelon/alert-1";
+import { utcDate } from "./lib/time";
 
 type Notification = {
   id: string; case_id: string | null; message: string; created_at: string;
@@ -115,7 +116,7 @@ export default function NotificationBell({ token, onOpenCase }: {
         {selecting && <label className="notification-select"><input type="checkbox" aria-label={`Select notification: ${item.message}`} checked={selected.includes(item.id)} disabled={busy} onChange={event => { setSelected(previous => event.target.checked ? [...previous, item.id] : previous.filter(id => id !== item.id)); setConfirmDelete(false); }} /><span className="notification-check-circle" aria-hidden="true">{selected.includes(item.id) && <Check size={16}/>}</span></label>}
         <Alert1 announce={false} unread={!item.read_at} tone={({warning:"warning",critical:"error",error:"error",success:"success"} as Record<string,AlertTone>)[item.alert_level || ""] || "info"} title={item.message}>
           <small>{item.read_at ? "Read" : "Unread"} · {(item.alert_level || "informational").replaceAll("_", " ")}</small>
-          <small><time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time></small>
+          <small><time dateTime={item.created_at}>{utcDate(item.created_at).toLocaleString()}</time></small>
           {!selecting && !deleted && (item.case_id || !item.read_at) && <button type="button" disabled={busy} onClick={() => void select(item)}>{reading === item.id ? "Updating…" : item.case_id ? "Open case" : "Mark as read"}</button>}
         </Alert1>
       </li>)}</ul>

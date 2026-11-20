@@ -14,6 +14,7 @@ PANELS = [
     ('probability', 'Stenosis probability evidence', 'Saved score-weighted stenosis mask evidence. Colour intensity is not severity or diagnostic confidence.'),
     ('attention', 'Detector feature activation', 'Saved backbone activation energy for compatible detector runs. This is not an attention-gate weight or a clinically validated explanation.'),
     ('gradcam', 'Grad-CAM attribution', 'Available only when the saved model has a verified target and convolutional layer contract. Not a clinical explanation.'),
+    ('gradcampp', 'Grad-CAM++ attribution', 'Second-order Grad-CAM weighting of the same detector targets; better coverage when several candidates are present. Not a clinical explanation.'),
 ]
 
 
@@ -25,7 +26,8 @@ def paths(image, event):
             'artery_probability': overlay.with_name(f'{overlay.stem}.artery_probability.png'),
             'probability': overlay.with_name(f'{overlay.stem}.probability.png'),
             'attention': overlay.with_name(f'{overlay.stem}.attention.png'),
-            'gradcam': overlay.with_name(f'{overlay.stem}.gradcam.png')}
+            'gradcam': overlay.with_name(f'{overlay.stem}.gradcam.png'),
+            'gradcampp': overlay.with_name(f'{overlay.stem}.gradcampp.png')}
 
 
 def inventory(image, event):
@@ -49,6 +51,20 @@ def boundary_png(mask_path):
     return output.getvalue()
 
 
+def printable_original(image):
+    """Return a ReportLab-compatible source without altering retained uploads."""
+    path = Path(image.original_path)
+    name = str(getattr(image, 'original_name', '') or path.name).lower()
+    if name.endswith(('.dcm', '.dicom')) or path.suffix.lower() in {'.dcm', '.dicom'}:
+        from .preprocessing import source_grayscale
+        decoded = source_grayscale(path.read_bytes(), name, getattr(image, 'frame_index', None))
+        output = BytesIO()
+        decoded.save(output, format='PNG')
+        output.seek(0)
+        return output
+    return path
+
+
 def report_images(image, event, panels=None):
     """Select the source and overlay for the printable summary."""
     files = paths(image, event)
@@ -56,5 +72,6 @@ def report_images(image, event, panels=None):
     for panel in panels or inventory(image, event):
         key = panel['key']
         if key in {'original', 'overlay'}:
-            rows.append((panel['title']+' — '+panel['description'], files.get(key)))
+            source = printable_original(image) if key == 'original' else files.get(key)
+            rows.append((panel['title']+' — '+panel['description'], source))
     return rows

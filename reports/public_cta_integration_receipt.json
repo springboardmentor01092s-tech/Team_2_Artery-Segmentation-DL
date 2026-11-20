@@ -1,0 +1,172 @@
+{
+  "provenance": {
+    "dataset": "3D Slicer CTACardio public testing sample",
+    "source_url": "https://github.com/Slicer/SlicerTestingData/releases/download/SHA256/3b0d4eb1a7d8ebb0c5a89cc0504640f76a030b4e869e33ff34c564c3d3b88ad2",
+    "source_documentation": "https://github.com/Slicer/Slicer/blob/main/Modules/Scripted/SampleData/SampleData.py",
+    "nrrd_sha256": "3b0d4eb1a7d8ebb0c5a89cc0504640f76a030b4e869e33ff34c564c3d3b88ad2",
+    "nifti_sha256": "b2a26becb48c2850e752449bf51f62fe26cc2d2174a0ee3e6b3bd6f3230a4ef8",
+    "native_shape": [
+      512,
+      512,
+      321
+    ],
+    "native_voxels": 84148224,
+    "conversion": "Lossless NRRD to NIfTI, metadata-minimized, physical LPS\u2192RAS header conversion only",
+    "voxel_values_and_physical_endpoints_verified": true,
+    "usage": "Local workflow acceptance only; no redistribution, training or new benchmark claims",
+    "limitations": "No reference coronary mask. Acquisition/domain differs from ImageCAS; not validated anatomical accuracy."
+  },
+  "case_code": "PUBLIC-CTA-CHECK-1f26ed",
+  "case_id": "2c5c3fb1-14e7-49b7-84a9-75069a244190",
+  "run_id": "d2c06ad4-e352-446e-be9a-d0d03544253c",
+  "status": "completed",
+  "result": {
+    "schema_version": "volume-analysis-1.0",
+    "model_id": "imagecas-coronary-unet3d-128-v1",
+    "model_key": "imagecas",
+    "anatomy": "coronary",
+    "checkpoint_sha256": "b77271b1780f32100bc954ccbec2ac5c4efa54a10e0f5975b631924c8a2f553d",
+    "checkpoint_epoch": 75,
+    "preprocessing": {
+      "version": "imagecas-source-parity-1",
+      "axis_order": "canonical RAS XYZ",
+      "clip_hu": [
+        -200,
+        800
+      ],
+      "normalization": "(clip+200)/1000",
+      "resize": "scipy zoom order=1 prefilter=False grid_mode=False",
+      "float16_storage_roundtrip": true,
+      "shape": [
+        128,
+        128,
+        128
+      ]
+    },
+    "source_shape": [
+      512,
+      512,
+      321
+    ],
+    "source_affine_ras_mm": [
+      [
+        -0.9335939884185791,
+        0.0,
+        0.0,
+        238.53326416015625
+      ],
+      [
+        0.0,
+        -0.9335939884185791,
+        0.0,
+        238.53326416015625
+      ],
+      [
+        0.0,
+        0.0,
+        1.25,
+        -200.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "canonical_shape": [
+      512,
+      512,
+      321
+    ],
+    "coarse_affine_ras_mm": [
+      [
+        3.7564293549755425,
+        0.0,
+        0.0,
+        -238.53326392173767
+      ],
+      [
+        0.0,
+        3.7564293549755425,
+        0.0,
+        -238.53326392173767
+      ],
+      [
+        0.0,
+        0.0,
+        3.149606299212598,
+        -200.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "coarse_foreground_voxels": 342,
+    "source_grid_foreground_voxels": 13728,
+    "duration_seconds": 7.287,
+    "device": "cpu",
+    "slices": [
+      {
+        "axis": "RAS X",
+        "coarse_index": 64,
+        "artifact": "overlay_0.png"
+      },
+      {
+        "axis": "RAS Y",
+        "coarse_index": 64,
+        "artifact": "overlay_1.png"
+      },
+      {
+        "axis": "RAS Z",
+        "coarse_index": 64,
+        "artifact": "overlay_2.png"
+      }
+    ],
+    "clinical_validated": false,
+    "severity": null,
+    "limitations": [
+      "Coarse full-field model; small vessels can be lost.",
+      "No 3D stenosis, severity or validated physical diameter estimation.",
+      "Resampling a coarse mask onto source geometry does not recover native-resolution vessel detail.",
+      "Probabilities are uncalibrated model outputs, not diagnostic confidence.",
+      "No overlap/performance metric is calculated without a matching reference mask."
+    ],
+    "analysis_id": "d2c06ad4-e352-446e-be9a-d0d03544253c",
+    "case_id": "2c5c3fb1-14e7-49b7-84a9-75069a244190",
+    "source_sha256": "b2a26becb48c2850e752449bf51f62fe26cc2d2174a0ee3e6b3bd6f3230a4ef8",
+    "input_kind": "medical_study",
+    "completed_at": "2026-11-13T17:54:16.904503+00:00"
+  },
+  "artifacts_verified": {
+    "mask_source.nii.gz": {
+      "bytes": 372190,
+      "sha256": "3cd24dd0aa06fdfad27b796d6dc70d42f8798b3419cf401fcef610c9d6fcd7a3"
+    },
+    "probability_coarse.nii.gz": {
+      "bytes": 7941253,
+      "sha256": "fa92b3b26a66ff1402e90b1be1230eddda920ed269a37baf3c7c1f87201196c9"
+    },
+    "overlay_0.png": {
+      "bytes": 9879,
+      "sha256": "1ff6656993de3216494695faf9dd2eadaad2b127fa52ab60da44a4fe717369f9"
+    },
+    "overlay_1.png": {
+      "bytes": 12047,
+      "sha256": "8db51b88a2b413e3e7d999e9fa150ba945a7509ecbd7606a76266a08405397fb"
+    },
+    "overlay_2.png": {
+      "bytes": 7704,
+      "sha256": "cbbaaf1f87aa334669396192d35d2a397544c8c6b6fae169bb633e7bea2b57ea"
+    },
+    "result.json": {
+      "bytes": 2023,
+      "sha256": "2ccf338a07180d24b84f90b57c92f884146e0d32316113a1e0f5762c34197315"
+    }
+  },
+  "source_grid_shape_and_affine_verified": true,
+  "performance_metrics_calculated": false
+}

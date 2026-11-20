@@ -1,0 +1,903 @@
+{
+  "routes": [
+    {
+      "method": "PATCH",
+      "path": "/api/auth/identifiers",
+      "handler": "update_identifiers",
+      "source": "backend/app/auth_ext.py",
+      "line": 54,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/capabilities",
+      "handler": "capabilities",
+      "source": "backend/app/auth_ext.py",
+      "line": 80,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/password-reset/request",
+      "handler": "request_password_reset",
+      "source": "backend/app/auth_ext.py",
+      "line": 159,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/password-reset/confirm",
+      "handler": "confirm_password_reset",
+      "source": "backend/app/auth_ext.py",
+      "line": 174,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/oauth/{provider}/start",
+      "handler": "oauth_start",
+      "source": "backend/app/auth_ext.py",
+      "line": 229,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/oauth/{provider}/link/start",
+      "handler": "oauth_link_start",
+      "source": "backend/app/auth_ext.py",
+      "line": 239,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/social-accounts",
+      "handler": "social_accounts",
+      "source": "backend/app/auth_ext.py",
+      "line": 249,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/oauth/{provider}/callback",
+      "handler": "oauth_callback",
+      "source": "backend/app/auth_ext.py",
+      "line": 277,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/oauth/exchange",
+      "handler": "exchange_oauth_ticket",
+      "source": "backend/app/auth_ext.py",
+      "line": 336,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace",
+      "handler": "list_runs",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 219,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace/schema",
+      "handler": "import_schema",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 225,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace/policies",
+      "handler": "policies",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 230,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace/policies/schema",
+      "handler": "policy_schema",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 236,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/evaluation/workspace/policies",
+      "handler": "create_policy",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 241,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/evaluation/workspace",
+      "handler": "import_run",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 248,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace/{run_id}/report",
+      "handler": "report",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 296,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/workspace/{run_id}/artifacts/{key}",
+      "handler": "artifact",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 302,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/evaluation/workspace/{run_id}/samples/{sample_id}/review",
+      "handler": "sample_review",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 334,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/evaluation/workspace/{run_id}/review",
+      "handler": "review",
+      "source": "backend/app/evaluation_workspace.py",
+      "line": 345,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "handler": "health",
+      "source": "backend/app/main.py",
+      "line": 451,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "handler": "register",
+      "source": "backend/app/main.py",
+      "line": 456,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "handler": "login",
+      "source": "backend/app/main.py",
+      "line": 475,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/demo-accounts",
+      "handler": "list_demo_accounts",
+      "source": "backend/app/main.py",
+      "line": 514,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me",
+      "handler": "me",
+      "source": "backend/app/main.py",
+      "line": 555,
+      "browser_verified": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/auth/me",
+      "handler": "update_profile",
+      "source": "backend/app/main.py",
+      "line": 560,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/change-password",
+      "handler": "change_password",
+      "source": "backend/app/main.py",
+      "line": 585,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/sessions",
+      "handler": "list_sessions",
+      "source": "backend/app/main.py",
+      "line": 605,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "handler": "logout",
+      "source": "backend/app/main.py",
+      "line": 619,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/logout-all",
+      "handler": "logout_all",
+      "source": "backend/app/main.py",
+      "line": 627,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/audit",
+      "handler": "my_audit",
+      "source": "backend/app/main.py",
+      "line": 638,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases",
+      "handler": "create_case",
+      "source": "backend/app/main.py",
+      "line": 651,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases",
+      "handler": "list_cases",
+      "source": "backend/app/main.py",
+      "line": 690,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks",
+      "handler": "my_tasks",
+      "source": "backend/app/main.py",
+      "line": 701,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/notifications",
+      "handler": "my_notifications",
+      "source": "backend/app/main.py",
+      "line": 727,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard/analytics",
+      "handler": "dashboard_analytics",
+      "source": "backend/app/main.py",
+      "line": 743,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/bulk",
+      "handler": "bulk_notifications",
+      "source": "backend/app/main.py",
+      "line": 802,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/notifications/{notification_id}/read",
+      "handler": "read_notification",
+      "source": "backend/app/main.py",
+      "line": 822,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}",
+      "handler": "get_case",
+      "source": "backend/app/main.py",
+      "line": 832,
+      "browser_verified": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/cases/{case_id}",
+      "handler": "delete_case",
+      "source": "backend/app/main.py",
+      "line": 837,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/trash",
+      "handler": "list_deleted_cases",
+      "source": "backend/app/main.py",
+      "line": 849,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/trash/{case_id}/restore",
+      "handler": "restore_case",
+      "source": "backend/app/main.py",
+      "line": 855,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/comments",
+      "handler": "add_case_comment",
+      "source": "backend/app/main.py",
+      "line": 867,
+      "browser_verified": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/cases/{case_id}",
+      "handler": "update_case",
+      "source": "backend/app/main.py",
+      "line": 884,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/review",
+      "handler": "add_clinical_review",
+      "source": "backend/app/main.py",
+      "line": 923,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/reviews",
+      "handler": "list_clinical_reviews",
+      "source": "backend/app/main.py",
+      "line": 963,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/reports/submit",
+      "handler": "submit_report",
+      "source": "backend/app/main.py",
+      "line": 973,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/reports/{version}/decision",
+      "handler": "decide_report",
+      "source": "backend/app/main.py",
+      "line": 1012,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/reports/{version}",
+      "handler": "get_report_version",
+      "source": "backend/app/main.py",
+      "line": 1044,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/access",
+      "handler": "grant_case_access",
+      "source": "backend/app/main.py",
+      "line": 1055,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/export",
+      "handler": "export_case",
+      "source": "backend/app/main.py",
+      "line": 1089,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/images",
+      "handler": "upload_image",
+      "source": "backend/app/main.py",
+      "line": 1111,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/volumes/prepare",
+      "handler": "prepare_case_volume",
+      "source": "backend/app/main.py",
+      "line": 1255,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/volume-models",
+      "handler": "volume_models",
+      "source": "backend/app/main.py",
+      "line": 1390,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/volumes/analyses",
+      "handler": "create_volume_analysis",
+      "source": "backend/app/main.py",
+      "line": 1396,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/volumes/analyses",
+      "handler": "list_volume_analyses",
+      "source": "backend/app/main.py",
+      "line": 1463,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/volumes/analyses/{run_id}/artifacts/{name}",
+      "handler": "volume_artifact",
+      "source": "backend/app/main.py",
+      "line": 1470,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/volumes/analyses/{run_id}/evidence.zip",
+      "handler": "volume_evidence",
+      "source": "backend/app/main.py",
+      "line": 1496,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/volumes/analyses/{run_id}/report/{format}",
+      "handler": "volume_research_report",
+      "source": "backend/app/main.py",
+      "line": 1528,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/preview",
+      "handler": "image_preview",
+      "source": "backend/app/main.py",
+      "line": 1555,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/source",
+      "handler": "image_source",
+      "source": "backend/app/main.py",
+      "line": 1564,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/runs",
+      "handler": "list_evaluation_runs",
+      "source": "backend/app/main.py",
+      "line": 1621,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/evaluation/runs/{record_id}",
+      "handler": "get_evaluation_run",
+      "source": "backend/app/main.py",
+      "line": 1626,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/analysis/status",
+      "handler": "analysis_status",
+      "source": "backend/app/main.py",
+      "line": 1634,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/analysis/models",
+      "handler": "registered_models",
+      "source": "backend/app/main.py",
+      "line": 1736,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/analysis/models/activate",
+      "handler": "activate_model",
+      "source": "backend/app/main.py",
+      "line": 1755,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/{image_id}/analysis/jobs",
+      "handler": "create_analysis_job",
+      "source": "backend/app/main.py",
+      "line": 1955,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/analysis/jobs/{job_id}",
+      "handler": "get_analysis_job",
+      "source": "backend/app/main.py",
+      "line": 1990,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/analysis/jobs/{job_id}/result",
+      "handler": "get_analysis_job_result",
+      "source": "backend/app/main.py",
+      "line": 1999,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analysis/jobs",
+      "handler": "image_analysis_jobs",
+      "source": "backend/app/main.py",
+      "line": 2013,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/images/{image_id}/analyze",
+      "handler": "analyze_image",
+      "source": "backend/app/main.py",
+      "line": 2023,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses",
+      "handler": "analysis_history",
+      "source": "backend/app/main.py",
+      "line": 2032,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/analyses",
+      "handler": "case_analysis_history",
+      "source": "backend/app/main.py",
+      "line": 2043,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses/{event_id}/overlay",
+      "handler": "history_overlay",
+      "source": "backend/app/main.py",
+      "line": 2051,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses/{event_id}/artifacts/{kind}",
+      "handler": "result_artifact",
+      "source": "backend/app/main.py",
+      "line": 2063,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses/{event_id}/panels",
+      "handler": "image_panel_inventory",
+      "source": "backend/app/main.py",
+      "line": 2087,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses/{event_id}/panels/{kind}",
+      "handler": "image_panel_artifact",
+      "source": "backend/app/main.py",
+      "line": 2102,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analyses/{event_id}/map/{kind}",
+      "handler": "history_explanation_map",
+      "source": "backend/app/main.py",
+      "line": 2117,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analysis/compare",
+      "handler": "compare_analyses",
+      "source": "backend/app/main.py",
+      "line": 2133,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analysis",
+      "handler": "get_analysis",
+      "source": "backend/app/main.py",
+      "line": 2149,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analysis/overlay",
+      "handler": "analysis_overlay",
+      "source": "backend/app/main.py",
+      "line": 2163,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/images/{image_id}/analysis/map/{kind}",
+      "handler": "current_explanation_map",
+      "source": "backend/app/main.py",
+      "line": 2175,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{user_id}/role",
+      "handler": "set_role",
+      "source": "backend/app/main.py",
+      "line": 2191,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{user_id}/status",
+      "handler": "set_user_status",
+      "source": "backend/app/main.py",
+      "line": 2216,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{user_id}/report-approval",
+      "handler": "set_report_approval_permission",
+      "source": "backend/app/main.py",
+      "line": 2237,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/access-requests",
+      "handler": "request_role",
+      "source": "backend/app/main.py",
+      "line": 2270,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/access-requests",
+      "handler": "own_role_requests",
+      "source": "backend/app/main.py",
+      "line": 2284,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/access-requests",
+      "handler": "admin_role_requests",
+      "source": "backend/app/main.py",
+      "line": 2290,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/access-requests/{request_id}/decision",
+      "handler": "decide_role_request",
+      "source": "backend/app/main.py",
+      "line": 2296,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users/{user_id}/operational-grant",
+      "handler": "set_operational_grant",
+      "source": "backend/app/main.py",
+      "line": 2332,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/users",
+      "handler": "list_users",
+      "source": "backend/app/main.py",
+      "line": 2357,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/audit",
+      "handler": "all_audit",
+      "source": "backend/app/main.py",
+      "line": 2362,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/stenosis-measurements",
+      "handler": "record_stenosis_measurement",
+      "source": "backend/app/main.py",
+      "line": 2420,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/stenosis-measurements",
+      "handler": "list_stenosis_measurements",
+      "source": "backend/app/main.py",
+      "line": 2452,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/research/severity-protocol",
+      "handler": "research_protocol_state",
+      "source": "backend/app/main.py",
+      "line": 2480,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/research/severity-protocol",
+      "handler": "authorize_research_protocol",
+      "source": "backend/app/main.py",
+      "line": 2488,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/automatic-measurements/{event_id}",
+      "handler": "save_automatic_measurements",
+      "source": "backend/app/main.py",
+      "line": 2513,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/automatic-measurements/{event_id}",
+      "handler": "get_automatic_measurements",
+      "source": "backend/app/main.py",
+      "line": 2591,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/research-reports",
+      "handler": "create_research_report",
+      "source": "backend/app/main.py",
+      "line": 2604,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/research-reports",
+      "handler": "list_research_reports",
+      "source": "backend/app/main.py",
+      "line": 2646,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/research-reports/{report_id}",
+      "handler": "get_research_report",
+      "source": "backend/app/main.py",
+      "line": 2654,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/research-reports/{report_id}/export/{format}",
+      "handler": "export_research_report",
+      "source": "backend/app/main.py",
+      "line": 2663,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/health/live",
+      "handler": "liveness",
+      "source": "backend/app/main.py",
+      "line": 2686,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/health/ready",
+      "handler": "readiness",
+      "source": "backend/app/main.py",
+      "line": 2691,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/operations",
+      "handler": "operations_snapshot",
+      "source": "backend/app/main.py",
+      "line": 2706,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/metrics",
+      "handler": "operations_metrics",
+      "source": "backend/app/main.py",
+      "line": 2716,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "handler": "serve_frontend_index",
+      "source": "backend/app/main.py",
+      "line": 2738,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/research-progress",
+      "handler": "progress",
+      "source": "backend/app/research_progress.py",
+      "line": 350,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/research-progress/evidence/{identity}",
+      "handler": "get_evidence",
+      "source": "backend/app/research_progress.py",
+      "line": 355,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/task-models",
+      "handler": "task_models",
+      "source": "backend/app/task_inference.py",
+      "line": 64,
+      "browser_verified": false
+    },
+    {
+      "method": "POST",
+      "path": "/api/cases/{case_id}/task-analyses",
+      "handler": "create_task",
+      "source": "backend/app/task_inference.py",
+      "line": 76,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/task-analyses",
+      "handler": "list_tasks",
+      "source": "backend/app/task_inference.py",
+      "line": 100,
+      "browser_verified": false
+    },
+    {
+      "method": "GET",
+      "path": "/api/cases/{case_id}/task-analyses/{run_id}/artifacts/{name}",
+      "handler": "artifact",
+      "source": "backend/app/task_inference.py",
+      "line": 107,
+      "browser_verified": false
+    }
+  ],
+  "api_route_count": 112,
+  "react_component_count": 52,
+  "browser_verification": "Blocked at latest access check by disabled local browser use"
+}

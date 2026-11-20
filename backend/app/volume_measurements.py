@@ -136,12 +136,12 @@ def measure(path):
     candidates = []
     for path_record in paths:
         widths = np.array(path_record['mask_width_mm'])
-        required = 2 * (REFERENCE_GUARD + REFERENCE_SAMPLES) + 1
-        if len(widths) < required:
-            continue
         world = np.asarray(path_record['points_ras_mm'])
-        eligible = range(REFERENCE_GUARD + REFERENCE_SAMPLES + 2,
-                         len(widths) - REFERENCE_GUARD - REFERENCE_SAMPLES - 2)
+        eligible_start = REFERENCE_GUARD + REFERENCE_SAMPLES + 2
+        eligible_stop = len(widths) - REFERENCE_GUARD - REFERENCE_SAMPLES - 2
+        if eligible_start >= eligible_stop:
+            continue
+        eligible = range(eligible_start, eligible_stop)
         index = min(eligible, key=lambda sample: widths[sample])
         proximal = list(range(index-REFERENCE_GUARD-REFERENCE_SAMPLES, index-REFERENCE_GUARD))
         distal = list(range(index+REFERENCE_GUARD+1, index+REFERENCE_GUARD+1+REFERENCE_SAMPLES))

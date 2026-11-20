@@ -4,6 +4,7 @@ import { request } from './api';
 import { reviewLabels } from './reviewLabels';
 import { reviewsForRun } from './reviewEvidence';
 import { Button } from './components/prismui/button';
+import { utcDate } from "./lib/time";
 
 export default function ReviewAssessment({ token, role, caseRecord, analysis, onSaved }: {
   token: string; role: string; caseRecord: CaseRecord; analysis: AnalysisResult | null; onSaved: (record: CaseRecord) => void;
@@ -39,7 +40,7 @@ export default function ReviewAssessment({ token, role, caseRecord, analysis, on
       <Button className="primary" disabled={busy}>{busy ? 'Saving…' : labels.submit}</Button>
     </form> : <p>Review permission and a saved analysis are required. Existing case reviews remain in case history.</p>}
     {error && <p role="alert" className="message error">{error}</p>}{message && <p role="status" className="message success">{message}</p>}
-    <details className="assessment-history"><summary>Assessment history for this run ({linked.length})</summary>{linked.length ? linked.map(r => <div key={r.id}><strong>{r.decision.replaceAll('_', ' ')} · {r.stenosis_severity || 'Unspecified'}</strong><p>{r.notes || 'No notes'}</p><small>{r.reviewer_name || r.reviewer_id} · {r.reviewer_role} · {new Date(r.created_at).toLocaleString()} · {r.id}</small></div>) : <p className="caption">No assessment recorded for this run yet.</p>}</details>
+    <details className="assessment-history"><summary>Assessment history for this run ({linked.length})</summary>{linked.length ? linked.map(r => <div key={r.id}><strong>{r.decision.replaceAll('_', ' ')} · {r.stenosis_severity || 'Unspecified'}</strong><p>{r.notes || 'No notes'}</p><small>{r.reviewer_name || r.reviewer_id} · {r.reviewer_role} · {utcDate(r.created_at).toLocaleString()} · {r.id}</small></div>) : <p className="caption">No assessment recorded for this run yet.</p>}</details>
     {!!caseRecord.reviews?.filter(r => !r.analysis_event_id).length && <p className="caption">{caseRecord.reviews.filter(r => !r.analysis_event_id).length} legacy case-only reviews are preserved, but are not attributed to this run.</p>}
   </section>;
 }

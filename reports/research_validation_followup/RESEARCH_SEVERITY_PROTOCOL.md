@@ -1,0 +1,3 @@
+# Research severity protocol
+
+The server applies a referenced, versioned research protocol only when approved for research, with non-overlapping bands partitioning 0–100 and an inclusive final upper bound. It retains the protocol hash with the reviewed measurement. There is no default grade. Missing protocol, unreliable calibration or invalid diameters cannot produce a grade. The existing tests use synthetic bands and verify boundary values, invalid inputs, approval requirements and saved protocol identity. Run `backend/.venv/bin/python -m pytest -q backend/tests/test_narrowing.py backend/tests/test_stenosis_measurements.py` from the backend environment with the application on PYTHONPATH.

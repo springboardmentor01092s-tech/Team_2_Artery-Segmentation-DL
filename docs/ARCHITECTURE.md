@@ -72,9 +72,11 @@ Future tables can hold reviewed lesions, model registry entries, and reports.
 | GET | /api/images/{id}/analysis/compare | Compare two runs on one image |
 
 Cases are owner-scoped; admins may view all cases. Public registration cannot
-assign privileged roles. Bootstrap the first local administrator with
-`backend/create_admin.py`. Production needs institution-managed role assignment,
-TLS, secret management, backups, and a privacy/security review.
+assign privileged roles. In the production Docker profile, registration also
+requires an administrator-issued invitation. Bootstrap the first local
+administrator with `python -m app.cli create-admin` inside the application
+container. Production needs institution-managed role assignment, TLS, secret
+management, backups, and a privacy/security review.
 
 ## Role permissions
 
@@ -85,9 +87,10 @@ TLS, secret management, backups, and a privacy/security review.
 | Data scientist / ML engineer | No case access in this milestone | Own account | No |
 | Administrator | All cases | Own account | Yes |
 
-Public registration always creates a researcher account. The administrator
-assigns other roles. Model-development permissions for ML engineers will be
-added with the model-management milestone.
+Development registration creates a Viewer account. Production registration
+requires an invitation and also creates a Viewer account. The administrator
+assigns any other role after sign-up. Model-development permissions for ML
+engineers will be added with the model-management milestone.
 
 JWTs contain a session ID and expire after eight hours. The backend verifies
 the session is still active on every request. Password changes revoke all

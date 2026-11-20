@@ -1,6 +1,39 @@
 # Local demonstration
 
+## Milestone 4 walkthrough
+
+1. Start the isolated demo workspace and open **Reports & Exports** as the demo researcher. Select report v2 for `FRESH-XA-DICOM-20261117-1639` (run `d74e1154`), then report v1 for `FRESH-PNG-20261117-112439` (run `ae72625c`). Confirm the original and centerline render. For each report, compare the case, image, run and report IDs across JSON, CSV and the ZIP manifest. Check that the PDF retains the candidate's indeterminate assessment.
+2. In the volume workspace, open saved public CTA run `75c30403-db57-42ee-b513-fecf4490a868`. Inspect the three slice previews and the report summary. The saved run has 25 paths, zero candidates and approximately 251.04 mm of traced centerline. Download 3D JSON, CSV, PDF and Evidence ZIP. Check the manifest case/run IDs and member hashes, then inspect all four PDF pages. The export handlers passed reconciliation. Record browser downloads and visual inspection separately.
+3. In **Model Evaluation**, show the versioned research models and compare only compatible tasks, splits and metrics. Rehearse an assigned review and an unassigned viewer's denied export with the demo accounts. Record the tested role and outcome. Close with the research and deployment limits in the [acceptance report](../reports/MILESTONE_4_FINAL_ACCEPTANCE.md).
+
 Run `python scripts/run_local.py` from the application root to serve the built frontend and API on loopback at `http://127.0.0.1:8000/`. A separate Vite development frontend can use port 5173. Opening the application does not start training.
+
+### Isolated Docker role-switching demonstration
+
+The normal `compose.yaml` deliberately disables saved demo sessions. For the
+final local demonstration, use the separate loopback-only profile instead:
+
+```text
+docker compose -f compose.demo.yaml up --build -d
+docker compose -f compose.demo.yaml exec app python /app/backend/seed_demo_accounts.py
+docker compose -f compose.demo.yaml exec app python /app/backend/seed_demo_case.py
+```
+
+Open `http://127.0.0.1:8001/`. It creates an isolated database and seven
+synthetic demo identities (administrator, doctor, clinician, researcher, ML
+engineer, technician and viewer). Once any role is selected, the application
+sidebar account menu lists the other roles for one-click switching. Credentials
+and role-switch tokens stay in the isolated local volume/browser session and
+must not be copied to source control or deployed. The regular Google-enabled
+administrator application remains at port 8000.
+
+The optional case seeder uses the normal API to create and analyze
+`DEMO-INTEGRATED-SYNTHETIC`. It is generated geometry, visibly labelled as not
+patient data, and may demonstrate only software behavior. Its segmentation,
+measurements, candidate marks, reports and any reviewer workspace must not be
+represented as expert advice, clinical validation, diagnostic output or model
+performance evidence. The 3D checkpoint is intentionally not installed in the
+demo profile, so a 3D analysis is unavailable rather than simulated.
 
 On an isolated demo installation with seeded users and `CV_LOCAL_DEMO_SESSIONS=1`, open `http://127.0.0.1:8000/?demo_role=researcher` to select the researcher. The app removes the role selector from the URL after selection. The backend only issues roster sessions when both the request host and peer are loopback and production mode is off. Other role values are `clinician`, `doctor`, `ml_engineer`, `technician`, `viewer` and `admin`. Existing case access and grants still apply.
 

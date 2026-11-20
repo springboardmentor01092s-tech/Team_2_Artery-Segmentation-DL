@@ -80,10 +80,17 @@ export default function RoleWorkspace({ role, onOpen }: { role: string; onOpen: 
   const title = role === "admin" ? "System governance" : role === "ml_engineer" ? "Model lifecycle & evaluation" : role === "technician" ? "Image preparation & quality" : doctor ? (role === "clinician" ? "Clinician workspace" : "Doctor workspace") : "Research engines & projects";
   return <section className="role-workspace" aria-labelledby="role-workspace-title">
     <div className="role-workspace-heading"><Icon size={28} aria-hidden="true" /><div>{role === "admin" || role === "ml_engineer" ? <h1 id="role-workspace-title">{title}</h1> : <h2 id="role-workspace-title">{title}</h2>}<p className="muted">Role-specific tools. Every case action still requires server-side authorization. Unconnected capabilities are explicitly marked.</p></div></div>
-    <div className="role-module-grid">{modules.map(({ title: name, description, icon: ModuleIcon, view, status }) => <Card className="panel role-module" key={name}>
+    <div className="role-module-grid">{modules.filter(item => item.view).map(({ title: name, description, icon: ModuleIcon, view, status }) => <Card className="panel role-module" key={name}>
       <ModuleIcon size={24} aria-hidden="true" /><h3>{name}</h3><p className="muted">{description}</p>
       {view ? <Button type="button" variant="outline" onClick={() => onOpen(view)}>Open {view === "analysis" ? "shared viewer" : view === "models" ? "model workspace" : view === "admin" ? "administration" : view === "cases" ? "cases" : "reports"}</Button> : <small className="role-module-status">{status}</small>}
     </Card>)}</div>
+    {modules.some(item => !item.view) && <details className="role-planned">
+      <summary>Planned capabilities <span>{modules.filter(item => !item.view).length}</span><small>Not connected in this prototype yet</small></summary>
+      <div className="role-module-grid">{modules.filter(item => !item.view).map(({ title: name, description, icon: ModuleIcon, view, status }) => <Card className="panel role-module" key={name}>
+      <ModuleIcon size={24} aria-hidden="true" /><h3>{name}</h3><p className="muted">{description}</p>
+      {view ? <Button type="button" variant="outline" onClick={() => onOpen(view)}>Open {view === "analysis" ? "shared viewer" : view === "models" ? "model workspace" : view === "admin" ? "administration" : view === "cases" ? "cases" : "reports"}</Button> : <small className="role-module-status">{status}</small>}
+    </Card>)}</div>
+    </details>}
     <p className="caption"><Activity size={14} aria-hidden="true" /> Research prototype. No automated clinical grading, clinical deployment or live compute control is implied.</p>
   </section>;
 }

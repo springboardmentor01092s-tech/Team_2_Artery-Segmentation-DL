@@ -7,6 +7,7 @@ import { Button } from './components/prismui/button';
 import { Card } from './components/prismui/card';
 import { canExportReports } from './permissions';
 import ImagePanelGallery, { type ImagePanel } from './ImagePanelGallery';
+import { utcDate } from "./lib/time";
 
 type Snapshot = {
   report_id: string; version: number; generated_at: string; sections: string[];
@@ -104,7 +105,7 @@ export default function ReportsPage({ token, role, cases, selectedCase, selected
     <div className="report-actions">
       <label>Case<select value={selectedCase?.id || ''} onChange={e => onCaseChange(e.target.value)}><option value="">Select a case</option>{cases.map(c => <option key={c.id} value={c.id}>{c.case_code}</option>)}</select></label>
       <label>Image<select value={selectedImage?.id || ''} onChange={e => onImageChange(e.target.value)} disabled={!selectedCase?.images.length}><option value="">Select an image</option>{selectedCase?.images.map(i => <option key={i.id} value={i.id}>{i.original_name}</option>)}</select></label>
-      <label>Analysis run<select value={analysis?.id || ''} disabled={!history.length} onChange={e => { const run = history.find(r => r.id === e.target.value); if (run) onSelectAnalysis(run); }}><option value="">Select saved run</option>{history.map(r => <option key={r.id} value={r.id}>{new Date(r.created_at).toLocaleString()} · {r.id.slice(0, 8)}</option>)}</select></label>
+      <label>Analysis run<select value={analysis?.id || ''} disabled={!history.length} onChange={e => { const run = history.find(r => r.id === e.target.value); if (run) onSelectAnalysis(run); }}><option value="">Select saved run</option>{history.map(r => <option key={r.id} value={r.id}>{utcDate(r.created_at).toLocaleString()} · {r.id.slice(0, 8)}</option>)}</select></label>
       <Button variant="outline" onClick={onAnalysis}>Back to Image Review</Button>
     </div>
     {error && <p role="alert" className="message error">{error}</p>}
@@ -112,7 +113,7 @@ export default function ReportsPage({ token, role, cases, selectedCase, selected
       <Card className="panel report-contents"><p className="eyebrow">REPORT BUILDER</p><h3>Contents</h3><p className="caption">Identifiers, provenance and safety limitations are mandatory.</p>
         <fieldset disabled={busy}><legend>Optional sections</legend>{choices.map(([key, label]) => <label className="report-section-choice" key={key}><input type="checkbox" checked={sections.includes(key)} onChange={e => setSections(p => e.target.checked ? [...p, key] : p.filter(k => k !== key))} />{label}</label>)}</fieldset>
         <Button className="primary" disabled={busy || !analysis || analysis.image_id !== selectedImage?.id} onClick={generate}><Save size={16} aria-hidden="true" />{busy ? 'Working…' : 'Save new report version'}</Button>
-        <label>Saved report version<select disabled={busy || !reports.length} value={snapshot?.report_id || ''} onChange={e => openReport(e.target.value)}><option value="">Select a saved version</option>{reports.map(r => <option key={r.id} value={r.id}>v{r.version} · run {r.analysis_event_id.slice(0, 8)} · {new Date(r.created_at).toLocaleString()}</option>)}</select></label>
+        <label>Saved report version<select disabled={busy || !reports.length} value={snapshot?.report_id || ''} onChange={e => openReport(e.target.value)}><option value="">Select a saved version</option>{reports.map(r => <option key={r.id} value={r.id}>v{r.version} · run {r.analysis_event_id.slice(0, 8)} · {utcDate(r.created_at).toLocaleString()}</option>)}</select></label>
         <p className="caption">{reports.length} saved versions. Controls configure the next report; existing snapshots are never edited.</p>
       </Card>
       <Card className="panel report-sheet">

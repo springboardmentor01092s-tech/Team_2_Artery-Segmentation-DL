@@ -5,6 +5,7 @@ import type { CaseRecord } from "./caseTypes";
 import { Button } from "./components/prismui/button";
 import { Card } from "./components/prismui/card";
 import { InlineDisclosureMenu } from "./components/watermelon/inline-disclosure-menu";
+import { utcDate } from "./lib/time";
 
 const label = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -28,6 +29,7 @@ export default function CaseWorkflow({ caseRecord, token, role, onUpdated, onDel
   const canSubmit = !!caseRecord.permissions?.can_submit_report && caseRecord.workflow_status === "reviewed";
   const canApprove = !!caseRecord.permissions?.can_approve_report && caseRecord.report_status === "pending_approval";
   const canDelete = !!caseRecord.permissions?.can_delete;
+  const syntheticDemo = /\bsynthetic\b/i.test(`${caseRecord.source_dataset || ""} ${caseRecord.clinical_notes || ""} ${caseRecord.case_code}`);
 
   async function refresh() {
     onUpdated(await request<CaseRecord>(`/api/cases/${caseRecord.id}`, token));
@@ -97,6 +99,7 @@ export default function CaseWorkflow({ caseRecord, token, role, onUpdated, onDel
         <div><small>Image processing</small><strong>{label(caseRecord.processing_status || "not_started")}</strong></div>
         <div><small>Report</small><strong>{label(caseRecord.report_status || "draft")}{caseRecord.report_version ? ` · v${caseRecord.report_version}` : ""}</strong></div>
       </div>
+      {syntheticDemo && <p className="message warning"><strong>Synthetic demonstration fixture — not patient data.</strong> Workflow, review, measurement, severity, report, and approval controls shown for this case demonstrate software behaviour only. They are not expert advice, clinical validation, or a diagnostic report.</p>}
       {caseRecord.workflow_status === "validation_failed" && <p className="message error">The latest image failed validation. Correct the file or metadata and upload it again.</p>}
       {caseRecord.workflow_status === "pending_review" && <p className="muted">AI results are ready for an authorized doctor. They are research findings until reviewed.</p>}
       {caseRecord.workflow_status === "changes_requested" && <p className="muted">Changes were requested. Review the notes below, correct the study or rerun analysis, then request another clinical review.</p>}
@@ -107,13 +110,13 @@ export default function CaseWorkflow({ caseRecord, token, role, onUpdated, onDel
         <div><Button type="button" className="primary" disabled={busy} onClick={() => act(`/api/cases/${caseRecord.id}/reports/${caseRecord.report_version}/decision`, { decision: "approved", notes: decisionNotes }, "POST", "Report approved.")}>Approve report v{caseRecord.report_version}</Button>
         <Button type="button" variant="outline" disabled={busy} onClick={() => act(`/api/cases/${caseRecord.id}/reports/${caseRecord.report_version}/decision`, { decision: "changes_requested", notes: decisionNotes }, "POST", "Report returned for changes.")}>Request changes</Button></div>
       </div>}
-      {caseRecord.report_revisions?.length ? <div className="workflow-history" id="report-history"><strong>Report history</strong>{caseRecord.report_revisions.map((item) => <span key={item.id}>v{item.version} · {label(item.status)} · {new Date(item.created_at).toLocaleString()}</span>)}</div> : null}
+      {caseRecord.report_revisions?.length ? <div className="workflow-history" id="report-history"><strong>Report history</strong>{caseRecord.report_revisions.map((item) => <span key={item.id}>v{item.version} · {label(item.status)} · {utcDate(item.created_at).toLocaleString()}</span>)}</div> : null}
     </Card>
     <Card className="panel">
       <h3>Case notes</h3>
       <p className="muted">Share a quality, model, or review note with users assigned to this case.</p>
       {role !== "viewer" && <form className="workflow-comment-form" onSubmit={addComment}><select aria-label="Note category" value={category} onChange={(event) => setCategory(event.target.value as typeof category)}><option value="general">General</option><option value="quality">Image quality</option><option value="model">Model finding</option><option value="review">Clinical review</option></select><textarea aria-label="Case note" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={1000} rows={2} placeholder="Add a de-identified note" required /><Button type="submit" disabled={busy || !comment.trim()}>Post note</Button></form>}
-      <div className="workflow-comments">{caseRecord.comments?.length ? caseRecord.comments.map((item) => <div key={item.id}><strong>{label(item.category)} · {new Date(item.created_at).toLocaleString()}</strong><p>{item.body}</p></div>) : <p className="muted">No notes yet.</p>}</div>
+      <div className="workflow-comments">{caseRecord.comments?.length ? caseRecord.comments.map((item) => <div key={item.id}><strong>{label(item.category)} · {utcDate(item.created_at).toLocaleString()}</strong><p>{item.body}</p></div>) : <p className="muted">No notes yet.</p>}</div>
     </Card>
     {children && <div className="case-overview-details">{children}</div>}
     {canDelete && <Card className="panel workflow-danger"><div className="viewer-heading"><div><p className="eyebrow">CASE MANAGEMENT</p><h3>Delete case</h3></div><Trash2 size={19} aria-hidden="true" /></div><p className="muted">Remove this case from active workspaces. An administrator can restore it from Trash; images and audit history are retained.</p>{!deleting ? <Button type="button" variant="outline" onClick={() => setDeleting(true)}>Delete case…</Button> : <form onSubmit={deleteCase}><label>Type <strong>{caseRecord.case_code}</strong> to confirm<input value={deleteCode} onChange={(event) => setDeleteCode(event.target.value)} autoComplete="off" /></label><div><Button type="submit" disabled={busy || deleteCode !== caseRecord.case_code}>Move case to Trash</Button><Button type="button" variant="outline" onClick={() => { setDeleting(false); setDeleteCode(""); }}>Cancel</Button></div></form>}</Card>}

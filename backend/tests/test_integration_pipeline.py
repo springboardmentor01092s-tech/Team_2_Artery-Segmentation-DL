@@ -35,6 +35,26 @@ def fake_analysis(path, spacing):
             None, None, None, None, {'calibration': 'uncalibrated_raw_scores', 'instance_detections': []}, None)
 
 
+def test_automatic_report_failure_preserves_completed_analysis(monkeypatch, caplog):
+    monkeypatch.setattr(main, 'models_ready', lambda: True)
+    monkeypatch.setattr(main, 'analyze', fake_analysis)
+
+    def fail_report(*args):
+        raise RuntimeError('Injected report failure')
+
+    monkeypatch.setattr(main, 'create_research_report', fail_report)
+    with TestClient(main.app) as client:
+        _, owner, _, image_id = inputs(client)
+        job = client.post(f'/api/images/{image_id}/analysis/jobs', headers=owner,
+                          json={'idempotency_key': uuid4().hex}).json()
+        assert InferenceWorker(main.execute_analysis_job).tick()
+        status = client.get(job['status_url'], headers=owner).json()
+        assert status['status'] == 'completed'
+        assert client.get(status['result_url'], headers=owner).status_code == 200
+        assert client.get(f"/api/cases/{job['case_id']}/research-reports", headers=owner).json() == []
+        assert 'automatic_research_report_failed' in caplog.text
+
+
 def test_jobs_idempotency_saved_explanation_history_and_access(monkeypatch):
     monkeypatch.setattr(main, 'models_ready', lambda: True)
     monkeypatch.setattr(main, 'analyze', fake_analysis)
@@ -55,6 +75,14 @@ def test_jobs_idempotency_saved_explanation_history_and_access(monkeypatch):
         job = client.get(f'/api/analysis/jobs/{job_id}', headers=owner).json()
         assert job['status'] == 'completed' and job['progress'] == 100
         result = client.get(job['result_url'], headers=owner).json()
+        reports_url = f"/api/cases/{job['case_id']}/research-reports"
+        reports = client.get(reports_url, headers=owner).json()
+        assert len(reports) == 1
+        assert reports[0]['analysis_event_id'] == result['id']
+        for fmt in ('pdf', 'csv', 'json'):
+            export_url = f"{reports_url}/{reports[0]['id']}/export/{fmt}"
+            assert client.get(export_url, headers=owner).status_code == 200
+            assert client.get(export_url, headers=outsider).status_code == 404
         structured = result['structured_result']
         assert structured['job_id'] == job_id and structured['result_id'] == result['id']
         assert structured['severity']['status'] == 'insufficient_evidence'
@@ -73,6 +101,7 @@ def test_jobs_idempotency_saved_explanation_history_and_access(monkeypatch):
         second = client.post(url, headers=owner, json={'idempotency_key': uuid4().hex}).json()
         assert second['id'] != job_id
         assert worker.tick()
+        assert len(client.get(reports_url, headers=owner).json()) == 2
         assert client.get(job['result_url'], headers=owner).json() == result
         history = client.get(f'/api/images/{identity}/analyses', headers=owner).json()
         assert len(history) == 2

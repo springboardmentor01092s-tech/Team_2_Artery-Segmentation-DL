@@ -11,7 +11,7 @@ from scipy.stats import spearmanr
 import torch
 
 from app import trained_release
-from app.xai_faithfulness import evaluate_forward_occlusion, matched_instance_score
+from app.xai_faithfulness import evaluate_forward_occlusion, matched_instance_index, matched_instance_score
 
 
 def main():
@@ -57,11 +57,20 @@ def main():
     result['baseline'] = {'method': 'per_channel_input_median', 'values': baseline.ravel().tolist()}
 
     randomized = copy.deepcopy(model).eval()
-    for module in randomized.backbone.body.layer4.modules():
-        if hasattr(module, 'reset_parameters'):
-            module.reset_parameters()
-    random_cam, _ = trained_release._detector_explanations(
-        randomized, image, threshold, candidate_position=args.candidate_position)
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(20261117)
+        for module in randomized.backbone.body.layer4.modules():
+            if hasattr(module, 'reset_parameters'):
+                module.reset_parameters()
+    with torch.inference_mode():
+        random_output = randomized([image])[0]
+    matched = matched_instance_index(random_output, reference_mask, minimum_score=threshold)
+    random_cam = None
+    if matched is not None:
+        eligible = torch.where((random_output['labels'] == 1) & (random_output['scores'] >= threshold))[0]
+        position = int(torch.where(eligible == matched)[0].item())
+        random_cam, _ = trained_release._detector_explanations(
+            randomized, image, threshold, candidate_position=position)
     if random_cam is None:
         result['randomization'] = {
             'status': 'target_unavailable_after_backbone_randomization',

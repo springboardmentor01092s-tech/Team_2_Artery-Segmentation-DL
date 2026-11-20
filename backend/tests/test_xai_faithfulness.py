@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from app.xai_faithfulness import evaluate_forward_occlusion, matched_instance_score
+from app.xai_faithfulness import evaluate_forward_occlusion, matched_instance_index, matched_instance_score
 
 
 def test_forward_occlusion_rewards_the_true_target_and_randomization_control():
@@ -51,6 +51,8 @@ def test_detection_target_is_bound_by_mask_iou():
     masks[1, 0, :3, :3] = 1
     output = {'labels': torch.tensor([1, 1]), 'scores': torch.tensor([.99, .61]), 'masks': masks}
     assert matched_instance_score(output, reference) == pytest.approx(.61)
+    assert matched_instance_index(output, reference, minimum_score=.60) is not None
+    assert matched_instance_index(output, reference, minimum_score=.70) is None
     assert matched_instance_score(output, np.eye(8, dtype=bool), minimum_iou=.9) == 0
 
 

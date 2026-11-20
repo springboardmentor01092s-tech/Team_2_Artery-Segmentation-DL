@@ -1,0 +1,20 @@
+{
+  "case_id": "same-frame-geometry-20261104-60-case",
+  "image_id": "same-frame-geometry-20261104-60-image",
+  "run_id": "same-frame-geometry-20261104-60",
+  "candidate_count": 6,
+  "candidate_export_sha256": "5595a6f174473ab5345c57a5fa505b76dd022d00b00ba65ae2aa8dd84137a1ff",
+  "auto_reopen_after_refresh": true,
+  "export_matches_api": true,
+  "unauthenticated_overlay_denied": true,
+  "source_archive": {
+    "case": 60,
+    "run_id": "same-frame-geometry-20261104-60",
+    "source_sha256": "0c5d25a509f1850c870fe78bb0e0d5f2cd29569db33aafd2e1ec1e589dfcf990",
+    "combined_overlay_sha256": "4ea3de230f6ad3a5697cd8418456a96f26bc07d29360388d556b145ccbdadd7e",
+    "profiles": 6,
+    "candidate_count": 6,
+    "no_local_image_compute": true
+  },
+  "local_inference": false
+}

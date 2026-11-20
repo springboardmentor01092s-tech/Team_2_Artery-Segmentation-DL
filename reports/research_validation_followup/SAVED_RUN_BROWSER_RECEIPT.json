@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-11",
+  "case_id": "dac0b8f5-71cb-4b58-b640-f5e5c5b85f41",
+  "image_id": "37bbfa6b-7286-4248-bf9c-5a4cbe1b9fc8",
+  "analysis_run_id": "d0286ecd-e383-4f16-8ecb-9e662c8df223",
+  "assessment_id": "124d94439d965864fe4898ceab59798eaa842fd02ae3bd461100f10179ae4994",
+  "report_id": "f8777b6a-0b2f-407c-ba1f-3d66dd5167aa",
+  "report_version": 3,
+  "candidate_count": 3,
+  "candidate_statuses": ["abstained", "abstained", "abstained"],
+  "reason": "low_local_boundary_contrast",
+  "refresh_restored_identical_assessment_id": true,
+  "downloaded_zip_bytes": 235813,
+  "downloaded_zip_sha256": "407358697b7a3b5283e25891d94aeb6886b91015c6358b62af64427505e783c4",
+  "manifest_hashes_and_lengths_match": true,
+  "csv_json_automatic_measurements_identical": true,
+  "browser_file_upload": "blocked: ChatGPT Chrome extension requires Allow access to file URLs",
+  "new_image_inference_verified_this_pass": false,
+  "training_performed": false,
+  "real_reference_pairs_created": 0
+}

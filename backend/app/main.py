@@ -17,10 +17,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from hashlib import sha256
+import secrets
+
+from . import admin_mfa
+from .models import AccountInvitation
 from .database import BASE_DIR, Base, SessionLocal, engine, get_db
 from .migrations import upgrade_local_schema
 from .auth_ext import identity_out, normalized_username, resolve_user, router as auth_ext_router
@@ -38,7 +43,7 @@ from .demonstrations import router as demonstrations_router
 from .task_inference import router as task_inference_router
 from .models import TaskInferenceRun
 from .analysis_result import build_result
-from .operations import install_telemetry, validate_deployment_environment, telemetry_snapshot, prometheus
+from .operations import install_telemetry, validate_deployment_environment, telemetry_snapshot, prometheus, api_docs_enabled
 from .inference_jobs import InferenceWorker
 from .action_policy import allowed_action, effective_actions, CONDITIONAL_ACTIONS
 from .case_contract import validate_case_configuration, supports_current_inference, case_modalities, case_tasks, validate_case_routes
@@ -87,7 +92,10 @@ async def lifespan(app: FastAPI):
             worker.close()
 
 
-app = FastAPI(title="CoroVision AI API", version="0.1.0", lifespan=lifespan)
+_DOCS = api_docs_enabled()
+app = FastAPI(title="CoroVision AI API", version="0.1.0", lifespan=lifespan,
+              docs_url="/docs" if _DOCS else None, redoc_url="/redoc" if _DOCS else None,
+              openapi_url="/openapi.json" if _DOCS else None)
 install_telemetry(app)
 app.add_middleware(
     CORSMiddleware,
@@ -115,6 +123,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=12, max_length=128)
     display_name: str = Field(default="", max_length=100)
     username: str | None = None
+    invitation: str | None = Field(default=None, max_length=128)
 
 
 class LoginIn(BaseModel):
@@ -122,6 +131,7 @@ class LoginIn(BaseModel):
     email: EmailStr | None = None
     password: str
     remember: bool = False
+    mfa_code: str | None = Field(default=None, max_length=6)
 
 
 class ProfileIn(BaseModel):
@@ -458,10 +468,22 @@ def health():
 def register(data: RegisterIn, db: Session = Depends(get_db)):
     email = data.email.lower()
     username = normalized_username(data.username)
+    # Validate conflicts before redeeming an invitation.  A valid one-time link
+    # must not be consumed by a request that cannot create an account.
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=409, detail="Email already registered")
     if username and db.scalar(select(UserIdentity).where(UserIdentity.username == username)):
         raise HTTPException(status_code=409, detail="Username already in use")
+    if data.invitation or os.getenv("COROVISION_ENV") == "production":
+        digest = sha256((data.invitation or "").encode()).hexdigest()
+        claimed = db.execute(update(AccountInvitation).where(
+            AccountInvitation.digest == digest,
+            AccountInvitation.email == email,
+            AccountInvitation.redeemed_at.is_(None),
+            AccountInvitation.expires_at > now(),
+        ).values(redeemed_at=now()))
+        if claimed.rowcount != 1:
+            raise HTTPException(403, "A valid invitation for this email is required")
     user = User(email=email, password_hash=hash_password(data.password), role="viewer", status="active")
     db.add(user)
     db.flush()
@@ -471,6 +493,25 @@ def register(data: RegisterIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return user_out(user, db)
+
+
+class InvitationIn(BaseModel):
+    email: EmailStr
+
+
+@app.post("/api/admin/invitations", status_code=201)
+def create_invitation(data: InvitationIn, admin: User = Depends(current_user), db: Session = Depends(get_db)):
+    if admin.role != "admin":
+        raise HTTPException(403, "Administrator access required")
+    email = data.email.lower()
+    if db.scalar(select(User).where(User.email == email)):
+        raise HTTPException(409, "An account already exists for this email")
+    token = secrets.token_urlsafe(32)
+    expires_at = now() + timedelta(hours=24)
+    db.add(AccountInvitation(digest=sha256(token.encode()).hexdigest(), email=email, expires_at=expires_at))
+    audit(db, admin.id, "account_invitation_created")
+    db.commit()
+    return {"invitation": token, "expires_at": expires_at}
 
 
 @app.post("/api/auth/login")
@@ -496,10 +537,29 @@ def login(data: LoginIn, db: Session = Depends(get_db)):
             audit(db, user.id, "login_failed")
             db.commit()
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if getattr(user, "status", "active") in {"suspended", "deactivated"}:
+    if getattr(user, "status", "active") != "active":
         audit(db, user.id, "login_blocked_suspended")
         db.commit()
         raise HTTPException(status_code=403, detail="Account is suspended or deactivated. Contact an administrator.")
+    mfa_verified = admin_mfa.required(user.role)
+    if mfa_verified:
+        factor = admin_mfa.enrollment(db, user.id)
+        if not data.mfa_code:
+            enrollment_key = factor.secret if factor.last_counter == -1 else None
+            db.commit()
+            return {"mfa_required": True, "enrollment_key": enrollment_key}
+        if not admin_mfa.consume(db, factor, data.mfa_code):
+            if guard is None:
+                guard = LoginThrottle(user_id=user.id, failed_attempts=0)
+                db.add(guard)
+            guard.failed_attempts += 1
+            if guard.failed_attempts >= 5:
+                guard.failed_attempts = 0
+                guard.blocked_until = now() + timedelta(minutes=15)
+            audit(db, user.id, "administrator_mfa_failed")
+            db.commit()
+            raise HTTPException(401, "Invalid or already used authenticator code")
+        audit(db, user.id, "administrator_mfa_verified")
     if guard:
         guard.failed_attempts = 0
         guard.blocked_until = None
@@ -508,22 +568,28 @@ def login(data: LoginIn, db: Session = Depends(get_db)):
     db.flush()
     audit(db, user.id, "login")
     db.commit()
-    return {"access_token": create_token(user, session), "token_type": "bearer",
+    return {"access_token": create_token(user, session, mfa_verified=mfa_verified), "token_type": "bearer",
             "expires_at": session.expires_at}
 
 
 @app.get("/api/auth/demo-accounts")
 def list_demo_accounts(request: Request, db: Session = Depends(get_db)):
     loopback = {"127.0.0.1", "::1"}
+    # Docker's loopback-published port reaches the app through the bridge rather
+    # than presenting 127.0.0.1 as the peer.  This escape hatch is set only by
+    # compose.demo.yaml; the Host must still be a loopback origin and production
+    # validation rejects the flag.
+    docker_loopback_proxy = os.getenv("CV_LOCAL_DEMO_DOCKER_PROXY") == "1"
     if (
         os.getenv("CV_LOCAL_DEMO_SESSIONS") != "1"
         or os.getenv("COROVISION_ENV") == "production"
         or not request.client
-        or request.client.host not in loopback
+        or (request.client.host not in loopback and not docker_loopback_proxy)
         or request.url.hostname not in loopback | {"localhost"}
     ):
         return {"accounts": []}
-    creds_path = BASE_DIR / "backend" / "demo-credentials.json"
+    configured_credentials = os.getenv("DEMO_CREDENTIALS_PATH", "").strip()
+    creds_path = Path(configured_credentials) if configured_credentials else BASE_DIR / "backend" / "demo-credentials.json"
     if not creds_path.is_file():
         creds_path = BASE_DIR / "demo-credentials.json"
     if not creds_path.is_file():
@@ -1142,8 +1208,10 @@ async def upload_image(
     if profile == "standard":
         denoise, enhance = STANDARD_PIPELINES[standard_pipeline]
     def reject_upload(status_code: int, detail: str):
-        case.workflow_status = "validation_failed"
-        case.processing_status = "failed"
+        # A failed intake attempt must not regress an existing case workflow.
+        if case.workflow_status in {"draft", "validation_failed"} and case.processing_status in {"not_started", "failed"}:
+            case.workflow_status = "validation_failed"
+            case.processing_status = "failed"
         audit(db, user.id, "image_validation_failed", case.id)
         notify_case(db, case, user.id, "validation_failed", f"Image validation failed for {case.case_code}",
                     {"technician", "doctor", "clinician", "admin"})
@@ -1468,6 +1536,39 @@ def create_volume_analysis(case_id: str, background: BackgroundTasks, file: Uplo
     return response
 
 
+@app.post('/api/cases/{case_id}/volumes/dicom-analyses', status_code=202)
+def create_dicom_volume_analysis(case_id: str, background: BackgroundTasks,
+                                files: list[UploadFile] = File(...),
+                                hu_confirmed: bool = Form(False), research_confirmed: bool = Form(False),
+                                user: User = Depends(require_roles('researcher', 'admin')),
+                                db: Session = Depends(get_db)):
+    """Bound direct slice uploads, then reuse the authorized reconstruction pipeline."""
+    from tempfile import TemporaryFile
+    from zipfile import ZipFile, ZIP_STORED
+    from starlette.datastructures import UploadFile as StarletteUploadFile
+    accessible_case(case_id, user, db, required_action='upload')
+    if not 2 <= len(files) <= 2000:
+        raise HTTPException(422, 'Select 2-2000 slices from exactly one de-identified CT series')
+    total = 0
+    with TemporaryFile() as archive_file:
+        with ZipFile(archive_file, 'w', compression=ZIP_STORED) as archive:
+            for index, item in enumerate(files):
+                member_bytes = 0
+                with archive.open(f'slice-{index:05d}.dcm', 'w') as member:
+                    while chunk := item.file.read(1024 * 1024):
+                        member_bytes += len(chunk)
+                        total += len(chunk)
+                        if member_bytes > 64*1024*1024 or total > 384*1024*1024:
+                            raise HTTPException(413, 'DICOM series exceeds upload limits')
+                        member.write(chunk)
+                if not member_bytes:
+                    raise HTTPException(422, 'DICOM series contains an empty slice')
+        archive_file.seek(0)
+        upload = StarletteUploadFile(file=archive_file, filename='direct-series.zip')
+        return create_volume_analysis(case_id, background, upload, hu_confirmed,
+                                      research_confirmed, 'medical_study', None, user, db)
+
+
 @app.get('/api/cases/{case_id}/volumes/analyses')
 def list_volume_analyses(case_id: str, user: User = Depends(require_case_role), db: Session = Depends(get_db)):
     accessible_case(case_id, user, db)
@@ -1619,6 +1720,7 @@ def analysis_out(run: AnalysisRun) -> dict:
             "attention_map_url": map_url("attention"),
             "stenosis_probability_url": map_url("probability"),
             "gradcam_url": map_url("gradcam"),
+            "gradcam_plus_plus_url": map_url("gradcampp"),
             "centerline_url": map_url("centerline"),
             "artery_probability_url": map_url("artery_probability"),
             "vessel_analysis": vessel,
@@ -1645,6 +1747,7 @@ def event_out(event: AnalysisEvent) -> dict:
             "attention_map_url": map_url("attention"),
             "stenosis_probability_url": map_url("probability"),
             "gradcam_url": map_url("gradcam"),
+            "gradcam_plus_plus_url": map_url("gradcampp"),
             "centerline_url": map_url("centerline"),
             "artery_probability_url": map_url("artery_probability"),
             "validation": evaluation.get("models", evaluation),
@@ -1901,6 +2004,10 @@ def perform_analysis(image_id, user, db, job=None):
         if map_content is not None:
             overlay_path.with_name(f"{overlay_path.stem}.{map_name}.png").write_bytes(map_content)
     artifacts = {"overlay": f"/api/images/{image.id}/analyses/{event_id}/overlay"}
+    for map_name, map_content in (model_scores.pop('_explanation_maps', None) or {}).items():
+        if map_name != 'gradcam_plus_plus' or not map_content:
+            raise ValueError('Unsupported explanation map')
+        overlay_path.with_name(f"{overlay_path.stem}.gradcampp.png").write_bytes(map_content)
     prediction_artifacts = model_scores.pop('_artifacts', {})
     for kind, content in prediction_artifacts.items():
         if kind not in {"artery_mask", "stenosis_mask", "raw_scores"}:
@@ -1974,6 +2081,25 @@ def perform_analysis(image_id, user, db, job=None):
 def execute_analysis_job(db, job):
     user = db.get(User, job.requested_by)
     perform_analysis(job.image_id, user, db, job)
+    # The analysis is already durable. Report failure must not change its outcome.
+    try:
+        if user.role not in ROLE_EXPORTERS or not allowed_action(user, 'analysis:export', db):
+            return
+        existing = db.scalar(select(ResearchReport.id).where(
+            ResearchReport.case_id == job.case_id,
+            ResearchReport.analysis_event_id == job.result_event_id,
+        ).limit(1))
+        if existing is None:
+            create_research_report(
+                job.case_id,
+                ResearchReportIn(image_id=job.image_id, analysis_event_id=job.result_event_id),
+                user, db,
+            )
+    except Exception:
+        import logging
+        db.rollback()
+        logging.getLogger('corovision.operations').exception(
+            'automatic_research_report_failed job=%s', job.id)
 
 
 class AnalysisJobIn(BaseModel):
@@ -2116,7 +2242,7 @@ def result_artifact(image_id: str, event_id: str, kind: str,
 
 
 def _explanation_file(base_path: str, kind: str) -> Path:
-    if kind not in {"attention", "artery_probability", "probability", "gradcam", "centerline"}:
+    if kind not in {"attention", "artery_probability", "probability", "gradcam", "gradcampp", "centerline"}:
         raise HTTPException(status_code=404, detail="Explanation map not found")
     return Path(base_path).with_name(f"{Path(base_path).stem}.{kind}.png")
 
@@ -2139,15 +2265,24 @@ def image_panel_inventory(image_id: str, event_id: str,
 @app.get('/api/images/{image_id}/analyses/{event_id}/panels/{kind}')
 def image_panel_artifact(image_id: str, event_id: str, kind: str,
                          user: User = Depends(require_case_role), db: Session = Depends(get_db)):
-    from .image_panels import paths, boundary_png
+    from io import BytesIO
+    from .image_panels import paths, boundary_png, printable_original
     from fastapi.responses import Response
     manifest = image_panel_inventory(image_id, event_id, user, db)
     panel = next((p for p in manifest['panels'] if p['key'] == kind), None)
     if not panel or not panel['available']:
         raise HTTPException(404, 'No saved artifact for this panel')
-    files = paths(db.get(Image, image_id), db.get(AnalysisEvent, event_id))
+    image = db.get(Image, image_id)
+    files = paths(image, db.get(AnalysisEvent, event_id))
     if kind == 'boundary':
         return Response(boundary_png(files['artery_mask']), media_type='image/png')
+    if kind == 'original':
+        try:
+            source = printable_original(image)
+        except (InvalidImage, OSError) as exc:
+            raise HTTPException(422, 'Saved source cannot be rendered') from exc
+        if isinstance(source, BytesIO):
+            return Response(source.getvalue(), media_type='image/png')
     return FileResponse(files[kind], media_type=None if kind == 'original' else 'image/png')
 
 

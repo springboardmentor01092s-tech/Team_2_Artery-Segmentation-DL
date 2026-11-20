@@ -7,6 +7,7 @@ import { request } from "./api";
 import RoleWorkspace from "./RoleWorkspace";
 import CorovisionLibraryDashboard from "./components/watermelon/corovision-library-dashboard";
 import type { SidebarView } from "./components/watermelon/macos-sidebar";
+import { utcDate } from "./lib/time";
 
 type CaseSummary = {
   id: string;
@@ -165,7 +166,7 @@ export default function OverviewPanel({
         </div>
         <div className="overview-analytics-grid">
           <Card className="panel"><div className="viewer-heading"><h3>Recent analyses</h3><span>{analytics.recent_analyses.length} latest runs</span></div>
-            {analytics.recent_analyses.length ? analytics.recent_analyses.map((item) => <button className="analysis-feed-row" key={item.id} type="button" onClick={() => onOpenCase(item.case_id)}><span><strong>{item.case_code}</strong><small>{item.image_name} · {item.model_version}</small></span><span className={item.model_flagged_region ? "flagged" : "not-flagged"}>{item.stenosis_mask_status === "not_assessed" ? "Not assessed" : item.stenosis_mask_status === "not_saved" ? "Mask count not saved" : item.stenosis_mask_status === "unknown" ? "Mask count unavailable" : item.stenosis_mask_components > 1 ? `${item.stenosis_mask_components} disconnected model regions` : item.model_flagged_region ? "Review flag" : "No mask pixels"}<small>{new Date(item.created_at).toLocaleString()}</small></span></button>) : <p className="muted">No completed model runs yet.</p>}
+            {analytics.recent_analyses.length ? analytics.recent_analyses.map((item) => <button className="analysis-feed-row" key={item.id} type="button" onClick={() => onOpenCase(item.case_id)}><span><strong>{item.case_code}</strong><small>{item.image_name} · {item.model_version}</small></span><span className={item.model_flagged_region ? "flagged" : "not-flagged"}>{item.stenosis_mask_status === "not_assessed" ? "Not assessed" : item.stenosis_mask_status === "not_saved" ? "Mask count not saved" : item.stenosis_mask_status === "unknown" ? "Mask count unavailable" : item.stenosis_mask_components > 1 ? `${item.stenosis_mask_components} disconnected model regions` : item.model_flagged_region ? "Review flag" : "No mask pixels"}<small>{utcDate(item.created_at).toLocaleString()}</small></span></button>) : <p className="muted">No completed model runs yet.</p>}
           </Card>
           <Card className="panel"><div className="viewer-heading"><h3>Processing status</h3><span>Cases</span></div>
             {Object.entries(analytics.processing_status).length ? Object.entries(analytics.processing_status).map(([status, count]) => <div className="processing-row" key={status}><span>{status.replaceAll("_", " ")}</span><strong>{count}</strong></div>) : <p className="muted">No case processing records yet.</p>}
@@ -177,7 +178,7 @@ export default function OverviewPanel({
       <div className="overview-queues">
         <Card className="panel overview-task-list"><div className="viewer-heading"><h3>My next steps</h3><span>{tasks.length} task{tasks.length === 1 ? "" : "s"}</span></div>{tasks.length ? tasks.map((item) => <button key={item.case_id} type="button" onClick={() => onOpenTask(item.case_id, item.view)}><strong>{item.case_code}</strong><span>{item.title}</span><small>{item.workflow_status.replaceAll("_", " ")}</small></button>) : <p className="muted">No action is waiting for your role.</p>}</Card>
       </div>
-      <Card className="panel overview-activity"><div className="viewer-heading"><h3>Recent activity</h3><span>Your account actions</span></div>{activity.length ? <ul>{activity.map((item) => <li key={item.id}><span>{item.action.replaceAll("_", " ")}</span><time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time></li>)}</ul> : <p className="muted">No recorded activity yet.</p>}</Card>
+      <Card className="panel overview-activity"><div className="viewer-heading"><h3>Recent activity</h3><span>Your account actions</span></div>{activity.length ? <ul>{activity.map((item) => <li key={item.id}><span>{item.action.replaceAll("_", " ")}</span><time dateTime={item.created_at}>{utcDate(item.created_at).toLocaleString()}</time></li>)}</ul> : <p className="muted">No recorded activity yet.</p>}</Card>
 
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { request } from "./api";
 import type { User } from "./AccountPanel";
 import { Card } from "./components/prismui/card";
@@ -6,6 +6,7 @@ import { ShieldCheck, UserCheck, Stethoscope, FlaskConical, Wrench, Eye, Cpu } f
 import AccessRequests from "./AccessRequests";
 import OperationalGrants from "./OperationalGrants";
 import PermissionMatrix from "./PermissionMatrix";
+import { utcDate } from "./lib/time";
 
 type Audit = { id: string; user_id: string; action: string; case_id: string | null; created_at: string };
 type TrashedCase = { id: string; case_code: string; deleted_at: string };
@@ -39,6 +40,27 @@ export default function AdminPanel({ token, currentUser, section = "users" }: { 
   const [auditFilter, setAuditFilter] = useState("");
   const [showAllAudit, setShowAllAudit] = useState(false);
   const titles = { users: "User Management", permissions: "Roles & Permissions", access: "Workspace & Case Access", audit: "Audit Logs" };
+
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviting, setInviting] = useState(false);
+
+  async function invite(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setInviteLink("");
+    setInviting(true);
+    try {
+      const result = await request<{ invitation: string }>("/api/admin/invitations", token, { email: inviteEmail }, "POST");
+      const url = new URL(window.location.origin);
+      url.hash = new URLSearchParams({ invite: result.invitation }).toString();
+      setInviteLink(url.href);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setInviting(false);
+    }
+  }
 
   async function refresh() {
     const [nextUsers, nextAudit, nextTrash] = await Promise.all([
@@ -117,6 +139,25 @@ export default function AdminPanel({ token, currentUser, section = "users" }: { 
           <h2>{titles[section]}</h2>
         </div>
       </div>
+      {section === "users" && (
+        <Card className="panel invite-panel">
+          <h3>Invite a user</h3>
+          <p className="muted">New accounts join as Viewer. Assign other roles below after they sign up.</p>
+          <form className="invite-form" onSubmit={invite}>
+            <label htmlFor="invite-email">Email address</label>
+            <div className="invite-row">
+              <input id="invite-email" type="email" placeholder="name@institution.org" value={inviteEmail} onChange={event => setInviteEmail(event.target.value)} required />
+              <button type="submit" className="primary" disabled={inviting}>{inviting ? "Creating…" : "Create invitation"}</button>
+            </div>
+          </form>
+          {inviteLink && (
+            <label>
+              Invitation link · valid for 24 hours
+              <input readOnly value={inviteLink} onFocus={event => event.target.select()} />
+            </label>
+          )}
+        </Card>
+      )}
       {error && <p className="message error" role="alert">{error} <button type="button" onClick={() => { setError(""); refresh().catch(cause => setError(cause.message)); }}>Retry</button></p>}
       {loading && <p role="status">Loading authorized administrative records…</p>}
       {message && <p className="message success" role="status">{message}</p>}
@@ -188,7 +229,7 @@ export default function AdminPanel({ token, currentUser, section = "users" }: { 
       {section === "access" && <><Card className="panel"><h3>Case content remains separately authorized</h3><p>Administrator status does not grant medical-image access. Existing case owners assign collaborators from the case Overview & access section. Institution membership, ownership correction and access revocation tools are not connected here.</p></Card><Card className="panel">
         <h3>Case Trash</h3>
         <p className="muted">Deleted cases remain in the audit trail and can be restored by an administrator.</p>
-        {trash.length ? <div className="simple-list">{trash.map((item) => <div className="list-row" key={item.id}><span><strong>{item.case_code}</strong> · {new Date(item.deleted_at).toLocaleString()}</span><button type="button" disabled={busyId === item.id} onClick={() => restoreCase(item.id)}>Restore</button></div>)}</div> : <p className="muted">Trash is empty.</p>}
+        {trash.length ? <div className="simple-list">{trash.map((item) => <div className="list-row" key={item.id}><span><strong>{item.case_code}</strong> · {utcDate(item.deleted_at).toLocaleString()}</span><button type="button" disabled={busyId === item.id} onClick={() => restoreCase(item.id)}>Restore</button></div>)}</div> : <p className="muted">Trash is empty.</p>}
       </Card></>}
 
       {section === "permissions" && <PermissionMatrix />}
@@ -199,11 +240,11 @@ export default function AdminPanel({ token, currentUser, section = "users" }: { 
         <p className="muted">This is the API-provided recent audit window, not a complete historical archive. Filters search loaded events only.</p>
         <label>Filter audit events<input value={auditFilter} onChange={e => setAuditFilter(e.target.value)} placeholder="Action or date" /></label>
         <div className="simple-list">
-          {!loading && audit.filter(item => `${item.action} ${new Date(item.created_at).toLocaleString()}`.toLowerCase().includes(auditFilter.toLowerCase())).length === 0 && <p>No matching audit events in the loaded window.</p>}
-          {audit.filter(item => `${item.action} ${new Date(item.created_at).toLocaleString()}`.toLowerCase().includes(auditFilter.toLowerCase())).slice(0, showAllAudit ? undefined : 10).map((item) => (
+          {!loading && audit.filter(item => `${item.action} ${utcDate(item.created_at).toLocaleString()}`.toLowerCase().includes(auditFilter.toLowerCase())).length === 0 && <p>No matching audit events in the loaded window.</p>}
+          {audit.filter(item => `${item.action} ${utcDate(item.created_at).toLocaleString()}`.toLowerCase().includes(auditFilter.toLowerCase())).slice(0, showAllAudit ? undefined : 10).map((item) => (
             <div className="list-row" key={item.id}>
-              <span>{item.action.replaceAll("_", " ")}</span>
-              <time>{new Date(item.created_at).toLocaleString()}</time>
+              <span className="audit-action">{(() => { const [name, ...detail] = item.action.split(":"); const label = name.replaceAll("_", " "); return <>{label.charAt(0).toUpperCase() + label.slice(1)}{detail.length ? <small title={detail.join(":")}>{detail.join(" · ")}</small> : null}</>; })()}</span>
+              <time>{utcDate(item.created_at).toLocaleString()}</time>
             </div>
           ))}
         </div>

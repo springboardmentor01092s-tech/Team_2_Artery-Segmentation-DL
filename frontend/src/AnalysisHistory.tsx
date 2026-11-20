@@ -3,6 +3,7 @@ import { request } from "./api";
 import type { AnalysisResult } from "./caseTypes";
 import { Button } from "./components/prismui/button";
 import { Card } from "./components/prismui/card";
+import { utcDate } from "./lib/time";
 
 type Comparison = {
   left: AnalysisResult;
@@ -45,12 +46,12 @@ export default function AnalysisHistory({ imageId, token, history, onSelect }: {
     <div className="viewer-heading"><h3>Analysis history</h3><span>{history.length} run{history.length === 1 ? "" : "s"}</span></div>
     {history.length === 0 ? <p className="muted">Run analysis to start this image’s history.</p> : <>
       <div className="history-list">{history.map((item) => <div className="history-row" key={item.id}>
-        <div><strong>{new Date(item.created_at).toLocaleString()}</strong><small>{item.model_version} · artery {item.artery_pixels.toLocaleString()} px · stenosis {item.structured_result?.stages.stenosis_detection?.status === 'skipped' ? 'Not assessed' : item.model_scores?.pixel_counts_unavailable ? 'Not saved' : `${item.stenosis_pixels.toLocaleString()} px`}</small></div>
+        <div><strong>{utcDate(item.created_at).toLocaleString()}</strong><small>{item.model_version} · artery {item.artery_pixels.toLocaleString()} px · stenosis {item.structured_result?.stages.stenosis_detection?.status === 'skipped' ? 'Not assessed' : item.model_scores?.pixel_counts_unavailable ? 'Not saved' : `${item.stenosis_pixels.toLocaleString()} px`}</small></div>
         <Button type="button" variant="outline" onClick={() => onSelect(item)}>View overlay</Button>
       </div>)}</div>
       {history.length >= 2 && <div className="compare-controls">
-        <label>Earlier run<select value={leftId} onChange={(event) => setLeftId(event.target.value)}>{history.map((item) => <option key={item.id} value={item.id}>{new Date(item.created_at).toLocaleString()} · {item.model_version}</option>)}</select></label>
-        <label>Later run<select value={rightId} onChange={(event) => setRightId(event.target.value)}>{history.map((item) => <option key={item.id} value={item.id}>{new Date(item.created_at).toLocaleString()} · {item.model_version}</option>)}</select></label>
+        <label>Earlier run<select value={leftId} onChange={(event) => setLeftId(event.target.value)}>{history.map((item) => <option key={item.id} value={item.id}>{utcDate(item.created_at).toLocaleString()} · {item.model_version}</option>)}</select></label>
+        <label>Later run<select value={rightId} onChange={(event) => setRightId(event.target.value)}>{history.map((item) => <option key={item.id} value={item.id}>{utcDate(item.created_at).toLocaleString()} · {item.model_version}</option>)}</select></label>
         <Button type="button" variant="outline" onClick={compare} disabled={busy || leftId === rightId}>{busy ? "Comparing…" : "Compare runs"}</Button>
       </div>}
       {error && <p className="message error" role="alert">{error}</p>}

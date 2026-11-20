@@ -1,0 +1,43 @@
+{
+  "id": "corovision-experimental-diameter-stenosis-five-category",
+  "version": "0.1-proposal",
+  "status": "requires_revision_before_review",
+  "review_warning": "The proposed five-label mapping below shifts published terminology. It is retained as historical draft evidence only and must not be approved or activated without an explicit revised mapping and rationale.",
+  "approved_by": null,
+  "approval_date": null,
+  "reference": "Experimental project proposal informed by CAD-RADS 2.0 percentage bands; not a CAD-RADS implementation and not clinically validated for invasive X-ray coronary angiography.",
+  "source_references": [
+    "https://pubs.rsna.org/doi/10.1148/ryct.220183",
+    "https://professional.heart.org/en/guidelines-statements/2021-accahascai-guideline-for-coronary-artery-revascularization-a-report-of-thecir0000000000001038",
+    "https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/chronic-coronary-syndromes/"
+  ],
+  "measurement_method": "independently reviewed percentage diameter stenosis: 100 * (RVD - MLD) / RVD",
+  "applicability": {
+    "modalities": ["XCA"],
+    "anatomies": ["coronary artery lesion"],
+    "aggregation": "per lesion only"
+  },
+  "bands": [
+    {"lower": 0, "upper": 1, "label": "Normal"},
+    {"lower": 1, "upper": 25, "label": "Mild"},
+    {"lower": 25, "upper": 50, "label": "Moderate"},
+    {"lower": 50, "upper": 70, "label": "Severe"},
+    {"lower": 70, "upper": 100, "label": "Critical / Very Severe"}
+  ],
+  "boundary_rule": "lower inclusive, upper exclusive; 100 is included in the final band",
+  "exclusions": [
+    "missing or unsuitable reference vessel segment",
+    "unreviewed lumen boundaries",
+    "ambiguous or overlapping anatomy",
+    "unacceptable image quality",
+    "unsupported modality or anatomy",
+    "millimetre claims without valid calibration",
+    "case-level Normal inference from no detected candidate"
+  ],
+  "limitations": [
+    "This proposal is not active until independently reviewed and approved.",
+    "CAD-RADS 2.0 applies to CCTA and per-patient reporting; these experimental XCA lesion labels must not be called CAD-RADS.",
+    "Anatomical diameter stenosis does not establish ischemia, blood-flow limitation or clinical risk.",
+    "The 0-1% Normal interval is an experimental numeric tolerance, not a clinical standard."
+  ]
+}

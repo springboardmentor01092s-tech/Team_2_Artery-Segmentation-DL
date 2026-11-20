@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from app import auth_ext
 from app.main import app
@@ -87,6 +88,72 @@ def test_existing_user_can_link_google_then_sign_in(monkeypatch):
         signed_in = client.get("/api/auth/oauth/google/callback", params={"code": "test", "state": state})
         ticket = parse_qs(urlparse(signed_in.headers["location"]).query)["auth_ticket"][0]
         assert client.post("/api/auth/oauth/exchange", json={"ticket": ticket}).status_code == 200
+
+
+def test_verified_google_email_links_existing_account_without_local_password(monkeypatch):
+    """Verified Google ownership is sufficient to recover an email-matched account."""
+    from urllib.parse import parse_qs, urlparse
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-secret")
+    monkeypatch.setattr(auth_ext, "FRONTEND_ORIGIN", "http://127.0.0.1:8000")
+    monkeypatch.setattr(auth_ext, "provider_identity", lambda provider, code: ("unlinked-google-sub", "existing@example.org", "Existing User"))
+    with TestClient(app, follow_redirects=False) as client:
+        client.post("/api/auth/register", json={"email": "existing@example.org", "password": "long-password-123"})
+        start = client.get("/api/auth/oauth/google/start")
+        state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+        callback = client.get("/api/auth/oauth/google/callback", params={"code": "test", "state": state})
+        assert callback.status_code == 302
+        ticket = parse_qs(urlparse(callback.headers["location"]).query)["auth_ticket"][0]
+        exchanged = client.post("/api/auth/oauth/exchange", json={"ticket": ticket})
+        assert exchanged.status_code == 200, exchanged.text
+        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {exchanged.json()['access_token']}"}).json()["email"] == "existing@example.org"
+        assert client.get("/api/auth/social-accounts", headers={"Authorization": f"Bearer {exchanged.json()['access_token']}"}).json()["providers"] == ["google"]
+
+
+def test_production_google_auto_provision_is_explicit_and_viewer_only(monkeypatch):
+    from urllib.parse import parse_qs, urlparse
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-secret")
+    monkeypatch.setenv("GOOGLE_AUTO_PROVISION", "1")
+    monkeypatch.setenv("COROVISION_ENV", "production")
+    monkeypatch.setenv("CV_LOCAL_DEMO_SESSIONS", "0")
+    monkeypatch.setenv("CV_LOCAL_DEMO_SHARING", "0")
+    monkeypatch.setattr(auth_ext, "provider_identity", lambda provider, code: ("new-google-sub", "new-google@example.org", "New Google User"))
+    with TestClient(app, follow_redirects=False) as client:
+        start = client.get("/api/auth/oauth/google/start")
+        state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+        callback = client.get("/api/auth/oauth/google/callback", params={"code": "test", "state": state})
+        ticket = parse_qs(urlparse(callback.headers["location"]).query)["auth_ticket"][0]
+        exchanged = client.post("/api/auth/oauth/exchange", json={"ticket": ticket})
+        assert exchanged.status_code == 200, exchanged.text
+        token = exchanged.json()["access_token"]
+        assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).json()["role"] == "viewer"
+
+
+def test_oauth_ticket_requires_administrator_mfa_before_session(monkeypatch):
+    from urllib.parse import parse_qs, urlparse
+    from app.database import SessionLocal
+    from app.models import User
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-secret")
+    monkeypatch.setattr(auth_ext.admin_mfa, "required", lambda role: role == "admin")
+    monkeypatch.setattr(auth_ext, "provider_identity", lambda provider, code: ("admin-google-sub", "oauth-admin@example.org", "OAuth Admin"))
+    with TestClient(app, follow_redirects=False) as client:
+        client.post("/api/auth/register", json={"email": "oauth-admin@example.org", "password": "long-password-123"})
+        with SessionLocal() as db:
+            user = db.scalar(select(User).where(User.email == "oauth-admin@example.org"))
+            user.role = "admin"
+            db.commit()
+        start = client.get("/api/auth/oauth/google/start")
+        state = parse_qs(urlparse(start.headers["location"]).query)["state"][0]
+        callback = client.get("/api/auth/oauth/google/callback", params={"code": "test", "state": state})
+        ticket = parse_qs(urlparse(callback.headers["location"]).query)["auth_ticket"][0]
+        first = client.post("/api/auth/oauth/exchange", json={"ticket": ticket})
+        assert first.status_code == 200, first.text
+        assert first.json()["mfa_required"] is True
+        assert "enrollment_key" in first.json()
+        # The ticket cannot establish a privileged session until a valid TOTP is supplied.
+        assert "access_token" not in first.json()
 
 
 def test_provider_identity_requires_verified_email(monkeypatch):

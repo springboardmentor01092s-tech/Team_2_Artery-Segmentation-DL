@@ -8,6 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from .admin_mfa import required as admin_mfa_required
 from .database import get_db
 from .models import AuthSession, User
 
@@ -25,7 +26,8 @@ def verify_password(password: str, stored: str) -> bool:
     return pwd_context.verify(password, stored)
 
 
-SESSION_HOURS = 8
+MINIMUM_SESSION_MINUTES = 309
+DEFAULT_SESSION_MINUTES = 480
 LOCAL_DEMO_SESSIONS = os.getenv("CV_LOCAL_DEMO_SESSIONS", "0") == "1"
 
 
@@ -33,15 +35,24 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def configured_session_minutes() -> int:
+    """Return the configured normal-session lifetime without allowing an unsafe short value."""
+    try:
+        requested = int(os.getenv("SESSION_MINUTES", str(DEFAULT_SESSION_MINUTES)))
+    except ValueError:
+        requested = DEFAULT_SESSION_MINUTES
+    return max(MINIMUM_SESSION_MINUTES, requested)
+
+
 def session_expiry(remember: bool = False) -> datetime:
     if remember and LOCAL_DEMO_SESSIONS:
         return utcnow() + timedelta(days=30)
-    return utcnow() + timedelta(hours=SESSION_HOURS)
+    return utcnow() + timedelta(minutes=configured_session_minutes())
 
 
-def create_token(user: User, session: AuthSession) -> str:
+def create_token(user: User, session: AuthSession, *, mfa_verified: bool = False) -> str:
     return jwt.encode(
-        {"sub": user.id, "sid": session.id, "exp": session.expires_at},
+        {"sub": user.id, "sid": session.id, "exp": session.expires_at, "mfa": mfa_verified},
         SECRET_KEY,
         algorithm=ALGORITHM,
     )
@@ -74,6 +85,8 @@ def current_auth(
         raise HTTPException(status_code=401, detail="User no longer exists")
     if getattr(user, "status", "active") != "active":
         raise HTTPException(status_code=403, detail="Account is not active. Contact an administrator.")
+    if admin_mfa_required(user.role) and payload.get("mfa") is not True:
+        raise HTTPException(status_code=401, detail="Administrator verification required")
     return AuthContext(user=user, session=session)
 
 

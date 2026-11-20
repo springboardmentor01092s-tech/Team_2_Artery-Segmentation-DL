@@ -51,6 +51,11 @@ def test_model_activation_records_history_and_uses_only_available_checkpoint_pai
     monkeypatch.setattr(main, "BASE_DIR", tmp_path)
     with TestClient(app) as client:
         _, researcher = make_user(f"model-manager-{suffix}@example.org", "researcher")
+        comparison = client.get("/api/analysis/status", headers=researcher)
+        assert comparison.status_code == 200
+        assert comparison.json()["comparison"] == json.loads(
+            (model_root / "comparison_report.json").read_text()
+        )
         assert client.post("/api/analysis/models/activate", headers=researcher,
                            json={"architecture": "attention_unet"}).status_code == 403
         _, researcher = make_user(f"model-approver-{suffix}@example.org", "admin")

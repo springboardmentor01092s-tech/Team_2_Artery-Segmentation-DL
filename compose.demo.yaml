@@ -1,0 +1,52 @@
+# Isolated, loopback-only final-demonstration environment.
+#
+# Start it deliberately with:
+#   docker compose -f compose.demo.yaml up --build -d
+#   docker compose -f compose.demo.yaml exec app python /app/backend/seed_demo_accounts.py
+#
+# It intentionally uses a separate database volume and port 8001.  The demo
+# account switcher is unavailable in the normal production-style compose file
+# and this profile must never be deployed or exposed beyond localhost.
+name: corovision-demo
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${COROVISION_DEMO_PORT:-8001}:8000"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Set a strong private JWT_SECRET}
+      COROVISION_ENV: development
+      SESSION_MINUTES: ${SESSION_MINUTES:-480}
+      CORS_ORIGINS: http://127.0.0.1:${COROVISION_DEMO_PORT:-8001}
+      FRONTEND_ORIGIN: http://127.0.0.1:${COROVISION_DEMO_PORT:-8001}
+      OAUTH_REDIRECT_BASE: http://127.0.0.1:${COROVISION_DEMO_PORT:-8001}
+      CV_LOCAL_DEMO_SESSIONS: "1"
+      CV_LOCAL_DEMO_SHARING: "1"
+      CV_LOCAL_DEMO_DOCKER_PROXY: "1"
+      DATABASE_URL: sqlite:////data/artery.db
+      STORAGE_DIR: /data/storage
+      DEMO_CREDENTIALS_PATH: /data/demo-credentials.json
+      DEMO_BASE_URL: http://127.0.0.1:8000
+      COROVISION_TRAINED_RELEASE: /models/trained_release
+      # Keep OAuth disabled in the isolated role-switching demonstration.
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GOOGLE_AUTO_PROVISION: "0"
+    volumes:
+      - demonstration-data:/data
+    read_only: true
+    cpus: "${COROVISION_CPUS:-2.0}"
+    mem_limit: "${COROVISION_MEMORY_LIMIT:-4g}"
+    pids_limit: ${COROVISION_PIDS_LIMIT:-256}
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 60s
+volumes:
+  demonstration-data:

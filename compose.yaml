@@ -8,15 +8,32 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET:?Set a strong private JWT_SECRET}
       COROVISION_ENV: production
+      # Signed-in tab sessions persist across refreshes for at least 309 minutes.
+      SESSION_MINUTES: ${SESSION_MINUTES:-480}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:8000}
       CV_LOCAL_DEMO_SESSIONS: "0"
       CV_LOCAL_DEMO_SHARING: "0"
       STORAGE_DIR: /data/storage
       DATABASE_URL: sqlite:////data/artery.db
       COROVISION_TRAINED_RELEASE: /models/trained_release
+      # The production bundle and API share this origin.  Keep OAuth callback
+      # completion on the same reachable service rather than Vite's dev port.
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://127.0.0.1:8000}
+      OAUTH_REDIRECT_BASE: ${OAUTH_REDIRECT_BASE:-http://127.0.0.1:8000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_AUTO_PROVISION: ${GOOGLE_AUTO_PROVISION:-0}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - application-data:/data
     read_only: true
+    cpus: "${COROVISION_CPUS:-2.0}"
+    mem_limit: "${COROVISION_MEMORY_LIMIT:-4g}"
+    pids_limit: ${COROVISION_PIDS_LIMIT:-256}
     tmpfs:
       - /tmp:size=512m,mode=1777
     cap_drop:

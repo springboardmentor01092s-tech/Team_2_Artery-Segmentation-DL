@@ -9,6 +9,30 @@ import time
 from uuid import uuid4
 
 logger = logging.getLogger('corovision.operations')
+
+# The bundled React app loads all scripts, styles, fonts and images from its own origin.
+# style-src keeps 'unsafe-inline' because UI libraries set inline style attributes.
+CONTENT_SECURITY_POLICY = '; '.join((
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "worker-src 'self' blob:",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+))
+
+
+def api_docs_enabled() -> bool:
+    """Interactive API docs stay available locally and are hidden in production unless explicitly enabled."""
+    if os.getenv('COROVISION_ENV', 'development') != 'production':
+        return True
+    return os.getenv('CV_PUBLIC_API_DOCS', '0') == '1'
 STARTED = time.monotonic()
 COUNTERS = defaultdict(lambda: {'requests': 0, 'errors': 0, 'seconds': 0., 'max_seconds': 0.})
 LOCK = threading.Lock()
@@ -20,7 +44,7 @@ def validate_deployment_environment():
     secret = os.getenv('JWT_SECRET', '')
     if len(secret.encode()) < 32 or secret.lower().startswith(('development', 'change', 'replace')):
         raise RuntimeError('Production requires a private, randomly generated JWT_SECRET of at least 32 bytes')
-    if any(os.getenv(name, '0') == '1' for name in ('CV_LOCAL_DEMO_SESSIONS', 'CV_LOCAL_DEMO_SHARING')):
+    if any(os.getenv(name, '0') == '1' for name in ('CV_LOCAL_DEMO_SESSIONS', 'CV_LOCAL_DEMO_SHARING', 'CV_LOCAL_DEMO_DOCKER_PROXY')):
         raise RuntimeError('Local demo session/sharing flags must be disabled for production')
 
 
@@ -37,6 +61,11 @@ def install_telemetry(app):
             response.headers['X-Frame-Options'] = 'DENY'
             response.headers['Referrer-Policy'] = 'no-referrer'
             response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+            response.headers.setdefault('Content-Security-Policy', CONTENT_SECURITY_POLICY)
+            response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+            forwarded = request.headers.get('x-forwarded-proto', '').split(',')[0].strip().lower()
+            if request.url.scheme == 'https' or forwarded == 'https':
+                response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
             if request.url.path.startswith('/api/'):
                 response.headers['Cache-Control'] = 'no-store'
             return response

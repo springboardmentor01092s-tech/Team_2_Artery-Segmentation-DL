@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-10T20:15:00+05:30",
+  "status": "not_locked",
+  "candidate_package": "/Volumes/One Touch/execution_readiness_20261030/corovision_severity_reference_pilot_20261110",
+  "source_dataset": "ARCADE stenosis test",
+  "source_coco_sha256": "3d0bcbf7d4263199cf26eb0eab8db1b111ce5dee65013170c2973136cb166d2d",
+  "candidate_manifest_sha256": "c732e10398b87e4926c3774f85417c51f61b6d6f920f26f16025e3618786b612",
+  "unlocked_worksheet_sha256": "13a452dc7eadfb9ac1fce7b446a6257fb367c67aa0e6d1d3d2739284547947ea",
+  "package_file_count": 43,
+  "package_inventory_sha256": "3e562e190cbcfa991eaf3c175b8a46fae9f8a297b7592025dfed136a70cc03b2",
+  "candidate_images": 20,
+  "candidate_lesions": 20,
+  "independently_measured": 0,
+  "verified_physical_calibration": 0,
+  "eligible_for_external_checkpoint_evaluation": 0,
+  "reasons_not_locked": [
+    "Independent MLD/RVD worksheet is empty.",
+    "No physical calibration is verified.",
+    "ARCADE cohort exposure to the frozen checkpoints is established.",
+    "Patient/study grouping and near-duplicate clearance remain unresolved.",
+    "The local COCO license fields are blank and official surfaces conflict (challenge registration states CC BY-NC-SA while a later public mirror reports CC0); redistribution terms require authoritative resolution."
+  ],
+  "training_performed": false
+}

@@ -1,5 +1,84 @@
 import numpy as np
-from app.saved_measurement import measure_candidate
+from io import BytesIO
+from types import SimpleNamespace
+
+from PIL import Image
+from pydicom.dataset import FileDataset, FileMetaDataset
+from pydicom.uid import ExplicitVRLittleEndian, SecondaryCaptureImageStorage, generate_uid
+
+from app.image_panels import report_images
+from app.saved_measurement import measure_candidate, source_mask
+
+
+def test_source_mask_decodes_retained_dicom_instead_of_using_pillow(tmp_path):
+    meta = FileMetaDataset()
+    meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
+    meta.MediaStorageSOPInstanceUID = generate_uid()
+    meta.TransferSyntaxUID = ExplicitVRLittleEndian
+    dataset = FileDataset("source.dcm", {}, file_meta=meta, preamble=b"\0" * 128)
+    dataset.SOPClassUID = meta.MediaStorageSOPClassUID
+    dataset.SOPInstanceUID = meta.MediaStorageSOPInstanceUID
+    dataset.Rows = dataset.Columns = 40
+    dataset.SamplesPerPixel = 1
+    dataset.PhotometricInterpretation = "MONOCHROME2"
+    dataset.BitsAllocated = dataset.BitsStored = 16
+    dataset.HighBit = 15
+    dataset.PixelRepresentation = 0
+    dataset.PixelData = np.arange(1600, dtype=np.uint16).reshape(40, 40).tobytes()
+    buffer = BytesIO()
+    dataset.save_as(buffer, enforce_file_format=True)
+    source_path = tmp_path / "source.dcm"
+    source_path.write_bytes(buffer.getvalue())
+    mask_path = tmp_path / "mask.png"
+    expected_mask = np.zeros((40, 40), dtype=np.uint8)
+    expected_mask[10:30, 15:25] = 255
+    Image.fromarray(expected_mask).save(mask_path)
+    image = SimpleNamespace(original_path=str(source_path), original_name="source.dcm",
+                            frame_index=None, width=40, height=40,
+                            preprocessing_config_json="{}")
+
+    mask, gray = source_mask(image, mask_path)
+
+    assert mask.shape == gray.shape == (40, 40)
+    assert np.array_equal(mask, expected_mask > 0)
+    assert np.isfinite(gray).all()
+    assert gray.min() == 0
+    assert gray.max() == 1
+
+
+def test_report_images_converts_retained_dicom_to_printable_png(tmp_path):
+    meta = FileMetaDataset()
+    meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
+    meta.MediaStorageSOPInstanceUID = generate_uid()
+    meta.TransferSyntaxUID = ExplicitVRLittleEndian
+    dataset = FileDataset("source.dcm", {}, file_meta=meta, preamble=b"\0" * 128)
+    dataset.SOPClassUID = meta.MediaStorageSOPClassUID
+    dataset.SOPInstanceUID = meta.MediaStorageSOPInstanceUID
+    dataset.Rows = dataset.Columns = 16
+    dataset.SamplesPerPixel = 1
+    dataset.PhotometricInterpretation = "MONOCHROME2"
+    dataset.BitsAllocated = dataset.BitsStored = 16
+    dataset.HighBit = 15
+    dataset.PixelRepresentation = 0
+    dataset.PixelData = np.arange(256, dtype=np.uint16).reshape(16, 16).tobytes()
+    source_path = tmp_path / "source.dcm"
+    dataset.save_as(source_path, enforce_file_format=True)
+    overlay_path = tmp_path / "run.png"
+    Image.new("RGB", (16, 16), "red").save(overlay_path)
+    image = SimpleNamespace(id="image", original_path=str(source_path), original_name="source.dcm",
+                            preview_path=str(overlay_path), frame_index=None)
+    event = SimpleNamespace(id="run", overlay_path=str(overlay_path))
+
+    rows = report_images(image, event, panels=[
+        {'key': 'original', 'title': 'Original', 'description': 'Source'},
+        {'key': 'overlay', 'title': 'Overlay', 'description': 'Prediction'},
+    ])
+
+    assert isinstance(rows[0][1], BytesIO)
+    with Image.open(rows[0][1]) as printable:
+        assert printable.format == "PNG"
+        assert printable.size == (16, 16)
+    assert rows[1][1] == overlay_path
 
 
 def test_unique_vessel_measurement_and_sensitivity():

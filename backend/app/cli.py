@@ -5,10 +5,10 @@ import argparse
 from getpass import getpass
 import re
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 from .database import Base, SessionLocal, engine
-from .models import AuditEvent, AuthSession, User, UserIdentity, UserProfile
+from .models import AdministratorFactor, AuditEvent, AuthSession, LoginThrottle, User, UserIdentity, UserProfile
 from .security import hash_password, utcnow
 
 
@@ -33,18 +33,34 @@ def prompt_credentials() -> tuple[str, str]:
 
 def create_initial_admin(email: str, password: str) -> str:
     validate_password(password)
-    Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
+        if engine.dialect.name == "sqlite":
+            db.execute(text("BEGIN IMMEDIATE"))
+        elif engine.dialect.name == "postgresql":
+            db.execute(text("SELECT pg_advisory_xact_lock(741881124)"))
+        Base.metadata.create_all(bind=db.connection())
         if db.scalar(select(func.count()).select_from(User).where(User.role == "admin")):
             raise ValueError("Initial administrator already exists; use the audited administrator workflow")
-        if db.scalar(select(User).where(User.email == email)):
-            raise ValueError("An account with that email already exists")
-        user = User(email=email, password_hash=hash_password(password), role="admin", status="active")
-        db.add(user)
-        db.flush()
-        db.add(UserProfile(user_id=user.id, display_name="Administrator"))
-        db.add(UserIdentity(user_id=user.id))
-        db.add(AuditEvent(user_id=user.id, action="initial_administrator_bootstrapped"))
+        user = db.scalar(select(User).where(User.email == email))
+        if user:
+            # A verified OAuth user may exist before the deployment owner runs
+            # the one-time bootstrap. Claim only that exact account while no
+            # administrator exists; this cannot promote a second account.
+            user.role = "admin"
+            user.status = "active"
+            user.password_hash = hash_password(password)
+            if not db.get(UserProfile, user.id):
+                db.add(UserProfile(user_id=user.id, display_name="Administrator"))
+            if not db.get(UserIdentity, user.id):
+                db.add(UserIdentity(user_id=user.id))
+            db.add(AuditEvent(user_id=user.id, action="initial_administrator_claimed_existing_account"))
+        else:
+            user = User(email=email, password_hash=hash_password(password), role="admin", status="active")
+            db.add(user)
+            db.flush()
+            db.add(UserProfile(user_id=user.id, display_name="Administrator"))
+            db.add(UserIdentity(user_id=user.id))
+            db.add(AuditEvent(user_id=user.id, action="initial_administrator_bootstrapped"))
         db.commit()
         return user.id
 
@@ -57,6 +73,13 @@ def reset_admin_password(email: str, password: str) -> None:
             raise ValueError("Active administrator account not found")
         user.password_hash = hash_password(password)
         user.status = "active"
+        factor = db.get(AdministratorFactor, user.id)
+        if factor is not None:
+            db.delete(factor)
+        # Recovery also clears the login throttle for this administrator.
+        throttle = db.get(LoginThrottle, user.id)
+        if throttle is not None:
+            db.delete(throttle)
         for session in db.scalars(select(AuthSession).where(
                 AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))):
             session.revoked_at = utcnow()

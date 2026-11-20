@@ -1,0 +1,11 @@
+{
+  "case_code": "PDF-EVIDENCE-XCA-20261116",
+  "case_id": "e25bce33-3c37-44f0-ac88-662dc610e694",
+  "image_id": "71cb432e-d33d-4337-8385-25fc3f96b09b",
+  "analysis_run_id": "025d42ba-3c10-4c93-be09-17fe04decff9",
+  "report_id": "03e78990-b81f-4a32-a254-8d3680404066",
+  "source_sha256": "748a2d4fcd2df8a11e5c1b836abbdf5201d21f75be808e0e71865ef8cda7bf55",
+  "candidate_count": 1,
+  "measurement_record_count": 1,
+  "workflow": "case-created/uploaded/preprocessed/analyzed/measured/reported/exported/reopened"
+}

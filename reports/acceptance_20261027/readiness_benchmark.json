@@ -1,0 +1,360 @@
+{
+  "created_at": "2026-10-27T07:39:47.204392+00:00",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "endpoint": "/api/health/live",
+  "before": {
+    "rss_kib": 35168,
+    "cpu_percent": 0.2,
+    "scope": "instantaneous ps sample; not peak utilization"
+  },
+  "batches": [
+    {
+      "concurrency": 1,
+      "requests": 20,
+      "success": 20,
+      "wall_seconds": 0.022053625027183443,
+      "requests_per_second": 906.8803870269794,
+      "p50_ms": 0.6343749992083758,
+      "p95_ms": 0.873415992828086,
+      "max_ms": 9.10675001796335,
+      "responses": [
+        {
+          "seconds": 0.00910675001796335,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.000873415992828086,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0007904169906396419,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006843339942861348,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006559999892488122,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0008282079943455756,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0007184999994933605,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006899170111864805,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006809170008637011,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005942500138189644,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006343749992083758,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005927090242039412,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006040000007487833,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005945409939158708,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006585829833056778,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005945829907432199,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006268330034799874,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0006112499977461994,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005376249901019037,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0005666660144925117,
+          "status": 200,
+          "bytes": 39
+        }
+      ]
+    },
+    {
+      "concurrency": 4,
+      "requests": 20,
+      "success": 20,
+      "wall_seconds": 0.008867208001902327,
+      "requests_per_second": 2255.5013929648767,
+      "p50_ms": 1.6618329973425716,
+      "p95_ms": 2.0112500060349703,
+      "max_ms": 2.2193329932633787,
+      "responses": [
+        {
+          "seconds": 0.0016695000231266022,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018316250061616302,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0019473749853204936,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0020112500060349703,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0015352499904111028,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0016122089873533696,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018005830061156303,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0014647079806309193,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018133750127162784,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0016618329973425716,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0015780410030856729,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0016093339945655316,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0022193329932633787,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018758329970296472,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.001681708003161475,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018047499761451036,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0012383749999571592,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0013789169897790998,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0013794999977108091,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0011327500105835497,
+          "status": 200,
+          "bytes": 39
+        }
+      ]
+    },
+    {
+      "concurrency": 8,
+      "requests": 20,
+      "success": 20,
+      "wall_seconds": 0.00788424999336712,
+      "requests_per_second": 2536.70292251332,
+      "p50_ms": 2.522916009183973,
+      "p95_ms": 3.53708301554434,
+      "max_ms": 4.114249983103946,
+      "responses": [
+        {
+          "seconds": 0.0025090839772019535,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0018776670040097088,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0024158750020433217,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.00353708301554434,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0022552080044988543,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0025242499832529575,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.002523249975638464,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.003264958009822294,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.004114249983103946,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.003151832992443815,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0033083749876823276,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.003033416985999793,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0027809159946627915,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0029261249874252826,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.002522916009183973,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0021312920143827796,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0015113749832380563,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.001787790999514982,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.0015811659977771342,
+          "status": 200,
+          "bytes": 39
+        },
+        {
+          "seconds": 0.001478916994528845,
+          "status": 200,
+          "bytes": 39
+        }
+      ]
+    }
+  ],
+  "inference_latency": null,
+  "gpu_usage": null,
+  "storage_growth": null,
+  "limitations": [
+    "Only 60 public liveness GETs; not inference capacity, authentication, database throughput or clinical readiness.",
+    "RSS/CPU are samples, not peaks. No GPU benchmark or uploaded-data growth test."
+  ],
+  "after": {
+    "rss_kib": 44624,
+    "cpu_percent": 0.2,
+    "scope": "instantaneous ps sample; not peak utilization"
+  }
+}

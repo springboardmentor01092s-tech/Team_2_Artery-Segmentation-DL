@@ -1,5 +1,8 @@
 """Coarse full-field 128^3 3D baseline. Scores are explicitly at prepared resolution."""
 import argparse,json,random,time
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+from segmentation_metrics import boundary_metrics
 from pathlib import Path
 import numpy as np
 import torch
@@ -41,10 +44,10 @@ def evaluate(model,loader,device,classes):
         for prediction,truth,case in zip(pred,target,ids):
             values=[]
             for label in range(1,classes):
-                a=prediction==label;b=truth==label;intersection=int((a&b).sum());pa=int(a.sum());pb=int(b.sum());values.append({'class':label,'dice':(2*intersection)/(pa+pb) if pa+pb else 1.,'iou':intersection/(pa+pb-intersection) if pa+pb else 1.,'gt_present':pb>0,'pred_voxels':pa,'gt_voxels':pb})
+                a=prediction==label;b=truth==label;intersection=int((a&b).sum());pa=int(a.sum());pb=int(b.sum());values.append({'class':label,'dice':(2*intersection)/(pa+pb) if pa+pb else 1.,'iou':intersection/(pa+pb-intersection) if pa+pb else 1.,'gt_present':pb>0,'pred_voxels':pa,'gt_voxels':pb,**boundary_metrics(a.numpy(),b.numpy())})
             rows.append({'id':case,'classes':values})
     per_class={str(label):{'dice_including_empty':float(np.mean([r['classes'][label-1]['dice'] for r in rows])),'dice_gt_present':float(np.mean([r['classes'][label-1]['dice'] for r in rows if r['classes'][label-1]['gt_present']])) if any(r['classes'][label-1]['gt_present'] for r in rows) else None} for label in range(1,classes)}
-    return {'mean_foreground_dice':float(np.mean([r['dice_including_empty'] for r in per_class.values()])),'per_class':per_class,'cases':rows,'resolution':[128,128,128],'note':'Coarse resized-volume baseline; not original-resolution or surface-distance metrics.'}
+    return {'mean_foreground_dice':float(np.mean([r['dice_including_empty'] for r in per_class.values()])),'per_class':per_class,'cases':rows,'resolution':[128,128,128],'note':'Coarse resized-volume baseline; boundary distances (Hausdorff, HD95, ASSD) are in resized voxels, not original-resolution millimetres.'}
 
 def save(value,path):temporary=path.with_suffix('.tmp');torch.save(value,temporary);temporary.replace(path)
 def bare(model):return model.module if isinstance(model,nn.DataParallel) else model

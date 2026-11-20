@@ -1,0 +1,1010 @@
+{
+  "scope": "Synthetic declared paths and candidate regions; not automatic anatomical association",
+  "rows": [
+    {
+      "fixture": "straight",
+      "original_adapter": {
+        "phantom": "straight",
+        "mask_sha256": "03d46f9469d5bf50085854c3bd8f89adfe8993c3cb26523eb2908f0bc5f11e08",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 0.0,
+        "width_rmse_px": 0.0,
+        "signed_bias_px": 0.0,
+        "measured_lesions": 0,
+        "narrowing_mae_percentage_points": null
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-straight",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 0.0,
+        "reasons": [],
+        "minimum_diameter": 24.0,
+        "reference_diameter": 24.0,
+        "minimum_cross_section": {
+          "index": 38,
+          "point": [
+            48.0,
+            39.0
+          ],
+          "endpoints": [
+            [
+              48.0,
+              27.25
+            ],
+            [
+              48.0,
+              51.25
+            ]
+          ],
+          "width": 24.0,
+          "contrast": 0.7,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 65,
+            "point": [
+              75.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                75.0,
+                27.25
+              ],
+              [
+                75.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                76.0,
+                27.25
+              ],
+              [
+                76.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                77.0,
+                27.25
+              ],
+              [
+                77.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                78.0,
+                27.25
+              ],
+              [
+                78.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                79.0,
+                27.25
+              ],
+              [
+                79.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "curved",
+      "original_adapter": {
+        "phantom": "curved",
+        "mask_sha256": "8a4d08235f90a56d2af3b831e667709e76ba64c930bccb701cad4641aeedeaab",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 1.1828660635425265,
+        "width_rmse_px": 1.4528951728788402,
+        "signed_bias_px": -1.1828660635425265,
+        "measured_lesions": 0,
+        "narrowing_mae_percentage_points": null
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-curved",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 4.444444444444429,
+        "reasons": [],
+        "minimum_diameter": 21.500000000000004,
+        "reference_diameter": 22.5,
+        "minimum_cross_section": {
+          "index": 52,
+          "point": [
+            62.0,
+            42.0
+          ],
+          "endpoints": [
+            [
+              59.392742030859424,
+              31.57096812343768
+            ],
+            [
+              64.60725796914058,
+              52.42903187656232
+            ]
+          ],
+          "width": 21.500000000000004,
+          "contrast": 0.7,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 65,
+            "point": [
+              75.0,
+              37.0
+            ],
+            "endpoints": [
+              [
+                70.19245384837546,
+                27.384907696750908
+              ],
+              [
+                80.2547597471245,
+                47.50951949424901
+              ]
+            ],
+            "width": 22.499999999999986,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              37.0
+            ],
+            "endpoints": [
+              [
+                73.39274203085942,
+                26.57096812343768
+              ],
+              [
+                78.84979359417692,
+                48.39917437670765
+              ]
+            ],
+            "width": 22.5,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              36.0
+            ],
+            "endpoints": [
+              [
+                74.39274203085942,
+                25.57096812343768
+              ],
+              [
+                79.84979359417692,
+                47.39917437670765
+              ]
+            ],
+            "width": 22.5,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              36.0
+            ],
+            "endpoints": [
+              [
+                73.19245384837546,
+                26.384907696750908
+              ],
+              [
+                83.2547597471245,
+                46.50951949424901
+              ]
+            ],
+            "width": 22.499999999999986,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              36.0
+            ],
+            "endpoints": [
+              [
+                76.39274203085942,
+                25.57096812343768
+              ],
+              [
+                81.84979359417692,
+                47.39917437670765
+              ]
+            ],
+            "width": 22.5,
+            "contrast": 0.7,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "tapered",
+      "original_adapter": {
+        "phantom": "tapered",
+        "mask_sha256": "500532e50b01dd9fc654eb96694a3b74ab7d86ffae696e8d706dd7c553440411",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 0.6486437064684143,
+        "width_rmse_px": 1.061087615509085,
+        "signed_bias_px": -0.6486437064684143,
+        "measured_lesions": 0,
+        "narrowing_mae_percentage_points": null
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-tapered",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 0.0,
+        "reasons": [],
+        "minimum_diameter": 16.0,
+        "reference_diameter": 16.0,
+        "minimum_cross_section": {
+          "index": 54,
+          "point": [
+            64.0,
+            39.0
+          ],
+          "endpoints": [
+            [
+              64.0,
+              31.25
+            ],
+            [
+              64.0,
+              47.25
+            ]
+          ],
+          "width": 16.0,
+          "contrast": 0.7,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 65,
+            "point": [
+              75.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                75.0,
+                31.25
+              ],
+              [
+                75.0,
+                47.25
+              ]
+            ],
+            "width": 16.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                76.0,
+                31.25
+              ],
+              [
+                76.0,
+                47.25
+              ]
+            ],
+            "width": 16.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                77.0,
+                31.25
+              ],
+              [
+                77.0,
+                47.25
+              ]
+            ],
+            "width": 16.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                78.0,
+                31.25
+              ],
+              [
+                78.0,
+                47.25
+              ]
+            ],
+            "width": 16.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                79.0,
+                31.25
+              ],
+              [
+                79.0,
+                47.25
+              ]
+            ],
+            "width": 16.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "branch",
+      "original_adapter": {
+        "phantom": "branch",
+        "mask_sha256": "54246ace90c058163ad44f12d46d074933e261dae5aa0f01cde0a7589d17e3f8",
+        "planned_sites": 3,
+        "eligible_sites": 2,
+        "rejected_paths": 0,
+        "excluded_sites": 1,
+        "width_mae_px": 0.0,
+        "width_rmse_px": 0.0,
+        "signed_bias_px": 0.0,
+        "measured_lesions": 0,
+        "narrowing_mae_percentage_points": null
+      },
+      "candidate_local": {
+        "status": "abstained",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-branch",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": null,
+        "reasons": [
+          "branch_ambiguity_in_candidate_region"
+        ]
+      }
+    },
+    {
+      "fixture": "eccentric",
+      "original_adapter": {
+        "phantom": "eccentric",
+        "mask_sha256": "72472dc8564a3d02ea0115f827c9f7d57d2b73c7d9848c355cc75e0053772ede",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 0.0,
+        "width_rmse_px": 0.0,
+        "signed_bias_px": 0.0,
+        "measured_lesions": 1,
+        "narrowing_mae_percentage_points": 0.0
+      },
+      "candidate_local": {
+        "status": "abstained",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-eccentric",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": null,
+        "reasons": [
+          "discontinuous_centerline"
+        ]
+      }
+    },
+    {
+      "fixture": "two-lesions",
+      "original_adapter": {
+        "phantom": "two-lesions",
+        "mask_sha256": "f74a56080aa739b6a51b5e2bc0d408eceaa0a192a9eac694c488c5616ec7fbe5",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 0.0,
+        "width_rmse_px": 0.0,
+        "signed_bias_px": 0.0,
+        "measured_lesions": 2,
+        "narrowing_mae_percentage_points": 0.0
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-two-lesions",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 50.0,
+        "reasons": [],
+        "minimum_diameter": 12.0,
+        "reference_diameter": 24.0,
+        "minimum_cross_section": {
+          "index": 38,
+          "point": [
+            48.0,
+            39.0
+          ],
+          "endpoints": [
+            [
+              48.0,
+              33.25
+            ],
+            [
+              48.0,
+              45.25
+            ]
+          ],
+          "width": 12.0,
+          "contrast": 0.7,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                76.0,
+                27.25
+              ],
+              [
+                76.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                77.0,
+                27.25
+              ],
+              [
+                77.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                78.0,
+                27.25
+              ],
+              [
+                78.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                79.0,
+                27.25
+              ],
+              [
+                79.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 70,
+            "point": [
+              80.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                80.0,
+                27.25
+              ],
+              [
+                80.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "boundary-perturbation",
+      "original_adapter": {
+        "phantom": "boundary-perturbation",
+        "mask_sha256": "556a83b45938299be6cd5594e03d852a3a76d9f98fc387439d63ff83d193db38",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 1.9395186437503185,
+        "width_rmse_px": 1.9399900944803752,
+        "signed_bias_px": -1.9395186437503185,
+        "measured_lesions": 1,
+        "narrowing_mae_percentage_points": 4.732126978740736
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-boundary-perturbation",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 56.25,
+        "reasons": [],
+        "minimum_diameter": 10.5,
+        "reference_diameter": 24.0,
+        "minimum_cross_section": {
+          "index": 38,
+          "point": [
+            48.0,
+            39.0
+          ],
+          "endpoints": [
+            [
+              48.0,
+              34.75
+            ],
+            [
+              48.0,
+              45.25
+            ]
+          ],
+          "width": 10.5,
+          "contrast": 0.35,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                76.0,
+                28.75
+              ],
+              [
+                76.0,
+                51.25
+              ]
+            ],
+            "width": 22.5,
+            "contrast": 0.35,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                77.0,
+                27.25
+              ],
+              [
+                77.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                78.0,
+                27.25
+              ],
+              [
+                78.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                79.0,
+                27.25
+              ],
+              [
+                79.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.7,
+            "in_lesion": false
+          },
+          {
+            "index": 70,
+            "point": [
+              80.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                80.0,
+                28.75
+              ],
+              [
+                80.0,
+                51.25
+              ]
+            ],
+            "width": 22.5,
+            "contrast": 0.35,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "blur-noise",
+      "original_adapter": {
+        "phantom": "blur-noise",
+        "mask_sha256": "b3742793547c1d364e5c2af4a5542bb640a91a8896dd246048125c8231144054",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 0.0,
+        "width_rmse_px": 0.0,
+        "signed_bias_px": 0.0,
+        "measured_lesions": 1,
+        "narrowing_mae_percentage_points": 0.0
+      },
+      "candidate_local": {
+        "status": "experimental_measurement",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-blur-noise",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": 56.25,
+        "reasons": [],
+        "minimum_diameter": 10.5,
+        "reference_diameter": 24.0,
+        "minimum_cross_section": {
+          "index": 55,
+          "point": [
+            65.0,
+            39.0
+          ],
+          "endpoints": [
+            [
+              65.0,
+              34.75
+            ],
+            [
+              65.0,
+              45.25
+            ]
+          ],
+          "width": 10.5,
+          "contrast": 0.35386003386696296,
+          "in_lesion": true
+        },
+        "reference_cross_sections": [
+          {
+            "index": 66,
+            "point": [
+              76.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                76.0,
+                28.75
+              ],
+              [
+                76.0,
+                50.75
+              ]
+            ],
+            "width": 22.0,
+            "contrast": 0.23303941111028237,
+            "in_lesion": false
+          },
+          {
+            "index": 67,
+            "point": [
+              77.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                77.0,
+                27.25
+              ],
+              [
+                77.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.4573400241513138,
+            "in_lesion": false
+          },
+          {
+            "index": 68,
+            "point": [
+              78.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                78.0,
+                27.25
+              ],
+              [
+                78.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.42346466067944794,
+            "in_lesion": false
+          },
+          {
+            "index": 69,
+            "point": [
+              79.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                79.0,
+                27.25
+              ],
+              [
+                79.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.362213543714597,
+            "in_lesion": false
+          },
+          {
+            "index": 70,
+            "point": [
+              80.0,
+              39.0
+            ],
+            "endpoints": [
+              [
+                80.0,
+                27.25
+              ],
+              [
+                80.0,
+                51.25
+              ]
+            ],
+            "width": 24.0,
+            "contrast": 0.509058408770357,
+            "in_lesion": false
+          }
+        ],
+        "uncertainty_percentage_points": null,
+        "limitation": "Predicted-mask research estimate. Uncertainty and independent lumen validation remain unavailable; automatic severity is withheld."
+      }
+    },
+    {
+      "fixture": "low-contrast",
+      "original_adapter": {
+        "phantom": "low-contrast",
+        "mask_sha256": "65db3ed9dc879f85d1918a369d9673395d53e6499e37a437317ddddb2fd0f242",
+        "planned_sites": 3,
+        "eligible_sites": 3,
+        "rejected_paths": 0,
+        "excluded_sites": 0,
+        "width_mae_px": 16.0,
+        "width_rmse_px": 16.57307052620807,
+        "signed_bias_px": -16.0,
+        "measured_lesions": 1,
+        "narrowing_mae_percentage_points": 16.666666666666668
+      },
+      "candidate_local": {
+        "status": "abstained",
+        "algorithm": "source-normal-cross-section-v1",
+        "run_id": "synthetic-low-contrast",
+        "candidate_id": "declared-synthetic-region",
+        "unit": "source_px",
+        "clinical_validated": false,
+        "category": null,
+        "narrowing_percent": null,
+        "reasons": [
+          "low_local_boundary_contrast"
+        ]
+      }
+    }
+  ]
+}

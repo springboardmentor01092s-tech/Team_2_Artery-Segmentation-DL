@@ -1,0 +1,1 @@
+{"status":"ready","application_ready":true,"database":true,"inference":true,"storage":"ready","frontend":"ready","models":{"2d":"available","3d":"optional_checkpoint_unavailable"},"worker":"configured","research_only":true}

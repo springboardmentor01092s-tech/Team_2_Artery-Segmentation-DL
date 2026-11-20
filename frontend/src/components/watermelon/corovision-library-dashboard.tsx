@@ -5,6 +5,7 @@ import { Activity, ArrowUpRight, ClipboardCheck, FileImage, FileText, FolderOpen
 import { Button } from "../prismui/button";
 import { Input } from "../prismui/input";
 import "./corovision-library-dashboard.css";
+import { utcDate } from "../../lib/time";
 
 type Study = { id: string; case_code: string; status: string; created_at: string; images: { id: string }[]; latest_review?: { id: string } | null };
 type Props = {
@@ -27,7 +28,7 @@ export default function CorovisionLibraryDashboard(props: Props) {
   let angle = 0;
   const gradient = segments.map((s, i) => { const from = angle; angle += count ? s.count / count * 100 : 0; return `var(--library-segment-${i}) ${from}% ${angle}%`; }).join(",");
   const days = Array.from({ length: 7 }, (_, i) => { const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - 6 + i); return date; });
-  const points = days.map(day => props.cases.filter(c => { const date = new Date(c.created_at); return date.toDateString() === day.toDateString(); }).length);
+  const points = days.map(day => props.cases.filter(c => { const date = utcDate(c.created_at); return date.toDateString() === day.toDateString(); }).length);
   const maximum = Math.max(1, ...points);
   const visible = props.cases.filter(c => c.case_code.toLowerCase().includes(query.toLowerCase()) && (status === "all" || (status === "reviewed" ? !!c.latest_review : status === "pending" ? !c.latest_review && c.status === "analyzed" : !c.latest_review && c.status !== "analyzed"))).sort((a,b) => b.created_at.localeCompare(a.created_at));
   const metrics = [{ title: "Research cases", value: count, note: "Visible to your account", icon: FolderOpen }, { title: "Images uploaded", value: images, note: "Across accessible studies", icon: FileImage }, { title: "Cases analyzed", value: props.analyzed, note: props.runs === null ? "From available case status" : `${props.runs} recorded analysis runs`, icon: ScanLine }, { title: "Pending review", value: props.pending, note: "Awaiting a recorded review", icon: ClipboardCheck }];
@@ -51,7 +52,7 @@ export default function CorovisionLibraryDashboard(props: Props) {
       </div>
       <section className="cv-library-panel" aria-labelledby="cv-studies-title"><div className="cv-library-section-head"><div><h2 id="cv-studies-title">Study library</h2><p>Find a case and continue where you left off.</p></div><Button variant="ghost" onClick={props.onViewCases}>View all <ArrowUpRight size={16} aria-hidden="true"/></Button></div>
         <div className="cv-library-tools"><label><Search size={17} aria-hidden="true"/><span className="sr-only">Search study library</span><Input value={query} placeholder="Search by case code" onChange={e => setQuery(e.target.value)}/></label><div role="group" aria-label="Filter study library">{[["all","All cases"],["pending","Awaiting review"],["reviewed","Reviewed"],["preparation","Other / preparation"]].map(([id,label]) => <button key={id} type="button" aria-pressed={status===id} onClick={() => setStatus(id)}>{label}</button>)}</div></div>
-        <div className="cv-library-study-list">{visible.length ? visible.slice(0,6).map(c => <button key={c.id} onClick={() => props.onOpenCase(c.id)}><span className="cv-library-action-icon"><FolderOpen size={20} aria-hidden="true"/></span><span><strong>{c.case_code}</strong><small>{c.images.length} images · Created {new Date(c.created_at).toLocaleDateString()}</small></span><span className="cv-library-status">{c.status.replaceAll("_"," ")}</span><ArrowUpRight size={17} aria-hidden="true"/></button>) : <p className="cv-library-empty">{count ? "No cases match these filters." : "No accessible studies yet. Cases will appear here when created or shared with you."}</p>}</div>
+        <div className="cv-library-study-list">{visible.length ? visible.slice(0,6).map(c => <button key={c.id} onClick={() => props.onOpenCase(c.id)}><span className="cv-library-action-icon"><FolderOpen size={20} aria-hidden="true"/></span><span><strong>{c.case_code}</strong><small>{c.images.length} images · Created {utcDate(c.created_at).toLocaleDateString()}</small></span><span className="cv-library-status">{c.status.replaceAll("_"," ")}</span><ArrowUpRight size={17} aria-hidden="true"/></button>) : <p className="cv-library-empty">{count ? "No cases match these filters." : "No accessible studies yet. Cases will appear here when created or shared with you."}</p>}</div>
       </section>
     </>}
     <p className="cv-library-footnote">Research prototype · Model outputs require expert review and are not a clinical diagnosis.</p>

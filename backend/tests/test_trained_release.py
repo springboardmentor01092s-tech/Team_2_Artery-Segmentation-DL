@@ -39,9 +39,11 @@ def test_adapter_keeps_masks_and_instance_semantics(tmp_path, monkeypatch):
     stenosis=np.zeros_like(artery);stenosis[110:115,200:204]=True
     monkeypatch.setattr(trained_release,'predict_masks',lambda _: (artery,stenosis,artery.astype('float32'),stenosis.astype('float32'),[dict(category_id=26,model_score=.4)]))
     monkeypatch.setattr(trained_release, '_models', lambda _: (object(), object()))
-    monkeypatch.setattr(trained_release, '_detector_explanations',
-                        lambda *_: (np.ones((512,512), dtype='float32'),
-                                    np.ones((512,512), dtype='float32')))
+    def explanations(*_, extras):
+        feature = np.ones((512, 512), dtype='float32')
+        extras['gradcam_plus_plus'] = feature
+        return feature, feature
+    monkeypatch.setattr(trained_release, '_detector_explanations', explanations)
     result=trained_release.analyze(path)
     assert len(result)==10 and result[1:3]==(200,20)
     assert result[8]['instance_detections'][0]['category_id']==26
@@ -53,6 +55,7 @@ def test_adapter_keeps_masks_and_instance_semantics(tmp_path, monkeypatch):
     assert result[8]['operating_point']['stenosis_score_threshold'] == profile['score_threshold']
     assert result[8]['explainability']['gradcam']['faithfulness_validated'] is False
     assert result[8]['explainability']['gradcam']['status'] == 'saved'
+    assert result[8]['explainability']['gradcam_plus_plus']['status'] == 'saved'
     assert result[8]['explainability']['attention']['label'] == 'Feature activation'
 
 
@@ -78,6 +81,11 @@ def test_detector_explanations_use_frozen_foreground_target():
     gradcam, activation = trained_release._detector_explanations(model, torch.rand(3, 32, 32), .25)
     assert gradcam.shape == (32, 32) and activation.shape == (32, 32)
     assert np.isfinite(gradcam).all() and np.isfinite(activation).all()
+    no_target_cam, activation_without_target = trained_release._detector_explanations(
+        model, torch.rand(3, 32, 32), 1.0)
+    assert no_target_cam is None
+    assert activation_without_target.shape == (32, 32)
+    assert np.isfinite(activation_without_target).all()
     assert all(torch.equal(before[key], value) for key, value in model.state_dict().items())
 
 
@@ -130,7 +138,8 @@ def test_real_case_upload_analysis_and_access_control(monkeypatch):
                               json={'idempotency_key': uuid4().hex})
             assert job.status_code == 202
             state = job.json()
-            deadline = time.monotonic() + 40
+            # Cold CPU inference can take longer than the earlier 40-second window.
+            deadline = time.monotonic() + 150
             while state['status'] in {'pending', 'processing'} and time.monotonic() < deadline:
                 time.sleep(.1)
                 state = client.get(state['status_url'], headers=owner).json()
@@ -152,6 +161,18 @@ def test_real_case_upload_analysis_and_access_control(monkeypatch):
             for candidate in result['candidates']:
                 assert len(candidate['bbox_prepared_xyxy']) == 4 and candidate['category_id'] == 26
             assert client.get(f'/api/images/{identity}/analyses', headers=owner).status_code == 200
+            reports_url = f"/api/cases/{case.json()['id']}/research-reports"
+            report_deadline = time.monotonic() + 5
+            while True:
+                reports = client.get(reports_url, headers=owner).json()
+                if reports or time.monotonic() >= report_deadline:
+                    break
+                time.sleep(.1)
+            assert len(reports) == 1
+            assert reports[0]['analysis_event_id'] == state['result_event_id']
+            export_url = f"{reports_url}/{reports[0]['id']}/export/pdf"
+            assert client.get(export_url, headers=owner).content.startswith(b'%PDF-')
+            assert client.get(export_url, headers=outsider).status_code == 404
         finally:
             worker.close()
 

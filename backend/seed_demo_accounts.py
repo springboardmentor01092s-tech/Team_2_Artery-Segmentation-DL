@@ -23,7 +23,10 @@ from app.security import hash_password
 
 
 HERE = Path(__file__).resolve().parent
-OUTPUT = HERE / "demo-credentials.json"
+# The normal local developer location is beside this script.  The isolated
+# Docker demonstration profile uses the writable `/data` volume instead, so no
+# credential material is baked into an image or committed to source control.
+OUTPUT = Path(os.getenv("DEMO_CREDENTIALS_PATH", str(HERE / "demo-credentials.json")))
 ACCOUNTS = (
     ("Doctor", "doctor", "doctor_demo", "doctor.demo@example.com", "Demo Doctor"),
     ("Clinician", "clinician", "radiologist_demo", "radiologist.demo@example.com", "Demo Clinician"),
@@ -65,7 +68,10 @@ def main() -> None:
         if not created:
             print(f"All {len(accounts)} local demo accounts already exist")
             return
-        fd, temporary = tempfile.mkstemp(prefix=".demo-credentials.", dir=HERE)
+        # Keep the atomic replacement alongside the configured output.  This is
+        # essential for the read-only application image used by Docker demos.
+        OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=".demo-credentials.", dir=OUTPUT.parent)
         try:
             if hasattr(os, "fchmod"):
                 os.fchmod(fd, 0o600)

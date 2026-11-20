@@ -1,0 +1,10 @@
+# Local consolidation volume. Use with the standard Compose configuration.
+services:
+  app:
+    environment:
+      DEMO_CREDENTIALS_PATH: /data/demo-credentials.json
+      CV_DEMO_SIGNIN_SWITCHER: "1"
+volumes:
+  application-data:
+    external: true
+    name: corovision-merge-rehearsal-20261120

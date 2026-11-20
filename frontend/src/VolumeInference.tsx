@@ -3,6 +3,7 @@ import { apiUrl } from './api';
 import { Button } from './components/prismui/button';
 import VolumeOrbit from './VolumeOrbit';
 import VolumeMeasurementPanel from './VolumeMeasurementPanel';
+import { utcDate } from "./lib/time";
 
 type VolumeRun = { id: string; status: string; error: string | null; created_at: string;model_key?:string;
   input_kind: 'medical_study' | 'synthetic_fixture' | 'unspecified';
@@ -18,6 +19,7 @@ export default function VolumeInference(props: Props) {
 
 function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', historyOnly = false, onOpenAnalysis}: Props) {
   const [file, setFile] = useState<File | null>(null);
+  const [dicomFiles, setDicomFiles] = useState<File[]>([]);
   const [hu, setHu] = useState(false);
   const [research, setResearch] = useState(false);
   const [installed, setInstalled] = useState(false);
@@ -26,6 +28,7 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', hist
   const [chosen, setChosen] = useState('');
   const [viewingRun, setViewingRun] = useState('');
   const [busy, setBusy] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [previews, setPreviews] = useState<Record<string,string>>({});
   const [report, setReport] = useState<null | {experimental_geometry?: {status?:string;reasons?:string[];paths?: {id:string;length_mm:number}[];candidates?:{id:string;path_id:string;minimum_area_mm2?:number;reference_area_mm2?:number;area_narrowing_percent?:number;minimum_diameter_mm:number;reference_diameter_mm:number;narrowing_percent:number;severity:string;location_ras_mm:number[]}[];limitations?:string[]}; analysis_run_id:string; model_id:string; explanation:{text:string}; stages:Record<string,{status:string;reason:string}>}>(null);
@@ -83,19 +86,39 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', hist
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
-    if (!file || busy) return;
-    setBusy(true); setError('');
+    if ((!file && !dicomFiles.length) || busy) return;
+    setBusy(true); setError(''); setUploadPercent(0);
     try {
-      if (!/\.nii(\.gz)?$/i.test(file.name) || !file.size || file.size > limits.max_file_bytes)
-        throw new Error(`Choose an intact .nii or .nii.gz file between 1 byte and ${Math.floor(limits.max_file_bytes/1024/1024)} MiB`);
+      if (!dicomFiles.length && (!file || !/\.(nii(\.gz)?|zip)$/i.test(file.name) || !file.size || file.size > limits.max_file_bytes))
+        throw new Error(`Choose an intact .nii, .nii.gz or single-series DICOM .zip file between 1 byte and ${Math.floor(limits.max_file_bytes/1024/1024)} MiB`);
       const body = new FormData();
-      body.append('file',file); body.append('hu_confirmed',String(hu)); body.append('research_confirmed',String(research)); body.append('input_kind','medical_study');
-      const response = await fetch(apiUrl(`/api/cases/${caseId}/volumes/analyses`), {method:'POST', headers, body});
-      if (!response.ok) throw new Error((await response.json()).detail || '3D inference rejected');
-      const row: VolumeRun = await response.json();
+      if (dicomFiles.length) {
+        if (dicomFiles.length < 2 || dicomFiles.length > 2000 || dicomFiles.some(f => !f.size || f.size > 64*1024*1024) || dicomFiles.reduce((s,f)=>s+f.size,0) > limits.max_file_bytes)
+          throw new Error('Select 2-2000 non-empty DICOM slices within the volume upload limit.');
+        dicomFiles.forEach(f => body.append('files',f));
+      } else if (file) body.append('file',file);
+      body.append('hu_confirmed',String(hu)); body.append('research_confirmed',String(research)); body.append('input_kind','medical_study');
+      const row = await new Promise<VolumeRun>((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open('POST', apiUrl(`/api/cases/${caseId}/volumes/${dicomFiles.length ? 'dicom-analyses' : 'analyses'}`));
+        request.setRequestHeader('Authorization', headers.Authorization);
+        request.timeout = 300000;
+        request.upload.onprogress = event => setUploadPercent(event.lengthComputable ? Math.round(event.loaded / event.total * 100) : null);
+        request.onerror = () => reject(new Error('Upload connection failed. Check saved analysis history before retrying.'));
+        request.ontimeout = () => reject(new Error('Upload timed out. Check saved analysis history before retrying.'));
+        request.onload = () => {
+          try {
+            const result = JSON.parse(request.responseText);
+            if (request.status < 200 || request.status >= 300)
+              throw new Error(typeof result.detail === 'string' ? result.detail : '3D inference rejected');
+            resolve(result);
+          } catch (cause) { reject(cause); }
+        };
+        request.send(body);
+      });
       setRuns(previous => [row,...previous]); setChosen(row.id);
     } catch (cause) { setError((cause as Error).message); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setUploadPercent(null); }
   }
 
   async function download(name: string) {
@@ -121,7 +144,7 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', hist
     {error && <p role="alert">{error}</p>}
     {!runs.length ? <p>No saved volume analyses.</p> : <table className="stenosis-summary">
       <thead><tr><th>Date</th><th>Run</th><th>Status</th><th>Model</th><th>Duration</th></tr></thead>
-      <tbody>{runs.map(run => <tr key={run.id}><td>{new Date(run.created_at).toLocaleString()}</td><td>{run.id}</td><td>{run.status}</td><td>{run.result?.model_id ?? run.model_key ?? 'Unavailable'}</td><td>{run.result ? `${run.result.duration_seconds.toFixed(2)} s` : 'Unavailable'}</td></tr>)}</tbody>
+      <tbody>{runs.map(run => <tr key={run.id}><td>{utcDate(run.created_at).toLocaleString()}</td><td>{run.id}</td><td>{run.status}</td><td>{run.result?.model_id ?? run.model_key ?? 'Unavailable'}</td><td>{run.result ? `${run.result.duration_seconds.toFixed(2)} s` : 'Unavailable'}</td></tr>)}</tbody>
     </table>}
     {onOpenAnalysis && <Button onClick={onOpenAnalysis}>Open analysis viewer</Button>}
   </section>;
@@ -129,18 +152,21 @@ function VolumeCase({caseId, token, readOnly = false, anatomy = 'coronary', hist
     <header><p className="eyebrow">VOLUME ANALYSIS</p><h3 id="volume-inference-title">{anatomy==='aorta'?'Aortic CT':'Coronary CTA'} segmentation</h3>
       <p>View a 3D vessel mask and slice previews. CoroVision selects the research pipeline from the case anatomy. Small vessels may be missed.</p></header>
     {!readOnly && <form onSubmit={start} className="volume-run-form" aria-busy={busy}>
-      <label>Original de-identified {anatomy==='aorta'?'CT/CTA':'coronary CTA'} NIfTI<input type="file" accept=".nii,.nii.gz" required disabled={busy} aria-describedby={error ? 'volume-input-help volume-error' : 'volume-input-help'} onChange={e => { setFile(e.target.files?.[0] || null); setError(''); }} /></label>
-      <p id="volume-input-help">NIfTI only · up to {Math.floor(limits.max_file_bytes/1024/1024)} MiB and {(limits.max_source_voxels/1_000_000).toFixed(0)} million native voxels. The header must specify millimetres. JPEG/PNG images and 4D sequences are not 3D CT volumes.</p>
+      <label>Original de-identified {anatomy==='aorta'?'CT/CTA':'coronary CTA'} volume<input type="file" accept=".nii,.nii.gz,.zip" required={!dicomFiles.length} disabled={busy} aria-describedby={error ? 'volume-input-help volume-error' : 'volume-input-help'} onChange={e => { setFile(e.target.files?.[0] || null); setError(''); }} /></label>
+      <p id="volume-input-help">NIfTI or a ZIP containing exactly one de-identified CT DICOM series · up to {Math.floor(limits.max_file_bytes/1024/1024)} MiB and {(limits.max_source_voxels/1_000_000).toFixed(0)} million native voxels. DICOM reconstruction checks series identity, slice ordering, orientation and spacing before inference. NIfTI headers must specify millimetres. JPEG/PNG images and 4D sequences are not 3D CT volumes.</p>
       <label className="volume-confirm"><input type="checkbox" checked={hu} onChange={e => setHu(e.target.checked)} required />I confirm original Hounsfield-unit CT intensities, not a normalized or enhanced export.</label>
       <label className="volume-confirm"><input type="checkbox" checked={research} onChange={e => setResearch(e.target.checked)} required />I confirm de-identification and research-only use; this model is not clinically validated.</label>
-      <Button type="submit" disabled={!installed || !file || !hu || !research || busy || active}>{busy ? 'Uploading and validating…' : active ? '3D analysis in progress…' : 'Run 3D segmentation'}</Button>
+      <label>Or select a complete DICOM series<input type="file" multiple accept=".dcm,.dicom" disabled={busy} onChange={e => {setDicomFiles(Array.from(e.target.files || [])); setError('');}} /></label>
+      {dicomFiles.length > 0 && <p role="status">{dicomFiles.length} slices selected · {(dicomFiles.reduce((sum,f)=>sum+f.size,0)/1024/1024).toFixed(1)} MiB. These slices take precedence over the single-file input. Select exactly one study and series; mixed series are rejected.</p>}
+      {busy && <div role="status"><progress aria-label="Volume upload progress" max={100} value={uploadPercent ?? undefined} />{uploadPercent === 100 ? 'Upload complete. Validating source geometry…' : uploadPercent === null ? 'Uploading volume…' : `Uploading volume: ${uploadPercent}%`}</div>}
+      <Button type="submit" disabled={!installed || (!file && !dicomFiles.length) || !hu || !research || busy || active}>{busy ? 'Uploading and validating…' : active ? '3D analysis in progress…' : 'Run 3D segmentation'}</Button>
       {!installed && <p role="status">Volume analysis is unavailable for this case on this installation.</p>}
     </form>}
     {error && <p id="volume-error" role="alert" className="message error">{error}</p>}
     <section className="volume-saved-results" aria-label="Saved 3D results">
       <h4>Saved 3D analyses</h4>
       {!runs.length ? <p>No 3D analyses yet.</p> : <>
-        <label>Analysis run<select value={selected?.id || ''} onChange={e => { setChosen(e.target.value); setViewingRun(''); }}>{runs.map(run => <option key={run.id} value={run.id}>{new Date(run.created_at).toLocaleString()} · {run.status} · {run.id.slice(0,8)}</option>)}</select></label>
+        <label>Analysis run<select value={selected?.id || ''} onChange={e => { setChosen(e.target.value); setViewingRun(''); }}>{runs.map(run => <option key={run.id} value={run.id}>{utcDate(run.created_at).toLocaleString()} · {run.status} · {run.id.slice(0,8)}</option>)}</select></label>
         <p role="status">Status: {selected?.status}{selected?.error ? ` — ${selected.error}` : ''}</p>
         {selected?.result && <>
           {selected.input_kind === 'synthetic_fixture' && <div className="message warning" role="note"><strong>Synthetic geometry test — not a medical scan.</strong><p>This saved run used an artificial gradient, not coronary CTA anatomy. Grey slices and an empty vessel mask do not demonstrate medical segmentation. Upload a real, de-identified CTA from Assets & preparation.</p></div>}

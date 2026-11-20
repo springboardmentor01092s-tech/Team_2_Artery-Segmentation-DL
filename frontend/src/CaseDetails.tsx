@@ -7,6 +7,7 @@ import { Input } from "./components/prismui/input";
 import { Stethoscope, CheckCircle2, AlertCircle, FileDown, ShieldAlert } from "lucide-react";
 import { taskLabel } from "./caseConfiguration";
 import { reviewLabels } from "./reviewLabels";
+import { utcDate } from "./lib/time";
 
 const histories = ["hypertension", "diabetes", "prior_mi", "prior_pci", "hyperlipidemia", "none", "unknown"];
 const risks = ["smoking", "family_history", "obesity", "sedentary", "hypertension", "diabetes", "none", "unknown"];
@@ -68,6 +69,7 @@ export default function CaseDetails({
   const isReadOnly = isViewer || caseRecord.permissions?.can_edit === false;
   const canExport = caseRecord.permissions?.can_export ?? (userRole === "doctor" || userRole === "clinician" || userRole === "researcher");
   const canAssign = caseRecord.permissions?.can_assign ?? (userRole === "admin" || !!currentUserId && caseRecord.owner_id === currentUserId);
+  const syntheticDemo = /\bsynthetic\b/i.test(`${caseRecord.source_dataset || ""} ${caseRecord.clinical_notes || ""} ${caseRecord.case_code}`);
 
   useEffect(() => {
     const switchedCase = lastCaseId.current !== caseRecord.id;
@@ -248,6 +250,8 @@ export default function CaseDetails({
           )}
         </div>
 
+        {syntheticDemo && <p className="message warning"><strong>Demonstration-only reviewer workspace.</strong> This case contains generated geometry, not a patient study. Any review entry is an interface demonstration and cannot be interpreted as expert advice, diagnosis, severity validation, or clinical approval.</p>}
+
         {caseRecord.latest_review && (
           <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "0.85rem", borderRadius: "10px", margin: "0.8rem 0" }}>
             <p style={{ margin: "0 0 0.4rem 0", fontSize: "0.88rem" }}>
@@ -259,7 +263,7 @@ export default function CaseDetails({
               </p>
             )}
             <small style={{ color: "#64748b" }}>
-              Reviewed by {caseRecord.latest_review.reviewer_name || "Clinical reviewer"} on {new Date(caseRecord.latest_review.created_at).toLocaleString()}
+              Reviewed by {caseRecord.latest_review.reviewer_name || "Clinical reviewer"} on {utcDate(caseRecord.latest_review.created_at).toLocaleString()}
             </small>
           </div>
         )}
@@ -315,7 +319,7 @@ export default function CaseDetails({
           )
         )}
         <p className="caption">A review is not clinical validation or a standalone diagnosis. Earlier decisions remain in case history.</p>
-        {(caseRecord.reviews || []).length > 0 && <details><summary>Recorded review history ({caseRecord.reviews?.length})</summary>{caseRecord.reviews?.map(review => <p key={review.id}><strong>{display(review.decision)}</strong> · {review.reviewer_name || "Assigned reviewer"} · {new Date(review.created_at).toLocaleString()}<br />{review.notes || "No notes recorded"}</p>)}</details>}
+        {(caseRecord.reviews || []).length > 0 && <details><summary>Recorded review history ({caseRecord.reviews?.length})</summary>{caseRecord.reviews?.map(review => <p key={review.id}><strong>{display(review.decision)}</strong> · {review.reviewer_name || "Assigned reviewer"} · {utcDate(review.created_at).toLocaleString()}<br />{review.notes || "No notes recorded"}</p>)}</details>}
       </Card>}
     </>
   );

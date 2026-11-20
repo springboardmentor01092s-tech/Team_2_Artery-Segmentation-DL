@@ -240,3 +240,8 @@ See [LICENSE](LICENSE) for the repository license. Third-party components retain
 Research with traceability. Review with context.
 
 </div>
+
+
+### First administrator on a new installation
+
+Run `docker compose exec app python -m app.cli create-admin` in the installation directory. Then sign in, enroll a time-based authenticator and open **User Management** to create invitations. Each installation manages its own accounts. [Administrator setup and recovery](docs/ADMIN_ACCESS.md)

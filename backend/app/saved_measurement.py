@@ -1,5 +1,6 @@
 """Frozen-artifact geometry integration; no model execution or weight loading."""
 import json
+from pathlib import Path
 import numpy as np
 from PIL import Image
 from scipy.ndimage import binary_dilation, binary_erosion, label
@@ -44,8 +45,9 @@ def percentile_ring_mask_estimate(mask, candidate):
 
 
 def source_mask(image, mask_path):
-    with Image.open(image.original_path) as original:
-        gray=np.asarray(original.convert('L'),dtype=float)/255
+    from .preprocessing import source_grayscale
+    original = source_grayscale(Path(image.original_path).read_bytes(), image.original_name, image.frame_index)
+    gray=np.asarray(original,dtype=float)/255
     with Image.open(mask_path) as source:
         prepared=source.convert('L')
         config=json.loads(image.preprocessing_config_json or '{}')

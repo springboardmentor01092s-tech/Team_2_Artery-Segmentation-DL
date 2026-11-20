@@ -1,5 +1,5 @@
-"""Idempotent SQLite upgrades for the local research prototype."""
-from sqlalchemy import text
+"""Idempotent additive upgrades for SQLite and PostgreSQL."""
+from sqlalchemy import inspect, text
 
 
 ADDITIONS = {
@@ -45,18 +45,24 @@ ADDITIONS = {
 
 
 def upgrade_local_schema(engine):
-    if engine.dialect.name != "sqlite":
+    dialect = engine.dialect.name
+    if dialect not in {"sqlite", "postgresql"}:
         return
     with engine.begin() as connection:
+        schema = inspect(connection)
+        tables = set(schema.get_table_names())
         for table, columns in ADDITIONS.items():
-            existing = {row[1] for row in connection.execute(text(f"PRAGMA table_info({table})"))}
-            if not existing:
+            if table not in tables:
                 continue  # Tables absent in older partial schemas are created by metadata.create_all.
+            existing = {column["name"] for column in schema.get_columns(table)}
             new_workflow_column = table == "cases" and "workflow_status" not in existing
             new_processing_column = table == "cases" and "processing_status" not in existing
             new_task_column = table == "cases" and "intended_task" not in existing
             for name, type_name in columns.items():
                 if name not in existing:
+                    if dialect == "postgresql":
+                        type_name = {"DATETIME": "TIMESTAMP WITH TIME ZONE",
+                                     "BOOLEAN DEFAULT 0": "BOOLEAN DEFAULT FALSE"}.get(type_name, type_name)
                     connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {type_name}"))
             if new_workflow_column:
                 connection.execute(text("""
@@ -73,4 +79,5 @@ def upgrade_local_schema(engine):
                 """))
             if new_task_column and "modality" in existing:
                 connection.execute(text("UPDATE cases SET intended_task = 'volume_preparation' WHERE modality IN ('CT', 'CTA', 'MRA', 'MRI')"))
-        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_images_case_source_sha256 ON images (case_id, source_sha256)"))
+        if "images" in tables:
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_images_case_source_sha256 ON images (case_id, source_sha256)"))

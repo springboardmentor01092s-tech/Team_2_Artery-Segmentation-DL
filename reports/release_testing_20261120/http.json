@@ -1,0 +1,21 @@
+{
+  "passive_headers": "PASS",
+  "anonymous_route_denial": "PASS",
+  "liveness_batches": [
+    {
+      "clients": 1,
+      "requests": 20,
+      "p95_ms": 2.14
+    },
+    {
+      "clients": 4,
+      "requests": 20,
+      "p95_ms": 2.595
+    },
+    {
+      "clients": 8,
+      "requests": 20,
+      "p95_ms": 7.479
+    }
+  ]
+}

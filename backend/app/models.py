@@ -397,3 +397,20 @@ class EvaluationSampleReview(Base):
     reviewer_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
     notes: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class AdministratorFactor(Base):
+    __tablename__ = "administrator_factors"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    secret: Mapped[str] = mapped_column(String(64))
+    last_counter: Mapped[int] = mapped_column(default=-1)
+
+
+class AccountInvitation(Base):
+    __tablename__ = "account_invitations"
+
+    digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    redeemed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

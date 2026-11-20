@@ -56,7 +56,7 @@ const views = [
   { id: "reports", label: "Reports", icon: FileBarChart2 },
   { id: "admin", label: "User Management", icon: ShieldUser },
   { id: "permissions", label: "Roles & Permissions", icon: ShieldCheck },
-  { id: "access", label: "Workspace & Case Access", icon: FolderOpen },
+  { id: "access", label: "Case Access", icon: FolderOpen },
   { id: "audit", label: "Audit Logs", icon: ClipboardList },
   { id: "account", label: "Profile & Settings", icon: User },
 ] as const;
@@ -364,7 +364,7 @@ export function MacOSSidebar({
               {savedAccounts.length > 0 && <>
                 <div className="macos-popover-divider" role="separator" />
                 <span className="macos-switch-label">SWITCH ACCOUNT</span>
-                {demoAccountChoices(savedAccounts, userRole).map((account) => <button
+                {demoAccountChoices(savedAccounts, savedAccounts.every(account => !account.token) ? undefined : userRole).map((account) => <button
                   key={account.id}
                   type="button"
                   className="macos-popover-item"

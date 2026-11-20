@@ -1,0 +1,5 @@
+FROM corovision:automatic-report-acceptance
+USER root
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools \
+    && python -m pip check
+USER 10001:10001
