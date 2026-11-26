@@ -9,3 +9,35 @@ backend/uploads/
 *.pt
 *.pth
 .env
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Data (large or private)
+data/
+datasets/
+*.csv
+*.zip
+
+# Model files and outputs
+*.h5
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+logs/
+runs/
+outputs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

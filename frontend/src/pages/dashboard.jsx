@@ -43,12 +43,20 @@ const NAV = [
   ["cases", "Cases"],
   ["syntax", "Segmentation"],
   ["stenosis", "Stenosis"],
+  ["reports", "Reports"],
 ];
 
 const TITLES = {
   cases: ["Case Management", "Create, review and manage patient cases"],
-  syntax: ["Segmentation", "Segment coronary arteries and measure vessels (syntax model)"],
+  syntax: ["Segmentation", "Segment coronary arteries and measure vessels (artery model)"],
   stenosis: ["Stenosis", "Find suspected stenosis regions (stenosis model)"],
+  reports: ["Reports", "Open or download the analysis report of a case"],
+};
+
+// display names for the two segmentation tasks (internal names: syntax, stenosis)
+const TASK_LABELS = {
+  syntax: "Artery",
+  stenosis: "Stenosis",
 };
 
 const inputCls =
@@ -94,6 +102,31 @@ function MiniStat({ value, label }) {
   );
 }
 
+const fmtPct = (v) => (v == null ? "-" : `${(v * 100).toFixed(1)}%`);
+
+// plain-language explanation built from the measured values of one candidate
+function explainText(c) {
+  const parts = [
+    `The classifier is ${(c.score * 100).toFixed(1)}% confident that this region is a stenosis.`,
+  ];
+  if (c.narrowing_pct != null && c.narrowing_pct >= 5) {
+    parts.push(
+      `The vessel narrows to ${c.narrowest_width_px}px where the normal width nearby is ${c.reference_width_px}px, an estimated ${c.narrowing_pct}% narrowing (${c.severity}).`
+    );
+  } else if (c.narrowing_pct != null) {
+    parts.push(
+      "No measurable narrowing was found in the vessel width here. The model flagged this region from its appearance, so it is worth a closer look."
+    );
+  }
+  if (c.location) {
+    parts.push(
+      `It is located in the ${c.location} of the image${c.segment ? `, on vessel segment ${c.segment}` : ""}.`
+    );
+  }
+  parts.push("The heatmap shows the area the model focused on most (red is strongest).");
+  return parts.join(" ");
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -108,7 +141,7 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [stages, setStages] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [view, setView] = useState("cases"); // "cases" | "syntax" | "stenosis"
+  const [view, setView] = useState("cases"); // "cases" | "syntax" | "stenosis" | "reports"
 
   // segmentation
   const [seg, setSeg] = useState(null); // result currently shown in the panel
@@ -116,6 +149,21 @@ export default function Dashboard() {
   const [segMap, setSegMap] = useState({}); // {caseId: ["syntax", ...]} for the lists
   const [segBusy, setSegBusy] = useState(false);
   const [segCaseId, setSegCaseId] = useState(null);
+
+  // stenosis pipeline
+  const [pipe, setPipe] = useState(null);
+  const [pipeCase, setPipeCase] = useState(null);
+  const [pipeBusy, setPipeBusy] = useState(false);
+  const [pipeDims, setPipeDims] = useState({ w: 1, h: 1 });
+
+  // classifier performance (shown once the backend endpoint exists)
+  const [metrics, setMetrics] = useState(null);
+
+  // U-Net vs Attention U-Net results
+  const [comparison, setComparison] = useState(null);
+
+  // report download in progress, e.g. "2-pdf"
+  const [downloading, setDownloading] = useState("");
 
   const canWrite = ["clinician", "admin"].includes(user?.role);
   const canPreprocess = ["clinician", "admin", "data_scientist"].includes(user?.role);
@@ -159,6 +207,24 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (view !== "stenosis" || metrics) return;
+    api
+      .get("/cases/model-metrics")
+      .then((r) => setMetrics(r.data))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  useEffect(() => {
+    if ((view !== "syntax" && view !== "stenosis") || comparison) return;
+    api
+      .get("/cases/model-comparison")
+      .then((r) => setComparison(r.data))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return cases;
@@ -175,6 +241,10 @@ export default function Dashboard() {
     withImage: cases.filter((c) => c.image_path).length,
     preprocessed: cases.filter((c) => String(c.analysis_status).toLowerCase().includes("preprocess")).length,
   };
+
+  // model comparison rows for the open tab (syntax = artery, stenosis = stenosis)
+  const compRows = (comparison?.models || []).filter((m) => m.task === view);
+  const bestOf = (key) => Math.max(...compRows.map((m) => (m[key] == null ? -1 : m[key])));
 
   const openNew = () => {
     setEditingId(null);
@@ -295,6 +365,50 @@ export default function Dashboard() {
     else runSegment(segCaseId, t);
   };
 
+  // run the full stenosis detection pipeline
+  const runPipeline = async (c) => {
+    setPipeBusy(true);
+    setPipeCase(c);
+    setError("");
+    try {
+      const res = await api.post(`/cases/${c.id}/stenosis-pipeline`);
+      setPipe({ ...res.data, ts: Date.now() });
+    } catch (e) {
+      setError(e.response?.data?.detail || "Stenosis pipeline failed.");
+    } finally {
+      setPipeBusy(false);
+    }
+  };
+
+  // download a report (pdf / csv / json). Goes through axios so the login token is sent.
+  const downloadReport = async (c, fmt) => {
+    const key = `${c.id}-${fmt}`;
+    setDownloading(key);
+    setError("");
+    try {
+      const res = await api.get(`/cases/${c.id}/report`, {
+        params: { format: fmt },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report_${c.patient_id}.${fmt}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(
+        e.response?.status === 404
+          ? "The report endpoint is not available yet."
+          : "Could not download the report. Run the stenosis pipeline for this case first."
+      );
+    } finally {
+      setDownloading("");
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       await api.delete(`/cases/${deleteTarget.id}`);
@@ -331,7 +445,6 @@ export default function Dashboard() {
               {label}
             </button>
           ))}
-          <div className="px-3 py-2 text-slate-500">Reports (soon)</div>
         </nav>
         <button
           onClick={logout}
@@ -431,6 +544,71 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Model comparison: U-Net vs Attention U-Net (Segmentation and Stenosis tabs) */}
+          {(view === "syntax" || view === "stenosis") && compRows.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700">
+                {view === "syntax" ? "Artery segmentation" : "Stenosis segmentation"}: model comparison (test set)
+              </h3>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="px-4 py-2">Model</th>
+                      <th className="px-4 py-2">Dice</th>
+                      <th className="px-4 py-2">IoU</th>
+                      <th className="px-4 py-2">Precision</th>
+                      <th className="px-4 py-2">Recall</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {compRows.map((m) => (
+                      <tr key={m.name}>
+                        <td className="px-4 py-2 font-medium">{m.name}</td>
+                        {["dice", "iou", "precision", "recall"].map((k) => (
+                          <td
+                            key={k}
+                            className={`px-4 py-2 ${
+                              m[k] != null && m[k] === bestOf(k)
+                                ? "font-semibold text-emerald-700"
+                                : ""
+                            }`}
+                          >
+                            {m[k] != null ? Number(m[k]).toFixed(4) : "-"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Green marks the best value in each column.
+                {comparison?.note ? ` ${comparison.note}` : ""}
+              </p>
+            </div>
+          )}
+
+          {/* Classifier performance (appears once the backend metrics endpoint exists) */}
+          {view === "stenosis" && metrics && (
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700">
+                Stenosis classifier performance (test set{metrics.n_test ? `, ${metrics.n_test} crops` : ""})
+              </h3>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6">
+                <MiniStat value={fmtPct(metrics.accuracy)} label="Accuracy" />
+                <MiniStat value={fmtPct(metrics.precision)} label="Precision" />
+                <MiniStat value={fmtPct(metrics.recall)} label="Sensitivity (recall)" />
+                <MiniStat value={fmtPct(metrics.specificity)} label="Specificity" />
+                <MiniStat value={metrics.f1 != null ? metrics.f1.toFixed(3) : "-"} label="F1-score" />
+                <MiniStat value={metrics.auc != null ? metrics.auc.toFixed(3) : "-"} label="AUC-ROC" />
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Confusion matrix: TP {metrics.tp}, FP {metrics.fp}, TN {metrics.tn}, FN {metrics.fn}
+              </p>
+            </div>
+          )}
+
           {view === "cases" ? (
             /* ---------- Cases ---------- */
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -507,7 +685,7 @@ export default function Dashboard() {
                                 key={t}
                                 className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700"
                               >
-                                {t}
+                                {TASK_LABELS[t] || t}
                               </span>
                             ))}
                           </div>
@@ -564,6 +742,95 @@ export default function Dashboard() {
                             >
                               Delete
                             </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : view === "reports" ? (
+            /* ---------- Reports ---------- */
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 p-4">
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by patient ID, gender, region..."
+                  className={`${inputCls} max-w-sm`}
+                />
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Patient ID</th>
+                      <th className="px-4 py-3">Age / Gender</th>
+                      <th className="px-4 py-3">Region</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Report</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading && (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-10 text-center text-slate-400">
+                          Loading cases...
+                        </td>
+                      </tr>
+                    )}
+                    {!loading && filtered.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-10 text-center text-slate-400">
+                          No cases to show.
+                        </td>
+                      </tr>
+                    )}
+                    {filtered.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium">
+                          <div className="flex items-center gap-3">
+                            {c.image_path && (
+                              <img
+                                src={`${API_URL}/uploads/${c.image_path}`}
+                                alt="scan"
+                                className="h-10 w-10 rounded object-cover"
+                              />
+                            )}
+                            {c.patient_id}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.age ?? "-"} / {c.gender ?? "-"}
+                        </td>
+                        <td className="px-4 py-3">{c.anatomical_region ?? "-"}</td>
+                        <td className="px-4 py-3">
+                          <Badge status={c.analysis_status} />
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right">
+                          {!c.image_path ? (
+                            <span className="text-xs text-slate-400">No scan uploaded</span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => navigate(`/cases/${c.id}/analysis`)}
+                                className="mr-3 text-teal-700 hover:underline"
+                              >
+                                Open
+                              </button>
+                              {["pdf", "csv", "json"].map((fmt) => (
+                                <button
+                                  key={fmt}
+                                  onClick={() => downloadReport(c, fmt)}
+                                  disabled={downloading === `${c.id}-${fmt}`}
+                                  className="mr-2 rounded-lg border border-indigo-300 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+                                >
+                                  {downloading === `${c.id}-${fmt}` ? "..." : fmt.toUpperCase()}
+                                </button>
+                              ))}
+                            </>
                           )}
                         </td>
                       </tr>
@@ -632,7 +899,7 @@ export default function Dashboard() {
                             {c.age ?? "-"} / {c.gender ?? "-"}
                           </td>
                           <td className="px-4 py-3">{c.anatomical_region ?? "-"}</td>
-                          <td className="px-4 py-3">{view === "syntax" ? "U-Net (syntax)" : "U-Net (stenosis)"}</td>
+                          <td className="px-4 py-3">{view === "syntax" ? "U-Net (artery)" : "U-Net (stenosis)"}</td>
                           <td className="px-4 py-3">
                             {!c.image_path ? (
                               <span className="text-xs text-slate-400">No scan uploaded</span>
@@ -662,6 +929,23 @@ export default function Dashboard() {
                                 className="text-fuchsia-600 hover:underline"
                               >
                                 View result
+                              </button>
+                            )}
+                            {view === "stenosis" && canPreprocess && c.image_path && (
+                              <button
+                                onClick={() => runPipeline(c)}
+                                disabled={pipeBusy}
+                                className="ml-3 text-indigo-600 hover:underline disabled:opacity-50"
+                              >
+                                {pipeBusy && pipeCase?.id === c.id ? "Running pipeline..." : "Pipeline"}
+                              </button>
+                            )}
+                            {view === "stenosis" && c.image_path && (
+                              <button
+                                onClick={() => navigate(`/cases/${c.id}/analysis`)}
+                                className="ml-3 text-teal-700 hover:underline"
+                              >
+                                Full report
                               </button>
                             )}
                           </td>
@@ -810,7 +1094,7 @@ export default function Dashboard() {
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-lg font-semibold">
-                Segmentation result ({seg.task})
+                Segmentation result ({TASK_LABELS[seg.task] || seg.task})
               </h3>
               <div className="flex items-center gap-2">
                 {segBusy && <span className="text-xs text-slate-500">Running...</span>}
@@ -825,7 +1109,7 @@ export default function Dashboard() {
                         : "border border-slate-300 text-slate-700"
                     } disabled:opacity-50`}
                   >
-                    {t}
+                    {TASK_LABELS[t]}
                     {segAll[t] ? " ✓" : ""}
                   </button>
                 ))}
@@ -878,6 +1162,216 @@ export default function Dashboard() {
             <div className="mt-4 text-right">
               <button
                 onClick={() => setSeg(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stenosis pipeline results */}
+      {pipe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold">
+                Stenosis detection pipeline: {pipeCase?.patient_id}
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                {pipe.stages_done.map((s, i) => (
+                  <span
+                    key={s}
+                    className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-700"
+                  >
+                    {i + 1}. {s.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              {[
+                ["1. Scan", pipeCase?.image_path ? `/uploads/${pipeCase.image_path}` : null],
+                ["2. Vessel mask", pipe.vessel_mask_url],
+                ["3. Centerline", pipe.centerline_url],
+                ["4. Stenosis mask", pipe.stenosis_mask_url],
+              ]
+                .filter(([, u]) => u)
+                .map(([name, u]) => (
+                  <div key={name}>
+                    <img
+                      src={`${API_URL}${u}?t=${pipe.ts}`}
+                      alt={name}
+                      onLoad={
+                        name.startsWith("4")
+                          ? (e) =>
+                              setPipeDims({
+                                w: e.target.naturalWidth,
+                                h: e.target.naturalHeight,
+                              })
+                          : undefined
+                      }
+                      className="w-full rounded-lg border"
+                    />
+                    <p className="mt-1 text-center text-xs text-slate-600">{name}</p>
+                  </div>
+                ))}
+
+              {/* 5. candidates drawn on the scan */}
+              <div>
+                <div
+                  className="relative overflow-hidden rounded-lg border"
+                  style={{ aspectRatio: `${pipeDims.w} / ${pipeDims.h}` }}
+                >
+                  {pipeCase?.image_path && (
+                    <img
+                      src={`${API_URL}/uploads/${pipeCase.image_path}?t=${pipe.ts}`}
+                      alt="candidates"
+                      className="h-full w-full object-fill"
+                    />
+                  )}
+                  {pipe.candidates.map((c, i) => (
+                    <div
+                      key={i}
+                      className="absolute border-2 border-red-500"
+                      style={{
+                        left: `${(c.bbox[0] / pipeDims.w) * 100}%`,
+                        top: `${(c.bbox[1] / pipeDims.h) * 100}%`,
+                        width: `${(c.bbox[2] / pipeDims.w) * 100}%`,
+                        height: `${(c.bbox[3] / pipeDims.h) * 100}%`,
+                      }}
+                    >
+                      <span className="absolute -top-5 left-0 rounded bg-red-500 px-1 text-[10px] text-white">
+                        {c.score}
+                      </span>
+                      {c.centerline_point && (
+                        <span
+                          className="absolute h-2 w-2 rounded-full bg-yellow-300 ring-1 ring-red-600"
+                          style={{
+                            left: `${((c.centerline_point[0] - c.bbox[0]) / c.bbox[2]) * 100}%`,
+                            top: `${((c.centerline_point[1] - c.bbox[1]) / c.bbox[3]) * 100}%`,
+                            transform: "translate(-50%, -50%)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-1 text-center text-xs text-slate-600">5. Candidates</p>
+              </div>
+            </div>
+
+            {pipe.vessel_stats && (
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <MiniStat value={pipe.vessel_stats.vessel_segments} label="Segments" />
+                <MiniStat value={`${pipe.vessel_stats.centerline_length_px}px`} label="Centerline" />
+                <MiniStat value={`${pipe.vessel_stats.mean_diameter_px}px`} label="Mean diameter" />
+                <MiniStat value={`${pipe.vessel_stats.max_diameter_px}px`} label="Max diameter" />
+                <MiniStat value={`${pipe.vessel_stats.min_diameter_px}px`} label="Min diameter" />
+              </div>
+            )}
+
+            <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-4 py-2">#</th>
+                    <th className="px-4 py-2">Box (x, y, w, h)</th>
+                    <th className="px-4 py-2">Score</th>
+                    <th className="px-4 py-2">Location</th>
+                    <th className="px-4 py-2">Segment</th>
+                    <th className="px-4 py-2">Vessel width</th>
+                    <th className="px-4 py-2">Severity</th>
+                    <th className="px-4 py-2">Narrowing</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {pipe.candidates.length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="px-4 py-4 text-center text-slate-400">
+                        No candidate regions found.
+                      </td>
+                    </tr>
+                  )}
+                  {pipe.candidates.map((c, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-2">{i + 1}</td>
+                      <td className="px-4 py-2">{c.bbox.join(", ")}</td>
+                      <td className="px-4 py-2">{c.score}</td>
+                      <td className="px-4 py-2">{c.location ?? "-"}</td>
+                      <td className="px-4 py-2">{c.segment ?? "-"}</td>
+                      <td className="px-4 py-2">
+                        {c.local_diameter_px != null ? `${c.local_diameter_px}px` : "-"}
+                      </td>
+                      <td className="px-4 py-2">{c.severity ?? "-"}</td>
+                      <td className="px-4 py-2">
+                        {c.narrowing_pct != null ? `${c.narrowing_pct}%` : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Combined stenosis visualization (Task 8) */}
+            {pipe.visualization_url && (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-slate-700">
+                    Stenosis visualization (original + artery segmentation + stenosis regions + model explanation)
+                  </h4>
+                  <a
+                    href={`${API_URL}${pipe.visualization_url}?t=${pipe.ts}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-indigo-300 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                  >
+                    Open full size
+                  </a>
+                </div>
+                <img
+                  src={`${API_URL}${pipe.visualization_url}?t=${pipe.ts}`}
+                  alt="Stenosis visualization"
+                  className="w-full max-w-3xl rounded-lg border"
+                />
+              </div>
+            )}
+
+            {/* Explainable AI: heatmaps + plain-language reason for every region */}
+            {pipe.candidates.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-semibold text-slate-700">
+                  Why was this flagged? (explainable AI)
+                </h4>
+                {pipe.candidates.map((c, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-wrap items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3"
+                  >
+                    {c.gradcam_url && (
+                      <img
+                        src={`${API_URL}${c.gradcam_url}?t=${pipe.ts}`}
+                        alt={`Grad-CAM region ${i + 1}`}
+                        className="h-36 rounded-lg border"
+                      />
+                    )}
+                    <div className="min-w-[240px] flex-1 text-sm text-slate-700">
+                      <p className="mb-1 font-medium">Region {i + 1}</p>
+                      <p>{explainText(c)}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Panels: crop, Grad-CAM, Grad-CAM++. Red marks where the model focused most.
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setPipe(null)}
                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
               >
                 Close

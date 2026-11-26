@@ -1,0 +1,9 @@
+{
+  "note": "Test-set results from the Colab notebook (threshold 0.5, 256x256). Artery = segmentation of the coronary artery tree; Stenosis = segmentation of stenosis regions.",
+  "models": [
+    {"name": "U-Net (artery)", "task": "syntax", "dice": 0.7597, "iou": 0.6126, "precision": 0.7788, "recall": 0.7416},
+    {"name": "Attention U-Net (artery)", "task": "syntax", "dice": 0.7509, "iou": 0.6012, "precision": 0.7792, "recall": 0.7246},
+    {"name": "U-Net (stenosis)", "task": "stenosis", "dice": 0.4888, "iou": 0.3235, "precision": 0.5159, "recall": 0.4644},
+    {"name": "Attention U-Net (stenosis)", "task": "stenosis", "dice": 0.478, "iou": 0.3142, "precision": 0.4805, "recall": 0.4759}
+  ]
+}
