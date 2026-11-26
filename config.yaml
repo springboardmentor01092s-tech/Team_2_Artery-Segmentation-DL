@@ -29,6 +29,15 @@ postprocessing:
   min_component_size: 40
   morphology_kernel_size: 3
 
+stenosis:
+  patch_size: 48
+  stenosis_threshold: 0.50
+  reference_radius: 18
+  min_ref_caliber: 4.0
+  batch_size: 16
+  epochs: 15
+  learning_rate: 0.001
+
 paths:
   checkpoints_dir: "outputs/checkpoints"
   masks_dir: "outputs/masks"

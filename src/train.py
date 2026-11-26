@@ -92,8 +92,55 @@ def _run_epoch(model, loader, criterion, optimizer, device, is_train=True):
     return loss_acc / n, dice_acc / n, iou_acc / n
 
 
-def train_single_model(model_name: str, config_path: str = "config.yaml"):
-    """Executes complete training loop for the specified architecture."""
+def evaluate_test_set(model, test_loader, device, ckpt_path, display_name, reports_dir):
+    """Loads best saved checkpoint, evaluates on test dataset, prints and saves formatted metrics."""
+    ckpt = torch.load(ckpt_path, map_location=device)
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.eval()
+
+    tp, fp, tn, fn = 0, 0, 0, 0
+    with torch.no_grad():
+        for imgs, masks, _ in test_loader:
+            imgs, masks = imgs.to(device), masks.to(device)
+            preds = (torch.sigmoid(model(imgs)) > 0.5).long()
+            targets = (masks > 0.5).long()
+
+            tp += int(((preds == 1) & (targets == 1)).sum().item())
+            fp += int(((preds == 1) & (targets == 0)).sum().item())
+            tn += int(((preds == 0) & (targets == 0)).sum().item())
+            fn += int(((preds == 0) & (targets == 1)).sum().item())
+
+    total = tp + fp + tn + fn
+    acc = (tp + tn) / total if total > 0 else 0.0
+    prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (2 * tp) / (2 * tp + fp + fn) if (2 * tp + fp + fn) > 0 else 0.0
+
+    print("\nTEST RESULTS (best epoch)\n")
+    print(f"{'accuracy:':<11}{acc:.3f}")
+    print(f"{'precision:':<11}{prec:.3f}")
+    print(f"{'recall:':<11}{rec:.3f}")
+    print(f"{'f1:':<11}{f1:.3f}\n")
+    print(f"confusion matrix  TP={tp}  FP={fp}  TN={tn}  FN={fn}\n")
+
+    test_results = {
+        "model": display_name,
+        "best_epoch": ckpt.get("epoch"),
+        "accuracy": round(acc, 4),
+        "precision": round(prec, 4),
+        "recall": round(rec, 4),
+        "f1": round(f1, 4),
+        "confusion_matrix": {"tp": tp, "fp": fp, "tn": tn, "fn": fn}
+    }
+    report_file = os.path.join(reports_dir, f"test_results_{display_name}.json")
+    with open(report_file, "w") as fp:
+        json.dump(test_results, fp, indent=2)
+
+    return test_results
+
+
+def train_single_model(model_name: str, config_path: str = "config.yaml", test_only: bool = False):
+    """Executes complete training loop for the specified architecture and evaluates on test set."""
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
@@ -105,11 +152,23 @@ def train_single_model(model_name: str, config_path: str = "config.yaml"):
 
     dev_str = cfg["training"].get("device", "cuda")
     device = torch.device(dev_str if (torch.cuda.is_available() and dev_str == "cuda") else "cpu")
-    print(f"\nTraining {model_name} on {device}...")
 
-    train_loader, val_loader, _, _ = get_dataloaders(config_path)
+    train_loader, val_loader, test_loader, _ = get_dataloaders(config_path)
     model, display_name = build_model(model_name, cfg, device)
 
+    ckpt_dir, rpt_dir = cfg["paths"]["checkpoints_dir"], cfg["paths"]["reports_dir"]
+    os.makedirs(ckpt_dir, exist_ok=True)
+    os.makedirs(rpt_dir, exist_ok=True)
+    ckpt_path = os.path.join(ckpt_dir, f"best_{display_name}.pth")
+
+    if test_only:
+        if not os.path.exists(ckpt_path):
+            raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+        print(f"Evaluating test set for {display_name} using: {ckpt_path}")
+        test_results = evaluate_test_set(model, test_loader, device, ckpt_path, display_name, rpt_dir)
+        return ckpt_path, {}, test_results
+
+    print(f"\nTraining {model_name} on {device}...")
     criterion = DiceBCELoss(bce_weight=0.5, dice_weight=0.5)
     lr = float(cfg["training"].get("learning_rate", 0.001))
     weight_decay = float(cfg["training"].get("weight_decay", 0.0001))
@@ -118,10 +177,6 @@ def train_single_model(model_name: str, config_path: str = "config.yaml"):
 
     epochs = cfg["training"].get("epochs", 35)
     patience = cfg["training"].get("early_stopping_patience", 10)
-    ckpt_dir, rpt_dir = cfg["paths"]["checkpoints_dir"], cfg["paths"]["reports_dir"]
-    os.makedirs(ckpt_dir, exist_ok=True)
-    os.makedirs(rpt_dir, exist_ok=True)
-    ckpt_path = os.path.join(ckpt_dir, f"best_{display_name}.pth")
 
     history = {k: [] for k in ["epoch", "train_loss", "train_dice", "train_iou", "val_loss", "val_dice", "val_iou", "lr"]}
     best_val_dice, no_improve = -1.0, 0
@@ -164,7 +219,10 @@ def train_single_model(model_name: str, config_path: str = "config.yaml"):
         json.dump(history, fp, indent=2)
 
     plot_training_curves(history, display_name, rpt_dir)
-    return ckpt_path, history
+
+    # Evaluate test dataset using best checkpoint
+    test_results = evaluate_test_set(model, test_loader, device, ckpt_path, display_name, rpt_dir)
+    return ckpt_path, history, test_results
 
 
 def plot_training_curves(history: dict, model_name: str, reports_dir: str):
@@ -188,18 +246,19 @@ def plot_training_curves(history: dict, model_name: str, reports_dir: str):
         plt.close()
 
 
-def train_both_models(config_path: str = "config.yaml"):
-    """Trains Baseline U-Net followed by Attention ResU-Net."""
-    train_single_model("Baseline_UNet", config_path)
-    train_single_model("Attention_ResUNet", config_path)
+def train_both_models(config_path: str = "config.yaml", test_only: bool = False):
+    """Trains Baseline U-Net followed by Attention ResU-Net, evaluating test results for both."""
+    train_single_model("Baseline_UNet", config_path, test_only=test_only)
+    train_single_model("Attention_ResUNet", config_path, test_only=test_only)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="both", choices=["unet", "attention_resunet", "both"])
     parser.add_argument("--config", type=str, default="config.yaml")
+    parser.add_argument("--test-only", action="store_true", help="Evaluate existing best checkpoint on test set without retraining")
     args = parser.parse_args()
     if args.model == "both":
-        train_both_models(args.config)
+        train_both_models(args.config, test_only=args.test_only)
     else:
-        train_single_model(args.model, args.config)
+        train_single_model(args.model, args.config, test_only=args.test_only)

@@ -129,6 +129,38 @@ python main.py --mode all
   python main.py --mode analyze
   ```
 
+* **Run Stenosis Detection, Severity Classification & QCA Profiling**:
+  ```bash
+  python main.py --mode stenosis
+  ```
+
+* **Run Explainable AI (Grad-CAM Feature Attribution)**:
+  ```bash
+  python main.py --mode xai
+  ```
+
+* **Run Model Architecture Comparison & Statistical Testing**:
+  ```bash
+  python main.py --mode compare
+  ```
+
+* **Generate Automated Clinical Reports (PDF, CSV, JSON)**:
+  ```bash
+  python main.py --mode report
+  # Or generate an individual patient report:
+  python main.py --mode report --patient 104
+  ```
+
+* **Launch REST API Server**:
+  ```bash
+  python main.py --mode api --port 8000
+  ```
+
+* **Run Automated End-to-End & API Test Suites**:
+  ```bash
+  python main.py --mode test
+  ```
+
 ---
 
 ## 7. Quantitative Test Evaluation & Results
@@ -152,20 +184,35 @@ Evaluated on 21 held-out test coronary angiograms from the DCA/ICA dataset:
 1. **Model Weights**:
    - `outputs/checkpoints/best_Baseline_UNet.pth`
    - `outputs/checkpoints/best_Attention_ResUNet.pth`
+   - `outputs/checkpoints/best_stenosis_classifier.pth` (Milestone 3)
 
 2. **Evaluation Metrics & Reports**:
    - `outputs/reports/metrics.json`: Overall summary metrics (Mean ± Std).
    - `outputs/reports/results.csv`: Case-by-case test metrics for all 21 test patients.
    - `outputs/reports/model_comparison.png`: Side-by-side grouped bar chart comparing Dice, IoU, Precision, Recall, and Specificity.
    - `outputs/reports/model_comparison_report.md`: Markdown summary table.
+   - `outputs/reports/stenosis_severity_results.csv`: Lesion coordinates, MLD (px), RVD (px), percentage narrowing, severity category (Normal, Mild, Moderate, Severe, Total Occlusion), and model confidence.
+   - `outputs/reports/case_stenosis_summary.csv`: Patient-level primary severity grade, maximum narrowing %, and lesion counts.
+   - `outputs/reports/stenosis_severity_summary.json`: Cohort severity distribution and quantitative narrowing statistics.
+   - `outputs/reports/stenosis_detection_results.csv`: Backward-compatible lesion detection results.
+   - `outputs/reports/stenosis_detection_report.json`: Backward-compatible milestone summary metrics.
 
-3. **Vessel Morphometry Outputs**:
+3. **Automated Reports & Multi-Format Exports**:
+   - `outputs/reports/corovision_automated_report.pdf`: Publication-grade clinical diagnostic PDF report with executive summary, model comparison, QCA analysis, and embedded figures.
+   - `outputs/reports/patient_<case_id>_clinical_report.pdf`: Dedicated 1-page individual patient report with localized lesions and Grad-CAM attributions.
+   - `outputs/reports/comprehensive_case_report.csv`: Unified patient-level CSV table combining segmentation, vessel morphometry, and stenosis severity.
+   - `outputs/reports/comprehensive_report.json`: Consolidated machine-readable JSON archive.
+   - `outputs/reports/model_comparison.csv` & `model_comparison.json`: Statistical comparison metrics and p-values.
+
+4. **Vessel Morphometry Outputs**:
    - `outputs/reports/vessel_analysis.csv`: Centerline length, caliber (mean/median/max diameter), and branch counts per test case.
    - `outputs/reports/vessel_analysis.json`: Serialized vessel morphometry data.
 
-4. **Visualizations**:
+5. **Visualizations**:
    - `outputs/visualizations/<Model>/<case>_comparison.png`: 4-panel visualizer (Angiogram, Ground Truth, Prediction, Color Overlay).
    - `outputs/visualizations/<Model>_vessel_analysis/<case>_vessel_caliber.png`: 4-panel centerline & caliber heatmap.
+   - `outputs/visualizations/stenosis_localization/<case>_stenosis.png`: 4-panel diagnostic figure (Angiogram with severity bounding boxes, Segmented Artery, Zoomed Primary Lesion Caliber, Grad-CAM Feature Attribution).
+   - `outputs/visualizations/explainable_ai/<case>_gradcam.png`: Dedicated 4-panel Explainable AI figure (Angiogram, Full-image Grad-CAM Heatmap Overlay, Zoomed Lesion Grad-CAM, CNN Probability Attribution).
    - `outputs/reports/<Model>_loss_curve.png`: Loss progression.
    - `outputs/reports/<Model>_dice_curve.png`: Dice & IoU progression.
 
